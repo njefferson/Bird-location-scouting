@@ -51,6 +51,15 @@ export function sparkline(series, { w = 96, h = 22, inferred = false } = {}) {
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   svg.classList.add('spark'); if (inferred) svg.classList.add('inferred');
+  // Faint vertical gridlines marking each of the 12 months (drawn under the data line).
+  for (let i = 0; i < 12; i++) {
+    const x = (i / 11) * (w - 2) + 1;
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', x.toFixed(1)); line.setAttribute('y1', '0');
+    line.setAttribute('x2', x.toFixed(1)); line.setAttribute('y2', String(h));
+    line.classList.add('spark-grid');
+    svg.append(line);
+  }
   const poly = document.createElementNS(ns, 'polyline');
   poly.setAttribute('points', pts.join(' '));
   poly.setAttribute('fill', 'none');

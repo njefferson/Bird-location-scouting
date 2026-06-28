@@ -21,6 +21,15 @@ function daysAgo(obsDt) {
   return Math.max(0, Math.round((NOW - d) / 86400000));
 }
 
+// A species name that links to its eBird species page (opens in a new tab).
+function speciesLink(cls, s, text) {
+  return el(`a.bird-link${cls ? '.' + cls : ''}`, {
+    href: `https://ebird.org/species/${s.code}`,
+    target: '_blank', rel: 'noopener',
+    title: `Open the eBird page for ${s.name}`,
+  }, text || s.name);
+}
+
 // --- Shared controls --------------------------------------------------------
 function monthSelector(state, onChange) {
   const sel = el('div.months');
@@ -62,7 +71,7 @@ export function renderCards(root, state, nav) {
   ]));
 
   const ranked = rankHotspots(HOTSPOTS, state.monthIdx);
-  const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked).slice(0, 15);
+  const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked).slice(0, state.listLength);
 
   const list = el('div.cards');
   if (!rows.length) {
@@ -107,7 +116,7 @@ function card(r, state, nav) {
 
   const species = el('div.top-species', {}, top.length
     ? top.map((c) => el('div.tsp', {}, [
-        el('span.tsp-name', {}, c.species.name),
+        speciesLink('tsp-name', c.species),
         el('span.tsp-freq', { title: c.freq.rule }, pct(c.freq.value) + (c.freq.inferred ? '*' : '')),
         el('span.tsp-bar', {}, el('i', { style: `width:${Math.round(c.freq.value * 100)}%` })),
       ]))
@@ -216,7 +225,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   for (const r of rows) {
     const inferredNow = r.fNow.inferred;
     table.append(el('tr', {}, [
-      el('td', {}, [el('span', {}, r.s.name), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
+      el('td', {}, [speciesLink('', r.s), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, photoabilityCell(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
@@ -270,7 +279,7 @@ export function renderSpecies(root, state, nav) {
 function speciesPanel(s, state, nav) {
   const panel = el('div.sp-panel');
   panel.append(el('div.sp-head', {}, [
-    el('h2', {}, s.name),
+    el('h2', {}, speciesLink('', s)),
     el('span.badge', { style: `--c:${s.photoability >= 0.7 ? '#2e7d32' : s.photoability >= 0.5 ? '#1565c0' : '#9e9e9e'}` }, `photoability ${s.photoability.toFixed(2)}`),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
   ]));
@@ -324,6 +333,17 @@ export function renderSettings(root, state, nav) {
 
   const e = ebirdSettings();
   const form = el('div.settings');
+
+  const lenInput = el('input', { type: 'number', min: '1', max: String(HOTSPOTS.length), value: String(state.listLength) });
+  lenInput.addEventListener('change', () => {
+    const n = Math.max(1, Math.min(HOTSPOTS.length, parseInt(lenInput.value, 10) || 15));
+    lenInput.value = String(n);
+    nav.setListLength(n);
+  });
+  form.append(section('Ranking list', [
+    el('label.row', {}, [el('span', {}, `Hotspots to show (1–${HOTSPOTS.length})`), lenInput]),
+    el('p.dim', {}, `The Ranking screen lists your top hotspots for the month — filters apply first, then this limit. Default 15; set ${HOTSPOTS.length} to see every hotspot.`),
+  ]));
 
   form.append(section('The box (§1)', [
     el('p.dim', {}, 'The geographic rectangle the planner covers.'),

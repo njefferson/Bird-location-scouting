@@ -7,11 +7,17 @@ import { loadReference } from './model/reference.js';
 import { recentInBox } from './model/ebird.js';
 import { mountAbout } from './ui/about.js';
 
+// Lightweight view-preference persistence (separate from the eBird settings store).
+const VIEW_KEY = 'frame.view';
+function loadView() { try { return JSON.parse(localStorage.getItem(VIEW_KEY) || '{}'); } catch { return {}; } }
+function saveView(patch) { try { localStorage.setItem(VIEW_KEY, JSON.stringify({ ...loadView(), ...patch })); } catch {} }
+
 const state = {
   monthIdx: new Date().getMonth(), // default = current month (§5)
   filter: 'all',
   recent: null,        // eBird overlay map: speciesCode → newest obsDt
   speciesQuery: '',
+  listLength: Math.max(1, Math.min(30, loadView().listLength || 15)), // hotspots shown on Ranking
 };
 
 const app = document.getElementById('app');
@@ -21,6 +27,7 @@ const nav = {
   go(hash) { if (location.hash === hash) render(); else location.hash = hash; },
   setMonth(i) { state.monthIdx = i; render(); },
   setFilter(k) { state.filter = k; render(); },
+  setListLength(n) { state.listLength = n; saveView({ listLength: n }); render(); },
 };
 
 const TABS = [

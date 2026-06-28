@@ -7,9 +7,12 @@
 #   EBIRD_API_TOKEN       (optional — turns on the live sightings overlay)
 name: Deploy Frame to Cloudflare Pages
 
+# main -> production (bird-location-scouting.pages.dev)
+# any other listed branch -> a Cloudflare PREVIEW deployment
+# (https://<branch>.bird-location-scouting.pages.dev), leaving production untouched.
 on:
   push:
-    branches: [ main ]
+    branches: [ main, next-version ]
   workflow_dispatch:
 
 jobs:
@@ -51,4 +54,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: frame
-          command: pages deploy . --project-name=bird-location-scouting --branch=main --commit-dirty=true
+          # branch=main is the production branch; any other branch publishes a preview.
+          command: pages deploy . --project-name=bird-location-scouting --branch=${{ github.ref_name }} --commit-dirty=true
