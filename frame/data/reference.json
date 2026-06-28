@@ -1,0 +1,5 @@
+{
+  "builtAt": null,
+  "_comment": "Empty scaffold. Populate with: EBIRD_API_TOKEN=xxx node scripts/build-reference.mjs all ./csv-dir. Until then the app runs on the transparent habitat/season inference model and labels every value 'inferred'.",
+  "hotspots": {}
+}

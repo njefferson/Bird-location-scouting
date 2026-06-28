@@ -1,0 +1,50 @@
+# Standalone deploy for the NEW repo (njefferson/Bird-location-scouting).
+# Place this at .github/workflows/deploy.yml in that repo. It publishes frame/
+# as its OWN Cloudflare Pages project (bird-location-scouting.pages.dev), with
+# the eBird proxy mounted at /api/ebird. Needs three repo secrets:
+#   CLOUDFLARE_API_TOKEN  (the account-wide Pages:Edit token you just made)
+#   CLOUDFLARE_ACCOUNT_ID
+#   EBIRD_API_TOKEN       (optional — turns on the live sightings overlay)
+name: Deploy Frame to Cloudflare Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ensure Pages project exists
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create bird-location-scouting --production-branch=main
+
+      - name: Set eBird API token secret
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
+        run: |
+          if [ -n "$EBIRD_API_TOKEN" ]; then
+            printf '%s' "$EBIRD_API_TOKEN" | npx -y wrangler@3 pages secret put EBIRD_API_TOKEN --project-name=bird-location-scouting
+          else
+            echo "No EBIRD_API_TOKEN secret — deploying without the live overlay."
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frame --project-name=bird-location-scouting --branch=main --commit-dirty=true

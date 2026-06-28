@@ -1,0 +1,14 @@
+{
+  "name": "Frame — Bird Photography Hotspot Planner",
+  "short_name": "Frame",
+  "description": "Where to go, in which month, to photograph which birds — ranked by photographic opportunity.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c1a15",
+  "theme_color": "#10231c",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

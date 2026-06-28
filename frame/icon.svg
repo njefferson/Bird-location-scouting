@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#10231c"/>
+  <!-- viewfinder frame -->
+  <g fill="none" stroke="#4dd0a0" stroke-width="18" stroke-linecap="round">
+    <path d="M120 84 H84 V120"/>
+    <path d="M392 84 H428 V120"/>
+    <path d="M120 428 H84 V392"/>
+    <path d="M392 428 H428 V392"/>
+  </g>
+  <!-- bird silhouette -->
+  <path fill="#4dd0a0" d="M150 300c40-10 70-44 96-86 8 26 26 40 54 40-6 18-22 30-44 34 30 10 58 6 86-12-14 34-46 58-92 62-58 5-104-22-132-66 12 0 22-2 32-6z"/>
+  <circle cx="300" cy="214" r="9" fill="#10231c"/>
+</svg>
