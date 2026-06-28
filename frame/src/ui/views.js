@@ -80,7 +80,7 @@ export function renderCards(root, state, nav) {
   ]));
 
   const ranked = rankHotspots(HOTSPOTS, state.monthIdx);
-  const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked).slice(0, state.listLength);
+  const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
   if (!rows.length) {
@@ -343,17 +343,6 @@ export function renderSettings(root, state, nav) {
 
   const e = ebirdSettings();
   const form = el('div.settings');
-
-  const lenInput = el('input', { type: 'number', min: '1', max: String(HOTSPOTS.length), value: String(state.listLength) });
-  lenInput.addEventListener('change', () => {
-    const n = Math.max(1, Math.min(HOTSPOTS.length, parseInt(lenInput.value, 10) || 15));
-    lenInput.value = String(n);
-    nav.setListLength(n);
-  });
-  form.append(section('Ranking list', [
-    el('label.row', {}, [el('span', {}, `Hotspots to show (1–${HOTSPOTS.length})`), lenInput]),
-    el('p.dim', {}, `The Ranking screen lists your top hotspots for the month — filters apply first, then this limit. Default 15; set ${HOTSPOTS.length} to see every hotspot.`),
-  ]));
 
   form.append(section('The box (§1)', [
     el('p.dim', {}, 'The geographic rectangle the planner covers.'),
