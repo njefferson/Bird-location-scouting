@@ -51,7 +51,12 @@ export function rawHotspotScore(hotspot, monthIdx, species = SPECIES) {
     raw += contrib;
   }
   contributions.sort((a, b) => b.contrib - a.contrib);
-  return { raw, contributions, anyInferred };
+  // How many *photographable* species this month are still on the model (their
+  // freq is modeled, not eBird). Drives the "N inferred" chip — note this only
+  // counts contributing species, so out-of-season modeled species don't inflate
+  // it and a fully-real row shows no chip at all.
+  const inferredCount = contributions.filter((c) => c.freq.inferred).length;
+  return { raw, contributions, anyInferred, inferredCount };
 }
 
 /** Trust shrinkage factor 0–1 from checklist count N (James–Stein style). */
@@ -68,10 +73,10 @@ export function shrinkFactor(n) {
 export function rankHotspots(hotspots, monthIdx, opts = {}) {
   const species = opts.species || SPECIES;
   const rows = hotspots.map((h) => {
-    const { raw, contributions, anyInferred } = rawHotspotScore(h, monthIdx, species);
+    const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species);
     const n = checklistN(h, monthIdx);
     const shrink = shrinkFactor(n);
-    return { hotspot: h, raw, shrunk: raw * shrink, contributions, anyInferred, n, shrink };
+    return { hotspot: h, raw, shrunk: raw * shrink, contributions, anyInferred, inferredCount, n, shrink };
   });
 
   const maxShrunk = Math.max(1e-9, ...rows.map((r) => r.shrunk));

@@ -113,7 +113,7 @@ function card(r, state, nav) {
       el('div.tags', {}, [
         trustBadge(r.trust),
         nBadge(r.n),
-        r.anyInferred ? inferredChip('Row uses the habitat/season model — see provenance.') : null,
+        inferredChip(r.inferredCount),
         live,
         h.outsideBox ? el('span.chip.dim', { title: 'Just outside the strict box — toggle in Settings.' }, 'edge') : null,
       ]),

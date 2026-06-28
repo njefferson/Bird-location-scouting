@@ -8,10 +8,11 @@ export function trustBadge(trust) {
   }, trust.label);
 }
 
-export function inferredChip(rule) {
+export function inferredChip(count, rule) {
+  if (!count) return null; // every photographable species this month is real eBird
   return el('span.chip.inferred', {
-    title: rule || 'Estimated from the habitat/season model — not eBird data.',
-  }, 'inferred');
+    title: rule || `${count} of this month's photographable species are estimated from the habitat/season model — the rest are eBird data.`,
+  }, `${count} inferred`);
 }
 
 /** Live "seen in last N days" badge (from the eBird overlay). */
@@ -22,6 +23,6 @@ export function liveBadge(daysAgo) {
 }
 
 export function nBadge(n) {
-  if (n == null) return el('span.chip.dim', { title: 'No eBird effort data loaded — run the build script.' }, 'N: —');
-  return el('span.chip', { title: `${n} checklists this month (eBird effort).` }, `N: ${n}`);
+  if (n == null) return el('span.chip.dim', { title: 'No eBird checklist counts loaded — run the build script.' }, 'no coverage data');
+  return el('span.chip', { title: `${n} eBird checklists were submitted here this month — more checklists means more trustworthy frequencies.` }, `${n} checklists`);
 }
