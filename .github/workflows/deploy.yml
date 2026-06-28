@@ -42,18 +42,6 @@ jobs:
             echo "No EBIRD_API_TOKEN secret — deploying without the live overlay."
           fi
 
-      # Diagnostic: confirm the Functions dir is present and compiles on the
-      # runner (where there's disk space). Non-fatal.
-      - name: Debug — list frame and test-compile functions
-        continue-on-error: true
-        run: |
-          echo "--- frame/ ---"; ls -la frame
-          echo "--- frame/functions (recursive) ---"; find frame/functions -type f
-          echo "--- test compile ---"
-          npx -y wrangler@3 pages functions build frame/functions --outfile=/tmp/_fns.js \
-            && echo "FUNCTIONS_BUILD_OK bytes=$(wc -c </tmp/_fns.js)" \
-            || echo "FUNCTIONS_BUILD_FAILED"
-
       # Deploy from INSIDE frame/ so wrangler reliably finds frame/functions as
       # ./functions (it resolves the Functions dir relative to the working
       # directory, not the deploy-target argument). publishing "." = frame/.
