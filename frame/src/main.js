@@ -5,6 +5,7 @@ import { el } from './ui/dom.js';
 import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSettings } from './ui/views.js';
 import { loadReference } from './model/reference.js';
 import { recentInBox } from './model/ebird.js';
+import { mountAbout } from './ui/about.js';
 
 const state = {
   monthIdx: new Date().getMonth(), // default = current month (§5)
@@ -53,6 +54,7 @@ window.addEventListener('hashchange', render);
 
 // Boot: paint immediately on the static/inference layer, then enrich.
 (async function boot() {
+  mountAbout();                  // floating "about" button, available everywhere
   render();
   await loadReference();         // swap in real eBird data if present
   render();
