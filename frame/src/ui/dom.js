@@ -38,7 +38,7 @@ export function clear(node) { while (node.firstChild) node.removeChild(node.firs
 export function pct(x) { return `${Math.round(x * 100)}%`; }
 
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */
-export function sparkline(series, { w = 96, h = 22, inferred = false } = {}) {
+export function sparkline(series, { w = 96, h = 22, inferred = false, months = true } = {}) {
   const max = Math.max(0.0001, ...series.map((s) => (typeof s === 'number' ? s : s.value)));
   const pts = series.map((s, i) => {
     const v = typeof s === 'number' ? s : s.value;
@@ -47,9 +47,11 @@ export function sparkline(series, { w = 96, h = 22, inferred = false } = {}) {
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
   const ns = 'http://www.w3.org/2000/svg';
+  const labelH = months ? 10 : 0;          // room for the month-initial axis
+  const totalH = h + labelH;
   const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('width', w); svg.setAttribute('height', h);
-  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', w); svg.setAttribute('height', totalH);
+  svg.setAttribute('viewBox', `0 0 ${w} ${totalH}`);
   svg.classList.add('spark'); if (inferred) svg.classList.add('inferred');
   // Faint vertical gridlines marking each of the 12 months (drawn under the data line).
   for (let i = 0; i < 12; i++) {
@@ -64,5 +66,19 @@ export function sparkline(series, { w = 96, h = 22, inferred = false } = {}) {
   poly.setAttribute('points', pts.join(' '));
   poly.setAttribute('fill', 'none');
   svg.append(poly);
+  // Month-initial axis (J F M A M J J A S O N D) along the bottom.
+  if (months) {
+    const INIT = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+    for (let i = 0; i < 12; i++) {
+      const x = (i / 11) * (w - 2) + 1;
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', x.toFixed(1));
+      t.setAttribute('y', String(totalH - 1));
+      t.setAttribute('text-anchor', i === 0 ? 'start' : i === 11 ? 'end' : 'middle');
+      t.classList.add('spark-mon');
+      t.textContent = INIT[i];
+      svg.append(t);
+    }
+  }
   return svg;
 }

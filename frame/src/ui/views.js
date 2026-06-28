@@ -21,13 +21,22 @@ function daysAgo(obsDt) {
   return Math.max(0, Math.round((NOW - d) / 86400000));
 }
 
-// A species name that links to its eBird species page (opens in a new tab).
-function speciesLink(cls, s, text) {
+// A bird name that opens that species' page INSIDE the planner (the Species view).
+function speciesLink(cls, s, state, nav) {
   return el(`a.bird-link${cls ? '.' + cls : ''}`, {
+    href: '#/species',
+    title: `See ${s.name} in the planner`,
+    onclick: (ev) => { ev.preventDefault(); state.speciesQuery = s.name; nav.go('#/species'); },
+  }, s.name);
+}
+
+// External link to a species' full eBird page (kept available from the Species view).
+function ebirdLink(s) {
+  return el('a.ebird-link', {
     href: `https://ebird.org/species/${s.code}`,
     target: '_blank', rel: 'noopener',
-    title: `Open the eBird page for ${s.name}`,
-  }, text || s.name);
+    title: `Open ${s.name} on eBird.org`,
+  }, '↗ eBird');
 }
 
 // --- Shared controls --------------------------------------------------------
@@ -116,7 +125,7 @@ function card(r, state, nav) {
 
   const species = el('div.top-species', {}, top.length
     ? top.map((c) => el('div.tsp', {}, [
-        speciesLink('tsp-name', c.species),
+        speciesLink('tsp-name', c.species, state, nav),
         el('span.tsp-freq', { title: c.freq.rule }, pct(c.freq.value) + (c.freq.inferred ? '*' : '')),
         el('span.tsp-bar', {}, el('i', { style: `width:${Math.round(c.freq.value * 100)}%` })),
       ]))
@@ -225,7 +234,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   for (const r of rows) {
     const inferredNow = r.fNow.inferred;
     table.append(el('tr', {}, [
-      el('td', {}, [speciesLink('', r.s), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
+      el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, photoabilityCell(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
@@ -279,9 +288,10 @@ export function renderSpecies(root, state, nav) {
 function speciesPanel(s, state, nav) {
   const panel = el('div.sp-panel');
   panel.append(el('div.sp-head', {}, [
-    el('h2', {}, speciesLink('', s)),
+    el('h2', {}, s.name),
     el('span.badge', { style: `--c:${s.photoability >= 0.7 ? '#2e7d32' : s.photoability >= 0.5 ? '#1565c0' : '#9e9e9e'}` }, `photoability ${s.photoability.toFixed(2)}`),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
+    ebirdLink(s),
   ]));
   panel.append(el('p.sp-note', {}, s.note));
 
