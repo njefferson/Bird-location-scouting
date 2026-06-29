@@ -5,6 +5,7 @@
 // way) and opens a native <dialog> with Esc / backdrop-click to close.
 // =============================================================================
 import { el } from './dom.js';
+import { CHANGELOG } from '../data/changelog.js';
 
 const ABOUT_HTML = `
   <h2>Frame — why this app exists</h2>
@@ -48,12 +49,23 @@ const ABOUT_HTML = `
   Sacramento, CA · Frequency data: eBird (refresh quarterly).</p>
 `;
 
+// "What's new" — built from the changelog data module (single source of truth).
+function changelogHTML() {
+  const releases = CHANGELOG.map((r) => `
+    <div class="rel">
+      <p class="rel-head"><span class="rel-ver">${r.version}</span>
+      <span class="rel-date">${r.date}</span></p>
+      <ul>${r.changes.map((c) => `<li>${c}</li>`).join('')}</ul>
+    </div>`).join('');
+  return `<h3 class="whatsnew-h">What’s new</h3>${releases}`;
+}
+
 export function mountAbout() {
   if (document.getElementById('about-btn')) return; // mount once
 
   const dialog = el('dialog.about-dialog', { id: 'about-dialog' }, [
     el('button.about-close', { 'aria-label': 'Close', onclick: () => dialog.close() }, '×'),
-    el('div.about-body', { html: ABOUT_HTML }),
+    el('div.about-body', { html: ABOUT_HTML + changelogHTML() }),
   ]);
   // Click on the backdrop (outside the content) closes it.
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });

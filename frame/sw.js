@@ -1,11 +1,11 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v8';
+const CACHE = 'frame-v9';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg',
   './src/styles.css', './src/main.js',
   './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js',
-  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js',
+  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js',
   './src/model/inference.js', './src/model/scoring.js', './src/model/ebird.js', './src/model/reference.js',
   './data/reference.json',
 ];
