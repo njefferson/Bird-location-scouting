@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v10 — 2026-06-28
+- The in-app "What's new" now shows the latest 5 releases with a link to the full changelog.
+
 ## v9 — 2026-06-28
 - Added a "What's new" panel — release notes now live in the app, in this file, and on GitHub Releases.
 

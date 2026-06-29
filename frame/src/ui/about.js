@@ -49,15 +49,20 @@ const ABOUT_HTML = `
   Sacramento, CA · Frequency data: eBird (refresh quarterly).</p>
 `;
 
-// "What's new" — built from the changelog data module (single source of truth).
+// "What's new" — latest few releases from the changelog data module (single
+// source of truth). Full history lives in /CHANGELOG.md and GitHub Releases.
+const WHATSNEW_LIMIT = 5;
 function changelogHTML() {
-  const releases = CHANGELOG.map((r) => `
+  const releases = CHANGELOG.slice(0, WHATSNEW_LIMIT).map((r) => `
     <div class="rel">
       <p class="rel-head"><span class="rel-ver">${r.version}</span>
       <span class="rel-date">${r.date}</span></p>
       <ul>${r.changes.map((c) => `<li>${c}</li>`).join('')}</ul>
     </div>`).join('');
-  return `<h3 class="whatsnew-h">What’s new</h3>${releases}`;
+  const more = CHANGELOG.length > WHATSNEW_LIMIT
+    ? `<p class="rel-more"><a href="https://github.com/njefferson/Bird-location-scouting/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog ↗</a></p>`
+    : '';
+  return `<h3 class="whatsnew-h">What’s new</h3>${releases}${more}`;
 }
 
 export function mountAbout() {

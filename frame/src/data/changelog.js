@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v10',
+    date: '2026-06-28',
+    changes: [
+      'The in-app “What’s new” now shows the latest 5 releases with a link to the full changelog.',
+    ],
+  },
+  {
     version: 'v9',
     date: '2026-06-28',
     changes: [

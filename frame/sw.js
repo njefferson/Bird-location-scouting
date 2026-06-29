@@ -1,6 +1,6 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v9';
+const CACHE = 'frame-v10';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg',
   './src/styles.css', './src/main.js',
