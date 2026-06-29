@@ -6,10 +6,11 @@
 // pulled from /ref/hotspot/geo. Names + coordinates are eBird's; habitats are
 // hand-inferred; access notes are brief local guidance.
 //
-// locId is now REAL for every hotspot, so per-hotspot live overlays work and the
+// locId is REAL for every hotspot, so per-hotspot live overlays work and the
 // bar-chart download maps to the correct place. freqByMonth / checklistsByMonth
-// stay null until the bar-chart TSVs are loaded (build script), at which point
-// the app flips from "inferred" to "documented".
+// are null HERE by design — the real per-month frequency + checklist counts live
+// in data/reference.json (built from eBird bar charts) and are merged over these
+// nulls at load time by model/reference.js, flipping the app to "documented".
 // =============================================================================
 
 /** @typedef {import('./species.js').Habitat} Habitat */

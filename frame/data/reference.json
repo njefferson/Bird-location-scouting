@@ -1,6 +1,6 @@
 {
   "builtAt": "2026-06-28",
-  "_comment": "Empty scaffold. Populate with: EBIRD_API_TOKEN=xxx node scripts/build-reference.mjs all ./csv-dir. Until then the app runs on the transparent habitat/season inference model and labels every value 'inferred'.",
+  "_comment": "Real eBird bar-chart data: per-month frequency + checklist counts for all 30 hotspots. The app loads this and labels these values 'documented' (a species with no entry here falls back to the transparent habitat/season inference model, marked 'inferred'). To refresh, re-run: EBIRD_API_TOKEN=xxx node scripts/build-reference.mjs all ./csv-dir. eBird frequency is a multi-year average, so quarterly is plenty.",
   "hotspots": {
     "ancil-hoffman": {
       "freqByMonth": {
