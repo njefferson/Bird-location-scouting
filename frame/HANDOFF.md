@@ -34,7 +34,9 @@ EBIRD_COOKIE="<pasted>" node frame/scripts/download-barcharts.mjs ./barcharts
 node frame/scripts/build-reference.mjs localbarcharts ./barcharts
 git add frame/data/reference.json && git commit -m "Refresh eBird frequency + N" && git push
 ```
-That rewrites `data/reference.json` and redeploys.
+That rewrites `data/reference.json` and redeploys. Installed apps pick the new
+data up automatically within a couple of loads (the service worker serves the
+cached copy instantly and refreshes it in the background).
 
 ## Optional: more hotspots
 To use 50 hotspots instead of 30: re-run

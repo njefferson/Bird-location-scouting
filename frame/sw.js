@@ -1,8 +1,8 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v10';
+const CACHE = 'frame-v11';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest', './icon.svg',
+  './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
   './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js',
   './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js',
@@ -30,10 +30,22 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
     return;
   }
-  // Everything else: cache-first (offline), revalidate in background.
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
-    const copy = res.clone();
-    caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-    return res;
-  }).catch(() => hit)));
+  // Everything else: stale-while-revalidate — serve the cache instantly for
+  // offline/speed, but ALWAYS refetch in the background so a deployed change
+  // (new JS, refreshed reference.json) reaches installed clients on their
+  // next load, without waiting for a service-worker version bump.
+  e.respondWith(caches.match(e.request).then((hit) => {
+    const refresh = fetch(e.request).then((res) => {
+      if (res && res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      }
+      return res;
+    });
+    if (hit) {
+      e.waitUntil(refresh.catch(() => {})); // offline → keep the cached copy
+      return hit;
+    }
+    return refresh.catch(() => hit);
+  }));
 });

@@ -133,5 +133,7 @@ frame/
   — hotspots read *Documented*, not *Inferred*. Refresh quarterly with the build
   script. (Any species without a histogram entry still falls back to the inference
   model and is marked *inferred*.)
-- **v2:** ✅ matrix heatmap, species search, live recent/notable overlay (proxy);
-  ⏳ Macaulay thumbnails (no public count API — left for v3).
+- **v2:** ✅ matrix heatmap, species search, live recent-sightings overlay (proxy);
+  ⏳ Macaulay thumbnails (no public count API — left for v3); ⏳ per-hotspot and
+  notable-sightings overlays (API client groundwork existed; re-add when a view
+  needs them — see git history for `recentAtHotspot` / `notableInBox`).
