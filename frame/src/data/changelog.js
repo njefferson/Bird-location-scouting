@@ -9,6 +9,17 @@
 
 export const CHANGELOG = [
   {
+    version: 'v11',
+    date: '2026-07-03',
+    changes: [
+      'Fixed wrong eBird species codes for 8 birds — their ↗ eBird links now open the right page and their live “seen recently” badges can light up. (Golden-crowned Sparrow was even showing Golden-crowned Kinglet sightings.)',
+      'Installed apps now pick up new data and fixes automatically on the next couple of loads — no more waiting on a version bump.',
+      'Proper iOS home-screen icon (PNG — iOS ignores SVG touch icons).',
+      'The “seen Nd ago” badge now explains it means anywhere in the box, not necessarily at that hotspot.',
+      'Renamed Black-crowned Night-Heron to “Black-crowned Night Heron” to match eBird — its real frequency data will load on the next data refresh.',
+    ],
+  },
+  {
     version: 'v10',
     date: '2026-06-28',
     changes: [

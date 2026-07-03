@@ -65,8 +65,9 @@ cd frame && python3 -m http.server 8000   # or: npx serve .
 ```
 Install to the home screen from the browser's Share/Install menu (PWA).
 
-## Make the data real (spec §2A, §7 v0→v1)
-The app ships on the inference model. To swap in **real eBird frequencies**:
+## Refresh the real data (spec §2A, §7 v0→v1)
+Real eBird frequencies for all 30 hotspots are already loaded in
+`data/reference.json`. To **refresh** them (or rebuild from scratch):
 
 ```bash
 # 1. (optional) build the common-name → species-code map
@@ -88,18 +89,17 @@ eBird frequency is a multi-year average, it does not move week to week.
 > enumerate/taxonomy steps must be run on your own machine. The key is read only
 > from `EBIRD_API_TOKEN` and is never committed.
 
-## What works on iOS alone vs. what needs a desktop once
+## What works on iOS alone vs. what needs a desktop
 - **Works now, iOS only:** the whole planner — ranking, filters, the year
-  heatmap, species search — on the inference model, plus (after the one-tap
-  secret above) the **live** "seen in last N days" / notable / nearest-recent
-  badges from the eBird API.
-- **Needs a desktop once (optional):** turning *inferred* frequencies into *real*
-  eBird ones. eBird's per-hotspot frequency lives only in login-gated histogram
-  CSVs (not the API), so it can't be fetched from a phone or a server. Run the
-  build step below on any computer once (or have someone do it) and commit the
-  resulting `data/reference.json` — the app flips those hotspots to *Documented*
-  automatically. If you never do this, the app stays fully usable and just keeps
-  labelling frequencies *inferred*.
+  heatmap, species search — on the **real, already-loaded eBird frequencies**,
+  plus (after the one-tap secret above) the **live** "seen in last N days" /
+  notable / nearest-recent badges from the eBird API.
+- **Needs a desktop only to refresh the data (optional):** eBird's per-hotspot
+  frequency lives only in login-gated histogram CSVs (not the API), so it can't
+  be re-pulled from a phone or a server. The committed `data/reference.json` is
+  already real; to update it, re-run the build step below on any computer and
+  commit the result. eBird frequency is a multi-year average, so this only needs
+  doing quarterly at most — the app stays fully usable in between.
 
 ## Screens (spec §5)
 - **Ranking** — current-month top-15 cards: score, trust tag, N, top-3
@@ -127,8 +127,13 @@ frame/
 
 ## Status vs. the spec milestones (§7)
 - **v0 (MVP):** ✅ hotspots, photoability, scoring, current-month top list, month
-  selector — end-to-end. (Frequency is the inference model until you load CSVs.)
-- **v1:** ✅ trust tags + N, four opportunity filters, Maps links; ⏳ live hotspot
-  enumeration runs via the build script (blocked from this sandbox by egress).
-- **v2:** ✅ matrix heatmap, species search, live recent/notable overlay (proxy);
-  ⏳ Macaulay thumbnails (no public count API — left for v3).
+  selector — end-to-end.
+- **v1:** ✅ trust tags + N, four opportunity filters, Maps links, **real eBird
+  frequency + checklist counts loaded for all 30 hotspots** (`data/reference.json`)
+  — hotspots read *Documented*, not *Inferred*. Refresh quarterly with the build
+  script. (Any species without a histogram entry still falls back to the inference
+  model and is marked *inferred*.)
+- **v2:** ✅ matrix heatmap, species search, live recent-sightings overlay (proxy);
+  ⏳ Macaulay thumbnails (no public count API — left for v3); ⏳ per-hotspot and
+  notable-sightings overlays (API client groundwork existed; re-add when a view
+  needs them — see git history for `recentAtHotspot` / `notableInBox`).

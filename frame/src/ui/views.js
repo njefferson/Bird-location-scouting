@@ -4,7 +4,7 @@
 // =============================================================================
 import { el, clear, pct, sparkline } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
-import { SPECIES, SPECIES_BY_CODE } from '../data/species.js';
+import { SPECIES } from '../data/species.js';
 import { HOTSPOTS, hotspotMapLink, BOX } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
@@ -12,13 +12,12 @@ import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.j
 import { referenceMeta } from '../model/reference.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 
-const NOW = new Date();
-
 function daysAgo(obsDt) {
   if (!obsDt) return null;
   const d = new Date(obsDt.replace(' ', 'T'));
   if (Number.isNaN(d.getTime())) return null;
-  return Math.max(0, Math.round((NOW - d) / 86400000));
+  // Date.now() at call time, not module load — a PWA can stay open for days.
+  return Math.max(0, Math.round((Date.now() - d.getTime()) / 86400000));
 }
 
 // A bird name that opens that species' page INSIDE the planner (the Species view).
@@ -318,17 +317,22 @@ function speciesPanel(s, state, nav) {
   }
   panel.append(el('div.table-wrap', {}, table));
 
-  // Live "nearest recent" via the overlay (graceful).
+  // Live "nearest recent" via the overlay (graceful). Debounced: the panel is
+  // rebuilt on every keystroke, so wait a beat and only fetch if this panel is
+  // still the one on screen — otherwise typing a name fires a call per letter.
   const liveLine = el('p.sp-live.dim', {}, 'Checking live eBird sightings…');
   panel.append(liveLine);
-  nearestForSpecies(s.code).then((obs) => {
-    if (!obs || !obs.length) { liveLine.textContent = 'No live eBird sighting nearby (or overlay disabled).'; return; }
-    const o = obs[0];
-    liveLine.classList.remove('dim');
-    clear(liveLine);
-    liveLine.append('Live: last reported at ', el('strong', {}, o.locName || o.subId || 'a nearby spot'),
-      o.obsDt ? ` (${daysAgo(o.obsDt)}d ago)` : '', '.');
-  });
+  setTimeout(() => {
+    if (!liveLine.isConnected) return; // superseded by a newer render
+    nearestForSpecies(s.code).then((obs) => {
+      if (!obs || !obs.length) { liveLine.textContent = 'No live eBird sighting nearby (or overlay disabled).'; return; }
+      const o = obs[0];
+      liveLine.classList.remove('dim');
+      clear(liveLine);
+      liveLine.append('Live: last reported at ', el('strong', {}, o.locName || o.subId || 'a nearby spot'),
+        o.obsDt ? ` (${daysAgo(o.obsDt)}d ago)` : '', '.');
+    });
+  }, 300);
 
   panel.append(el('p.legend', {}, '* inferred from the habitat/season model. Live row uses the eBird recent-obs API.'));
   return panel;

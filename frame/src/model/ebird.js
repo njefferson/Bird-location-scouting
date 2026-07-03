@@ -72,20 +72,6 @@ export async function recentInBox({ back = 14 } = {}) {
   return bySpecies;
 }
 
-/** Notable (rare/locally-notable) recent obs in the box. */
-export async function notableInBox({ back = 14 } = {}) {
-  const { lat, lng } = boxCenter();
-  const obs = await call('/v2/data/obs/geo/recent/notable', { lat: lat.toFixed(3), lng: lng.toFixed(3), dist: 30, back, detail: 'simple' });
-  return Array.isArray(obs) ? obs : null;
-}
-
-/** Recent obs at a single hotspot (needs the real locId from the build script). */
-export async function recentAtHotspot(hotspot, { back = 14 } = {}) {
-  if (!hotspot.locId) return null;
-  const obs = await call(`/v2/data/obs/${hotspot.locId}/recent`, { back });
-  return Array.isArray(obs) ? obs : null;
-}
-
 /** Nearest recent place to photograph species X (§2C). */
 export async function nearestForSpecies(speciesCode, { back = 30 } = {}) {
   const { lat, lng } = boxCenter();
