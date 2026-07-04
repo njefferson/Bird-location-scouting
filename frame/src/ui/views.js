@@ -151,9 +151,11 @@ function toggleNotes(_, h) {
 
 function dataProvenanceFooter() {
   const meta = regionMeta();
-  const msg = meta.loaded
+  let msg = meta.loaded
     ? `${meta.region} region · ${meta.hotspots} hotspots across ${meta.counties} county file(s) · eBird histogram data built ${meta.builtAt || '(date n/a)'}. * = a value still on the habitat/season model.`
     : 'No region data loaded yet — every frequency is the transparent habitat/season model (marked *).';
+  // Loud, honest failure: county data without species codes zeroes every score.
+  if (meta.loaded && !meta.taxonomy) msg += ' ⚠ data/taxonomy.json failed to load — species codes are missing, so scores read 0. Run the Refresh eBird data action.';
   return el('footer.provenance', {}, [el('strong', {}, 'Data: '), msg]);
 }
 

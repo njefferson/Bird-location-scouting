@@ -78,7 +78,16 @@ async function taxonomy() {
   console.log(`Resolved ${Object.keys(map).length}/${SPECIES.length} species names → codes → data/taxonomy.json`);
   if (missing.length) {
     console.error(`\n${missing.length} species name(s) NOT in the eBird taxonomy — fix the NAME in species.js (they won't match bar-chart data until then):`);
-    for (const n of missing) console.error(`  - "${n}"`);
+    for (const n of missing) {
+      // Suggest likely intended names (taxonomy renames/splits) by word overlap,
+      // so the fix is in the log instead of needing research.
+      const words = n.toLowerCase().split(/[\s-]+/).filter((w) => w.length > 3);
+      const cands = tax
+        .filter((t) => { const c = t.comName.toLowerCase(); return words.some((w) => c.includes(w)); })
+        .filter((t) => t.category === 'species')
+        .slice(0, 4).map((t) => t.comName);
+      console.error(`  - "${n}"${cands.length ? `  → did you mean: ${cands.join(' | ')}` : ''}`);
+    }
     return false;
   }
   return true;

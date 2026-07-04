@@ -289,7 +289,7 @@ export const SPECIES = [
   { name: 'Long-billed Curlew', photoability: 0.72, status: 'winter', abundance: 0.3,
     habitats: { grassland: 0.7, marsh: 0.6, lake: 0.5 },
     note: 'Huge decurved bill; feeds in fields and flats, striking in profile.' },
-  { name: 'Whimbrel', photoability: 0.64, status: 'migrant', abundance: 0.3,
+  { name: 'Hudsonian Whimbrel', photoability: 0.64, status: 'migrant', abundance: 0.3,
     habitats: { lake: 0.6, marsh: 0.5, grassland: 0.4 },
     note: 'Medium curlew of the shoreline; wary but workable on open flats.' },
   { name: 'Willet', photoability: 0.62, status: 'winter', abundance: 0.4,
@@ -453,7 +453,7 @@ export const SPECIES = [
   { name: 'Great Horned Owl', photoability: 0.72, status: 'resident', abundance: 0.35,
     habitats: { oak: 0.7, riparian: 0.7, grassland: 0.4, urban: 0.4 },
     note: 'Big, wide-ranging; day-roosts in the open occasionally — find the roost.' },
-  { name: 'Barn Owl', photoability: 0.66, status: 'resident', abundance: 0.3,
+  { name: 'American Barn Owl', photoability: 0.66, status: 'resident', abundance: 0.3,
     habitats: { grassland: 0.7, marsh: 0.5, urban: 0.5 },
     note: 'Pale, nocturnal; day roosts in nest boxes and barns, otherwise a dusk shot.' },
 
