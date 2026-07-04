@@ -6,6 +6,7 @@
 // =============================================================================
 import { el } from './dom.js';
 import { CHANGELOG } from '../data/changelog.js';
+import { ROADMAP } from '../data/roadmap.js';
 
 const ABOUT_HTML = `
   <h2>Frame — why this app exists</h2>
@@ -49,6 +50,15 @@ const ABOUT_HTML = `
   Sacramento, CA · Frequency data: eBird (refresh quarterly).</p>
 `;
 
+// "Coming next" — planned features from the roadmap data module. Items move
+// from here into "What's new" as they ship (edit data/roadmap.js each release).
+function roadmapHTML() {
+  if (!ROADMAP.length) return '';
+  const items = ROADMAP.map((r) =>
+    `<li><strong>${r.title}</strong> — ${r.detail}</li>`).join('');
+  return `<h3 class="whatsnew-h">Coming next</h3><ul class="roadmap">${items}</ul>`;
+}
+
 // "What's new" — latest few releases from the changelog data module (single
 // source of truth). Full history lives in /CHANGELOG.md and GitHub Releases.
 const WHATSNEW_LIMIT = 5;
@@ -70,7 +80,7 @@ export function mountAbout() {
 
   const dialog = el('dialog.about-dialog', { id: 'about-dialog' }, [
     el('button.about-close', { 'aria-label': 'Close', onclick: () => dialog.close() }, '×'),
-    el('div.about-body', { html: ABOUT_HTML + changelogHTML() }),
+    el('div.about-body', { html: ABOUT_HTML + roadmapHTML() + changelogHTML() }),
   ]);
   // Click on the backdrop (outside the content) closes it.
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });

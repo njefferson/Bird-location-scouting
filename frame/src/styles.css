@@ -179,6 +179,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 .about-inferred { color: var(--warn); font-weight: 700; }
 .about-foot { color: var(--dim); font-size: 12px; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
 .whatsnew-h { margin-top: 20px !important; border-top: 1px solid var(--line); padding-top: 14px; }
+.about-body .roadmap li { margin: 7px 0; }
+.about-body .roadmap strong { color: var(--accent); }
 .about-body .rel { margin: 8px 0 12px; }
 .rel-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 2px !important; }
 .rel-ver { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }

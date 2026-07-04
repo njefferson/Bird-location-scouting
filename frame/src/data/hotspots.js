@@ -7,10 +7,11 @@
 // hand-inferred; access notes are brief local guidance.
 //
 // locId is REAL for every hotspot, so per-hotspot live overlays work and the
-// bar-chart download maps to the correct place. freqByMonth / checklistsByMonth
-// are null HERE by design — the real per-month frequency + checklist counts live
-// in data/reference.json (built from eBird bar charts) and are merged over these
-// nulls at load time by model/reference.js, flipping the app to "documented".
+// bar-chart download maps to the correct place. This file is now the CURATED
+// OVERLAY: model/regions.js loads the active region's per-county data files
+// (data/counties/<code>.json, real freq + checklist counts keyed by locId) and,
+// where a locId matches an entry here, attaches this hotspot's friendly id,
+// habitats and access notes. freqByMonth / checklistsByMonth stay null here.
 // =============================================================================
 
 /** @typedef {import('./species.js').Habitat} Habitat */

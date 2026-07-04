@@ -9,6 +9,18 @@
 
 export const CHANGELOG = [
   {
+    version: 'v12',
+    date: '2026-07-04',
+    changes: [
+      'Groundwork for multiple regions: the planner now loads its hotspots from per-county data files, so it can cover the coast (Humboldt) and the mountains, not just the Sacramento box. No visible change yet — the region switcher and county picker come next.',
+      'The ⓘ panel now shows a “Coming next” roadmap of planned features, above “What’s new”.',
+      'The quarterly data refresh now pre-builds every California county (plus the Tahoe/Reno ring), so any county added to a region later already has real bar-chart data waiting.',
+      'Expanded the species list from 55 to 173, adding coastal (shorebirds, gulls, seabirds), Central Valley waterfowl/marsh, and Sierra/Tahoe montane birds — all rated for the same 375mm reach.',
+      'Species codes now come straight from the eBird taxonomy at build time instead of being hand-typed, so the wrong-code bug that hid data can’t happen again.',
+      'A bird that eBird has never reported at a hotspot now reads as a true zero, not an “inferred” estimate — more honest, and it clears the stray “inferred” chips on well-covered hotspots.',
+    ],
+  },
+  {
     version: 'v11',
     date: '2026-07-03',
     changes: [

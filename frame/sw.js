@@ -1,13 +1,14 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v11';
+const CACHE = 'frame-v12';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
   './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js',
-  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js',
-  './src/model/inference.js', './src/model/scoring.js', './src/model/ebird.js', './src/model/reference.js',
-  './data/reference.json',
+  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js',
+  './src/model/inference.js', './src/model/scoring.js', './src/model/ebird.js', './src/model/regions.js',
+  './data/taxonomy.json',
+  './data/counties/US-CA-067.json', './data/counties/US-CA-017.json', './data/counties/US-CA-061.json',
 ];
 
 self.addEventListener('install', (e) => {
@@ -32,7 +33,7 @@ self.addEventListener('fetch', (e) => {
   }
   // Everything else: stale-while-revalidate — serve the cache instantly for
   // offline/speed, but ALWAYS refetch in the background so a deployed change
-  // (new JS, refreshed reference.json) reaches installed clients on their
+  // (new JS, refreshed county data) reaches installed clients on their
   // next load, without waiting for a service-worker version bump.
   e.respondWith(caches.match(e.request).then((hit) => {
     const refresh = fetch(e.request).then((res) => {
