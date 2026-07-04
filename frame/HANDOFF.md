@@ -27,16 +27,48 @@ optional — it turns on the live "seen recently" overlay).
 
 ## Refreshing the real frequency data (optional, ~quarterly)
 The data is already loaded; eBird frequency is a multi-year average, so it
-rarely needs updating. When you do want to refresh it, paste your eBird cookie
-(on any ebird.org page: F12 → Console → `document.cookie` → copy), then:
+rarely needs updating. Two ways to refresh — **no computer needed for the
+first**:
+
+### From an iPad (or any device) — the automated way
+The **Refresh eBird data** GitHub Action does the whole job on a runner:
+downloads all 30 bar charts, rebuilds `reference.json`, commits, and deploys.
+It also runs itself quarterly. The only thing it needs from you is a fresh
+eBird session cookie in the `EBIRD_COOKIE` repo secret (sessions last a long
+time, so this is rare).
+
+**One-time setup — a cookie bookmarklet for iOS Safari** (no dev tools on
+iPad): bookmark any page, then edit the bookmark and replace its URL with:
+```
+javascript:prompt('eBird cookie — copy this:',document.cookie)
+```
+Name it "eBird cookie".
+
+**The refresh, entirely in Safari:**
+1. Go to ebird.org and make sure you're signed in. Tap the bookmarklet,
+   copy the text it shows.
+2. github.com → this repo → **Settings → Secrets and variables → Actions →
+   `EBIRD_COOKIE`** → update (create it the first time).
+3. **Actions** tab → **Refresh eBird data** → **Run workflow**.
+
+Done — if the data changed it commits and redeploys, and installed apps pick
+it up automatically within a couple of loads (the service worker refreshes its
+cache in the background). If the run fails with a cookie error, repeat steps
+1–2 with a fresh cookie and re-run.
+
+### From a computer — the manual way
 ```bash
-EBIRD_COOKIE="<pasted>" node frame/scripts/download-barcharts.mjs ./barcharts
+EBIRD_COOKIE="<pasted document.cookie>" node frame/scripts/download-barcharts.mjs ./barcharts
 node frame/scripts/build-reference.mjs localbarcharts ./barcharts
 git add frame/data/reference.json && git commit -m "Refresh eBird frequency + N" && git push
 ```
-That rewrites `data/reference.json` and redeploys. Installed apps pick the new
-data up automatically within a couple of loads (the service worker serves the
-cached copy instantly and refreshes it in the background).
+
+## Release notes are automatic
+Merging a change that touches `CHANGELOG.md` on `main` auto-publishes the
+matching GitHub Release (tag `frame-v<n>`) via the **Publish release from
+CHANGELOG** workflow — no manual pasting. Just keep the newest section at the
+top of `CHANGELOG.md` in the existing `## v<n> — YYYY-MM-DD` format (mirrored
+from `frame/src/data/changelog.js`).
 
 ## Optional: more hotspots
 To use 50 hotspots instead of 30: re-run
