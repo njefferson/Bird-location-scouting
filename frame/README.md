@@ -77,11 +77,12 @@ so a code is never hand-typed (that was the source of an earlier data-hiding bug
 
 ## Refresh / extend the real data
 **Easiest: the "Refresh eBird data" GitHub Action** — it validates species names,
-rebuilds every region county's file, refreshes `taxonomy.json`, commits and
-deploys on a runner. Needs the `EBIRD_API_TOKEN` and `EBIRD_COOKIE` repo secrets,
-runs itself quarterly, and is fully driveable from a phone/iPad (see `HANDOFF.md`).
-To cover a **new area**, add its county code to a region in `counties.js` and
-re-run — the pipeline builds any county belonging to a region. By hand:
+rebuilds **every county's** file (statewide, ~20 min), refreshes `taxonomy.json`,
+commits and deploys on a runner. Needs the `EBIRD_API_TOKEN` and `EBIRD_COOKIE`
+repo secrets, runs itself quarterly, and is fully driveable from a phone/iPad
+(see `HANDOFF.md`). Because all counties are pre-built, covering a **new area**
+is just adding its county code to a region in `counties.js` — no build needed.
+By hand:
 
 ```bash
 export EBIRD_API_TOKEN=yourkey     # species codes + hotspot lists

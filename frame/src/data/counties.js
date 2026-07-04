@@ -90,16 +90,13 @@ export function countyDepth(code) {
 export const COUNTY_CODES = Object.keys(COUNTIES);
 
 // --- Regions ----------------------------------------------------------------
-// A region is a named set of counties. This is the single source of truth,
-// shared by the app (model/regions.js) and the build (build-counties.mjs), and
-// it defines the DEFAULT BUILD SCOPE: `build-counties.mjs build` with no args
-// builds exactly the counties that belong to some region here — so data stays
-// proportional to where you actually go, and adding a county to a region is
-// what makes the pipeline start building it. (Node-safe: no browser globals.)
+// A region is a named set of counties — what the APP loads and shows. The
+// build pipeline is independent of this: it pre-builds EVERY county above each
+// quarter, so any county added to a region (by editing this file today, by the
+// county-picker map in v13) already has real bar-chart data waiting. Regions
+// only decide which county files the app fetches. (Node-safe: no browser
+// globals — shared with the build scripts.)
 export const REGIONS = [
   { id: 'home', name: 'Home', counties: ['US-CA-067', 'US-CA-017', 'US-CA-061'] },
   { id: 'humboldt', name: 'Humboldt', counties: ['US-CA-023'] },
 ];
-
-/** Every county code referenced by any region (the default build scope). */
-export const REGION_COUNTY_CODES = [...new Set(REGIONS.flatMap((r) => r.counties))];

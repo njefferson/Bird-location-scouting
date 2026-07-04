@@ -10,11 +10,17 @@
 #   1. VALIDATE — resolve every curated species name against the live eBird
 #      taxonomy. Fails fast (before any download) if a name is wrong, so bad
 #      data can never ship. Only needs EBIRD_API_TOKEN.
-#   2. BUILD — for each county in a saved region (src/data/counties.js REGIONS),
-#      enumerate its top hotspots and download their bar charts, writing
-#      frame/data/counties/<code>.json + refreshing frame/data/taxonomy.json.
+#   2. BUILD — for EVERY county in src/data/counties.js (all 58 CA + the 5
+#      Tahoe/Reno NV counties), enumerate its top hotspots and download their
+#      bar charts, writing frame/data/counties/<code>.json + refreshing
+#      frame/data/taxonomy.json. Statewide is ~1,050 polite requests, ~20 min —
+#      the point is that any county added to a region later (or picked on the
+#      v13 county map) already has real data waiting.
 #   3. COMMIT the changed data to main (ignoring builtAt-only diffs) and DEPLOY.
 #      (Deploy is inline because GITHUB_TOKEN pushes don't trigger deploy.yml.)
+#
+# If a run dies partway (e.g. the cookie expires mid-build), re-run it with
+# "Resume partial run" checked — already-built counties are skipped.
 #
 # Runs quarterly (eBird frequency is a multi-year average) and on demand from
 # the Actions tab. Note GitHub pauses cron schedules after ~60 days without
@@ -23,6 +29,11 @@ name: Refresh eBird data
 
 on:
   workflow_dispatch:
+    inputs:
+      resume:
+        description: 'Resume partial run (skip counties already built) instead of rebuilding all fresh'
+        type: boolean
+        default: false
   schedule:
     - cron: '0 14 1 */3 *'   # 1st of Jan/Apr/Jul/Oct, 06:00/07:00 Pacific
 
@@ -53,20 +64,29 @@ jobs:
           fi
           node frame/scripts/build-counties.mjs validate
 
-      - name: Build county data files
+      - name: Build county data files (statewide)
         env:
           EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
           EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
+          RESUME: ${{ inputs.resume }}
         run: |
           if [ -z "$EBIRD_COOKIE" ]; then
             echo "::error::No EBIRD_COOKIE secret. Sign into ebird.org, copy document.cookie (bookmarklet on iPad — see frame/HANDOFF.md), and save it as the EBIRD_COOKIE repository secret."
             exit 1
           fi
-          # --force rebuilds every region county each run (fresh multi-year data).
-          node frame/scripts/build-counties.mjs build --force
+          if [ "$RESUME" = "true" ]; then
+            echo "Resuming: counties with existing files are skipped."
+            node frame/scripts/build-counties.mjs build
+          else
+            node frame/scripts/build-counties.mjs build --force
+          fi
 
+      # Runs even when the build step fails partway (cookie death): county files
+      # are only ever written COMPLETE, so committing the finished ones preserves
+      # progress — a later "resume" run skips them and picks up where this died.
       - name: Commit if the data changed
         id: commit
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

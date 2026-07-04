@@ -18,10 +18,12 @@
 //   build [codes...]         Build county files (needs EBIRD_API_TOKEN for the
 //                            hotspot lists and EBIRD_COOKIE for the login-gated
 //                            bar charts). Runs `taxonomy` first. With no codes,
-//                            builds the counties belonging to a saved region
-//                            (src/data/counties.js REGIONS) — data follows where
-//                            you go. Incremental: an existing file is skipped
-//                            unless --force.
+//                            builds EVERY county in src/data/counties.js
+//                            (~1,050 requests, ~20 min at the polite 1/sec) so
+//                            any county added to a region later already has
+//                            data. Incremental: an existing file is skipped
+//                            unless --force — so a partial/failed run resumes
+//                            cheaply by re-running WITHOUT --force.
 //
 // USAGE (normally run by .github/workflows/refresh-data.yml)
 //   EBIRD_API_TOKEN=x node scripts/build-counties.mjs validate
@@ -37,7 +39,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseBarchart, fetchBarchart, sleep } from './barchart-lib.mjs';
-import { COUNTIES, countyDepth, REGION_COUNTY_CODES } from '../src/data/counties.js';
+import { COUNTIES, countyDepth, COUNTY_CODES } from '../src/data/counties.js';
 import { SPECIES } from '../src/data/species.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -95,7 +97,7 @@ async function build(args) {
   if (!cookie) { console.error('Set EBIRD_COOKIE (bar charts are login-gated).'); process.exit(1); }
   const force = args.includes('--force');
   const wanted = args.filter((a) => a !== '--force');
-  const codes = wanted.length ? wanted : REGION_COUNTY_CODES;
+  const codes = wanted.length ? wanted : COUNTY_CODES; // default: EVERY county
   for (const c of codes) if (!COUNTIES[c]) { console.error(`Unknown county code ${c}`); process.exit(1); }
 
   // Refresh the name→code map first so codes always match the live taxonomy.

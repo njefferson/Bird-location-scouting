@@ -31,10 +31,13 @@ first**:
 
 ### From an iPad (or any device) — the automated way
 The **Refresh eBird data** GitHub Action does the whole job on a runner:
-validates species names, rebuilds every region county's data file, refreshes
-`taxonomy.json`, commits, and deploys. It also runs itself quarterly. It needs
-the `EBIRD_API_TOKEN` secret and a fresh eBird session cookie in the
-`EBIRD_COOKIE` repo secret (sessions last a long time, so the cookie is rare).
+validates species names, rebuilds **every county's** data file (all 58 CA + the
+5 Tahoe/Reno NV counties — ~20 min), refreshes `taxonomy.json`, commits, and
+deploys. It also runs itself quarterly. It needs the `EBIRD_API_TOKEN` secret
+and a fresh eBird session cookie in the `EBIRD_COOKIE` repo secret. If a run
+dies partway (cookie expired mid-build), the finished counties are still
+committed — update the cookie and re-run with **Resume partial run** checked to
+pick up where it stopped.
 
 **One-time setup — a cookie bookmarklet for iOS Safari** (no dev tools on
 iPad): bookmark any page, then edit the bookmark and replace its URL with:
@@ -68,11 +71,11 @@ git add frame/data/counties frame/data/taxonomy.json && git commit -m "Refresh e
 The planner covers a **region** = a named set of counties, defined in
 `frame/src/data/counties.js` (`REGIONS`). Data lives in one file per county
 (`frame/data/counties/US-CA-###.json`), and the app loads only the active
-region's counties. To cover a new area, add its county code to a region (or add
-a new region) in `counties.js`, then run the refresh — the pipeline builds any
-county that belongs to a region. `species.js` holds only your photoability
-judgments, keyed by eBird common name; the codes are resolved from eBird into
-`frame/data/taxonomy.json` by the build (so no code is ever hand-typed).
+region's counties — but the pipeline pre-builds **all** counties, so adding a
+county to a region is instant (no build needed). `species.js` holds only your
+photoability judgments, keyed by eBird common name; the codes are resolved from
+eBird into `frame/data/taxonomy.json` by the build (so no code is ever
+hand-typed).
 
 ## Release notes are automatic
 Merging a change that touches `CHANGELOG.md` on `main` auto-publishes the
@@ -83,7 +86,8 @@ from `frame/src/data/changelog.js`).
 
 ## Optional: cover a new area
 Add the county's eBird code (e.g. `US-CA-045` for Mendocino) to a region in
-`frame/src/data/counties.js` (`REGIONS`) — or add a whole new region — then run
-the **Refresh eBird data** Action. The pipeline builds any county that belongs
-to a region, so the new area's hotspots appear automatically. Depth (how many
-hotspots per county) is set per county in the same file.
+`frame/src/data/counties.js` (`REGIONS`) — or add a whole new region. Its data
+is already pre-built by the quarterly refresh, so the hotspots appear on the
+next deploy with no build step. Depth (how many hotspots per county; default 15,
+featured counties 40) is set per county in the same file — bump it and re-run
+the refresh if you want a new home turf covered more deeply.
