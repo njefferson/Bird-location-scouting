@@ -1,0 +1,55 @@
+# Auto-publish a GitHub Release from the newest CHANGELOG.md entry.
+# Fires when CHANGELOG.md changes on main (i.e. when a release merges); also
+# manually dispatchable to backfill. If the release tag already exists, it
+# does nothing — safe to re-run.
+name: Publish release from CHANGELOG
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'CHANGELOG.md' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse newest CHANGELOG entry
+        id: parse
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+          const lines = readFileSync('CHANGELOG.md', 'utf8').split('\n');
+          // Newest section is the first "## vN — YYYY-MM-DD" heading; its body
+          // runs until the next "## " heading (or end of file).
+          const start = lines.findIndex((l) => /^## v\d+ — \d{4}-\d{2}-\d{2}/.test(l));
+          if (start === -1) { console.error('No "## vN — date" section found in CHANGELOG.md'); process.exit(1); }
+          const [, ver, date] = lines[start].match(/^## (v\d+) — (\d{4}-\d{2}-\d{2})/);
+          let end = lines.findIndex((l, i) => i > start && l.startsWith('## '));
+          if (end === -1) end = lines.length;
+          const body = lines.slice(start + 1, end).join('\n').trim();
+          if (!body) { console.error(`Section ${ver} has no notes`); process.exit(1); }
+          appendFileSync(process.env.GITHUB_OUTPUT, `tag=frame-${ver}\ntitle=frame-${ver} — ${date}\n`);
+          writeFileSync('release-body.md', body + '\n');
+          console.log(`Parsed frame-${ver} (${date}), ${body.split('\n').length} line(s) of notes.`);
+          EOF
+
+      - name: Create release if the tag is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.parse.outputs.tag }}" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release ${{ steps.parse.outputs.tag }} already exists — nothing to do."
+            exit 0
+          fi
+          gh release create "${{ steps.parse.outputs.tag }}" \
+            -R "$GITHUB_REPOSITORY" \
+            --target main \
+            --title "${{ steps.parse.outputs.title }}" \
+            --notes-file release-body.md
+          echo "Published ${{ steps.parse.outputs.tag }}."

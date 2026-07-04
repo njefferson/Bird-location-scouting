@@ -67,7 +67,11 @@ Install to the home screen from the browser's Share/Install menu (PWA).
 
 ## Refresh the real data (spec §2A, §7 v0→v1)
 Real eBird frequencies for all 30 hotspots are already loaded in
-`data/reference.json`. To **refresh** them (or rebuild from scratch):
+`data/reference.json`. **Easiest refresh: the "Refresh eBird data" GitHub
+Action** — it downloads, rebuilds, commits and deploys on a runner, needs only
+the `EBIRD_COOKIE` repo secret, and can be run entirely from a phone/iPad (see
+`HANDOFF.md`). It also runs itself quarterly. To do it by hand instead (or
+rebuild from scratch):
 
 ```bash
 # 1. (optional) build the common-name → species-code map
