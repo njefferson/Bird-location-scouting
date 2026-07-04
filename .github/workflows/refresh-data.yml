@@ -6,10 +6,15 @@
 # bookmarklet works: javascript:prompt('eBird cookie',document.cookie) on an
 # ebird.org page while signed in. See frame/HANDOFF.md for the full procedure.
 #
-# The runner downloads all 30 bar charts, rebuilds frame/data/reference.json,
-# commits it to main if the data actually changed, and deploys to Cloudflare.
-# (The deploy step is inline because pushes made with GITHUB_TOKEN deliberately
-# do not trigger other workflows, so deploy.yml would not fire.)
+# What the runner does:
+#   1. VALIDATE — resolve every curated species name against the live eBird
+#      taxonomy. Fails fast (before any download) if a name is wrong, so bad
+#      data can never ship. Only needs EBIRD_API_TOKEN.
+#   2. BUILD — for each county in a saved region (src/data/counties.js REGIONS),
+#      enumerate its top hotspots and download their bar charts, writing
+#      frame/data/counties/<code>.json + refreshing frame/data/taxonomy.json.
+#   3. COMMIT the changed data to main (ignoring builtAt-only diffs) and DEPLOY.
+#      (Deploy is inline because GITHUB_TOKEN pushes don't trigger deploy.yml.)
 #
 # Runs quarterly (eBird frequency is a multi-year average) and on demand from
 # the Actions tab. Note GitHub pauses cron schedules after ~60 days without
@@ -38,37 +43,40 @@ jobs:
           # which relies on Node's module-syntax detection.
           node-version: 22
 
-      - name: Download bar charts from eBird
+      - name: Validate species names against the eBird taxonomy
         env:
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
+        run: |
+          if [ -z "$EBIRD_API_TOKEN" ]; then
+            echo "::error::No EBIRD_API_TOKEN secret — needed to resolve species codes and hotspot lists. Add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          node frame/scripts/build-counties.mjs validate
+
+      - name: Build county data files
+        env:
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
           EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
         run: |
           if [ -z "$EBIRD_COOKIE" ]; then
             echo "::error::No EBIRD_COOKIE secret. Sign into ebird.org, copy document.cookie (bookmarklet on iPad — see frame/HANDOFF.md), and save it as the EBIRD_COOKIE repository secret."
             exit 1
           fi
-          node frame/scripts/download-barcharts.mjs ./barcharts
-          COUNT=$(ls barcharts/*.tsv 2>/dev/null | wc -l)
-          echo "Downloaded $COUNT bar-chart TSV(s)."
-          if [ "$COUNT" -lt 25 ]; then
-            echo "::error::Only $COUNT/30 bar charts downloaded — the eBird cookie has probably expired. Copy a fresh document.cookie from a signed-in ebird.org page, update the EBIRD_COOKIE secret, and re-run this workflow."
-            exit 1
-          fi
-
-      - name: Rebuild reference.json
-        run: node frame/scripts/build-reference.mjs localbarcharts ./barcharts
+          # --force rebuilds every region county each run (fresh multi-year data).
+          node frame/scripts/build-counties.mjs build --force
 
       - name: Commit if the data changed
         id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frame/data/reference.json
-          # -I ignores the builtAt stamp, which changes on every run.
+          git add frame/data/counties frame/data/taxonomy.json
+          # -I ignores the per-file builtAt stamp, which changes on every run.
           if git diff --staged --quiet -I'"builtAt"'; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No real data changes (only the builtAt stamp) — skipping commit and deploy."
+            echo "No real data changes (only builtAt stamps) — skipping commit and deploy."
           else
-            git commit -m "Refresh eBird frequency + checklist data (automated)"
+            git commit -m "Refresh eBird county data + taxonomy (automated)"
             git push origin main
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi

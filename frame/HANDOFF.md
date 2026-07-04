@@ -2,16 +2,15 @@
 
 > **Status: done.** The original handoff below has been carried out — the app
 > lives in this repo (`njefferson/Bird-location-scouting`), and **real eBird
-> frequency + checklist data for all 30 hotspots is loaded** in
-> `frame/data/reference.json` (committed). Hotspots read *Documented*, not
-> *Inferred*. This file is kept only as an operations reference for the two
-> things that still need *you* (a human with credentials), plus the refresh
-> procedure.
+> frequency + checklist data is loaded** in per-county files under
+> `frame/data/counties/` (committed). Hotspots read *Documented*, not *Inferred*.
+> This file is kept only as an operations reference for the things that still
+> need *you* (a human with credentials), plus the refresh procedure.
 
 ## What this is
 `frame/` is a self-contained installable PWA: a bird-photography hotspot planner
-for a fixed box near Sacramento, CA. Score = Σ frequency(species) ×
-photoability(species), per month. See `frame/README.md`.
+for the Sacramento foothills (and, via regions, the wider state). Score =
+Σ frequency(species) × photoability(species), per month. See `frame/README.md`.
 
 ## Things only you can provide (don't try to fake these)
 - **GitHub auth** — to push / set secrets.
@@ -32,10 +31,10 @@ first**:
 
 ### From an iPad (or any device) — the automated way
 The **Refresh eBird data** GitHub Action does the whole job on a runner:
-downloads all 30 bar charts, rebuilds `reference.json`, commits, and deploys.
-It also runs itself quarterly. The only thing it needs from you is a fresh
-eBird session cookie in the `EBIRD_COOKIE` repo secret (sessions last a long
-time, so this is rare).
+validates species names, rebuilds every region county's data file, refreshes
+`taxonomy.json`, commits, and deploys. It also runs itself quarterly. It needs
+the `EBIRD_API_TOKEN` secret and a fresh eBird session cookie in the
+`EBIRD_COOKIE` repo secret (sessions last a long time, so the cookie is rare).
 
 **One-time setup — a cookie bookmarklet for iOS Safari** (no dev tools on
 iPad): bookmark any page, then edit the bookmark and replace its URL with:
@@ -58,10 +57,22 @@ cache in the background). If the run fails with a cookie error, repeat steps
 
 ### From a computer — the manual way
 ```bash
-EBIRD_COOKIE="<pasted document.cookie>" node frame/scripts/download-barcharts.mjs ./barcharts
-node frame/scripts/build-reference.mjs localbarcharts ./barcharts
-git add frame/data/reference.json && git commit -m "Refresh eBird frequency + N" && git push
+export EBIRD_API_TOKEN="<key>"   # resolves species codes + hotspot lists
+export EBIRD_COOKIE="<pasted document.cookie>"  # login-gated bar charts
+node frame/scripts/build-counties.mjs validate            # sanity-check species names
+node frame/scripts/build-counties.mjs build --force        # writes frame/data/counties/*.json + taxonomy.json
+git add frame/data/counties frame/data/taxonomy.json && git commit -m "Refresh eBird county data" && git push
 ```
+
+### What "regions" and county files are (v12+)
+The planner covers a **region** = a named set of counties, defined in
+`frame/src/data/counties.js` (`REGIONS`). Data lives in one file per county
+(`frame/data/counties/US-CA-###.json`), and the app loads only the active
+region's counties. To cover a new area, add its county code to a region (or add
+a new region) in `counties.js`, then run the refresh — the pipeline builds any
+county that belongs to a region. `species.js` holds only your photoability
+judgments, keyed by eBird common name; the codes are resolved from eBird into
+`frame/data/taxonomy.json` by the build (so no code is ever hand-typed).
 
 ## Release notes are automatic
 Merging a change that touches `CHANGELOG.md` on `main` auto-publishes the
@@ -70,8 +81,9 @@ CHANGELOG** workflow — no manual pasting. Just keep the newest section at the
 top of `CHANGELOG.md` in the existing `## v<n> — YYYY-MM-DD` format (mirrored
 from `frame/src/data/changelog.js`).
 
-## Optional: more hotspots
-To use 50 hotspots instead of 30: re-run
-`EBIRD_API_TOKEN=<key> node frame/scripts/build-reference.mjs listbox`,
-extend `frame/src/data/hotspots.js` with the next entries (real locIds from that
-list), then refresh the data as above.
+## Optional: cover a new area
+Add the county's eBird code (e.g. `US-CA-045` for Mendocino) to a region in
+`frame/src/data/counties.js` (`REGIONS`) — or add a whole new region — then run
+the **Refresh eBird data** Action. The pipeline builds any county that belongs
+to a region, so the new area's hotspots appear automatically. Depth (how many
+hotspots per county) is set per county in the same file.

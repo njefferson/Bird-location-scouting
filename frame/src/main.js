@@ -3,7 +3,7 @@
 // =============================================================================
 import { el } from './ui/dom.js';
 import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSettings } from './ui/views.js';
-import { loadReference } from './model/reference.js';
+import { loadActiveRegion } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { mountAbout } from './ui/about.js';
 
@@ -52,11 +52,12 @@ function render() {
 
 window.addEventListener('hashchange', render);
 
-// Boot: paint immediately on the static/inference layer, then enrich.
+// Boot: the working hotspot list + species codes come from the active region's
+// data files, so render only after they load (a quick, SW-cached local fetch).
 (async function boot() {
   mountAbout();                  // floating "about" button, available everywhere
-  render();
-  await loadReference();         // swap in real eBird data if present
+  app.replaceChildren(el('p.empty', {}, 'Loading…'));
+  await loadActiveRegion();      // county data + species codes for the active region
   render();
   const recent = await recentInBox({ back: 14 }); // live overlay (graceful)
   if (recent) { state.recent = recent; render(); }

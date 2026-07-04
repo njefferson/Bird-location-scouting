@@ -65,45 +65,44 @@ cd frame && python3 -m http.server 8000   # or: npx serve .
 ```
 Install to the home screen from the browser's Share/Install menu (PWA).
 
-## Refresh the real data (spec §2A, §7 v0→v1)
-Real eBird frequencies for all 30 hotspots are already loaded in
-`data/reference.json`. **Easiest refresh: the "Refresh eBird data" GitHub
-Action** — it downloads, rebuilds, commits and deploys on a runner, needs only
-the `EBIRD_COOKIE` repo secret, and can be run entirely from a phone/iPad (see
-`HANDOFF.md`). It also runs itself quarterly. To do it by hand instead (or
-rebuild from scratch):
+## Data model: regions & county files (v12+)
+The planner covers a **region** — a named set of counties (`src/data/counties.js`
+`REGIONS`; ships with Home = Sacramento/El Dorado/Placer and Humboldt). Real
+eBird data lives in one file per county (`data/counties/US-CA-###.json`, keyed by
+locId), and the app loads only the active region's counties, so coverage scales
+without bloating any single download. `src/data/species.js` holds only the
+curated *photoability* judgments, keyed by eBird common name — species **codes**
+are resolved from the live eBird taxonomy at build time into `data/taxonomy.json`,
+so a code is never hand-typed (that was the source of an earlier data-hiding bug).
+
+## Refresh / extend the real data
+**Easiest: the "Refresh eBird data" GitHub Action** — it validates species names,
+rebuilds every region county's file, refreshes `taxonomy.json`, commits and
+deploys on a runner. Needs the `EBIRD_API_TOKEN` and `EBIRD_COOKIE` repo secrets,
+runs itself quarterly, and is fully driveable from a phone/iPad (see `HANDOFF.md`).
+To cover a **new area**, add its county code to a region in `counties.js` and
+re-run — the pipeline builds any county belonging to a region. By hand:
 
 ```bash
-# 1. (optional) build the common-name → species-code map
-EBIRD_API_TOKEN=yourkey node scripts/build-reference.mjs taxonomy
-
-# 2. fetch real hotspot ids/coords for the box from the eBird API
-EBIRD_API_TOKEN=yourkey node scripts/build-reference.mjs enumerate
-
-# 3. From each hotspot's eBird bar-chart page, "Download Histogram Data".
-#    Save each CSV named after the scaffold id, e.g. wb-pond.csv, into ./csv-dir
-#    (histogram data is login-gated and NOT in the API — this step is manual).
-node scripts/build-reference.mjs histogram ./csv-dir
+export EBIRD_API_TOKEN=yourkey     # species codes + hotspot lists
+export EBIRD_COOKIE="<document.cookie from a signed-in ebird.org>"  # bar charts
+node scripts/build-counties.mjs validate         # check species names resolve
+node scripts/build-counties.mjs build --force    # writes data/counties/*.json + taxonomy.json
 ```
-This writes `data/reference.json`; the app loads it automatically and flips the
-affected hotspots/months from *inferred* to *documented*. Refresh quarterly —
-eBird frequency is a multi-year average, it does not move week to week.
+Refresh quarterly — eBird frequency is a multi-year average, it does not move
+week to week.
 
-> **Note:** this environment's egress policy blocks `api.ebird.org`, so the
-> enumerate/taxonomy steps must be run on your own machine. The key is read only
-> from `EBIRD_API_TOKEN` and is never committed.
+> **Note:** this environment's egress policy blocks `api.ebird.org`, so a local
+> build must run on your own machine (or just use the GitHub Action). Keys are
+> read only from the environment and never committed.
 
 ## What works on iOS alone vs. what needs a desktop
 - **Works now, iOS only:** the whole planner — ranking, filters, the year
-  heatmap, species search — on the **real, already-loaded eBird frequencies**,
-  plus (after the one-tap secret above) the **live** "seen in last N days" /
-  notable / nearest-recent badges from the eBird API.
-- **Needs a desktop only to refresh the data (optional):** eBird's per-hotspot
-  frequency lives only in login-gated histogram CSVs (not the API), so it can't
-  be re-pulled from a phone or a server. The committed `data/reference.json` is
-  already real; to update it, re-run the build step below on any computer and
-  commit the result. eBird frequency is a multi-year average, so this only needs
-  doing quarterly at most — the app stays fully usable in between.
+  heatmap, species search — on the **real, committed eBird frequencies**, plus
+  (after the one-tap secret) the **live** "seen recently" badges from the eBird API.
+- **Refreshing/extending the data needs no computer:** the GitHub Action does the
+  login-gated bar-chart pull on a runner; from an iPad you just paste a fresh
+  cookie into the repo secret and tap "Run workflow" (see `HANDOFF.md`).
 
 ## Screens (spec §5)
 - **Ranking** — current-month top-15 cards: score, trust tag, N, top-3
@@ -122,21 +121,22 @@ frame/
   src/
     main.js                 app bootstrap + hash routing
     styles.css
-    data/   species.js  hotspots.js  habitats.js     # curated reference
-    model/  inference.js  scoring.js  ebird.js  reference.js
+    data/   species.js  hotspots.js  habitats.js  counties.js   # curated reference
+    model/  inference.js  scoring.js  ebird.js  regions.js
     ui/     dom.js  badges.js  views.js
-  data/     reference.json  (built artifact; empty scaffold by default)
-  scripts/  build-reference.mjs   ebird-proxy/
+  data/     counties/US-CA-###.json  (per-county eBird data)  taxonomy.json  (name→code)
+  scripts/  build-counties.mjs  barchart-lib.mjs  ebird-proxy/
 ```
 
 ## Status vs. the spec milestones (§7)
 - **v0 (MVP):** ✅ hotspots, photoability, scoring, current-month top list, month
   selector — end-to-end.
 - **v1:** ✅ trust tags + N, four opportunity filters, Maps links, **real eBird
-  frequency + checklist counts loaded for all 30 hotspots** (`data/reference.json`)
-  — hotspots read *Documented*, not *Inferred*. Refresh quarterly with the build
-  script. (Any species without a histogram entry still falls back to the inference
-  model and is marked *inferred*.)
+  frequency + checklist counts** for every hotspot (per-county files) — hotspots
+  read *Documented*, not *Inferred*. Refresh quarterly with the build pipeline.
+- **v12:** ✅ region/county data model, 173-species list, taxonomy-derived codes,
+  honest real-zero for unreported species. ⏳ region switcher + county-picker map
+  (v13), location auto-switch (v14), hotspot map view (v15).
 - **v2:** ✅ matrix heatmap, species search, live recent-sightings overlay (proxy);
   ⏳ Macaulay thumbnails (no public count API — left for v3); ⏳ per-hotspot and
   notable-sightings overlays (API client groundwork existed; re-add when a view

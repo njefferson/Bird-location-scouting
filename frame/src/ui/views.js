@@ -5,11 +5,11 @@
 import { el, clear, pct, sparkline } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { SPECIES } from '../data/species.js';
-import { HOTSPOTS, hotspotMapLink, BOX } from '../data/hotspots.js';
+import { hotspotMapLink, BOX } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
-import { referenceMeta } from '../model/reference.js';
+import { getHotspots, regionMeta } from '../model/regions.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 
 function daysAgo(obsDt) {
@@ -78,7 +78,7 @@ export function renderCards(root, state, nav) {
     filterBar(state, (k) => nav.setFilter(k)),
   ]));
 
-  const ranked = rankHotspots(HOTSPOTS, state.monthIdx);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx);
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
@@ -120,7 +120,7 @@ function card(r, state, nav) {
     scoreRing,
   ]);
 
-  const habs = el('div.habs', {}, h.habitats.map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
+  const habs = el('div.habs', {}, (h.habitats || []).map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
 
   const species = el('div.top-species', {}, top.length
     ? top.map((c) => el('div.tsp', {}, [
@@ -146,14 +146,14 @@ function toggleNotes(_, h) {
   const existing = document.querySelector(`.card-notes[data-h="${h.id}"]`);
   if (existing) { existing.remove(); return; }
   const all = [...document.querySelectorAll('.card')].find((c) => c._hotspot === h);
-  if (all) all.append(el('div.card-notes', { dataset: { h: h.id } }, h.access));
+  if (all) all.append(el('div.card-notes', { dataset: { h: h.id } }, h.access || 'No curated access notes for this hotspot yet — use the 🗺 Maps button.'));
 }
 
 function dataProvenanceFooter() {
-  const meta = referenceMeta();
+  const meta = regionMeta();
   const msg = meta.loaded
-    ? `Static layer: eBird histogram data built ${meta.builtAt || '(date n/a)'}. * = months still on the model.`
-    : 'No eBird histogram data loaded yet — every frequency is the transparent habitat/season model (marked *). Run scripts/build-reference.mjs with your eBird account to swap in real data.';
+    ? `${meta.region} region · ${meta.hotspots} hotspots across ${meta.counties} county file(s) · eBird histogram data built ${meta.builtAt || '(date n/a)'}. * = a value still on the habitat/season model.`
+    : 'No region data loaded yet — every frequency is the transparent habitat/season model (marked *).';
   return el('footer.provenance', {}, [el('strong', {}, 'Data: '), msg]);
 }
 
@@ -169,7 +169,7 @@ export function renderMatrix(root, state, nav) {
 
   // Pre-rank each month so cell color is comparable within a month column.
   const byMonth = MONTHS.map((_, m) => {
-    const ranked = rankHotspots(HOTSPOTS, m);
+    const ranked = rankHotspots(getHotspots(), m);
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
   });
 
@@ -179,7 +179,7 @@ export function renderMatrix(root, state, nav) {
   table.append(head);
 
   // Order rows by their best month score.
-  const order = HOTSPOTS.map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].score)) }))
+  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].score)) }))
     .sort((a, b) => b.best - a.best);
 
   for (const { h } of order) {
@@ -205,10 +205,10 @@ export function renderMatrix(root, state, nav) {
 // =============================================================================
 export function renderHotspotDetail(root, state, nav, hotspotId) {
   clear(root);
-  const h = HOTSPOTS.find((x) => x.id === hotspotId);
+  const h = getHotspots().find((x) => x.id === hotspotId);
   if (!h) { root.append(el('p.empty', {}, 'Unknown hotspot.')); return; }
 
-  const ranked = rankHotspots(HOTSPOTS, state.monthIdx).find((r) => r.hotspot.id === h.id);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx).find((r) => r.hotspot.id === h.id);
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
@@ -294,7 +294,7 @@ function speciesPanel(s, state, nav) {
   ]));
   panel.append(el('p.sp-note', {}, s.note));
 
-  const ranked = bestForSpecies(s, HOTSPOTS);
+  const ranked = bestForSpecies(s, getHotspots());
   const best = ranked[0];
   if (best && best.best.shootScore > 0) {
     panel.append(el('p.sp-best', {}, [
@@ -365,11 +365,12 @@ export function renderSettings(root, state, nav) {
     el('button.btn', { onclick: async (ev) => { ev.target.textContent = 'Probing…'; const ok = await probe(); ev.target.textContent = ok ? '✓ Overlay reachable' : '✗ Not reachable (app still works offline)'; } }, 'Test overlay'),
   ]));
 
-  const meta = referenceMeta();
+  const meta = regionMeta();
   form.append(section('Static reference data (§2A)', [
     el('p', {}, meta.loaded
-      ? `Loaded eBird histogram data, built ${meta.builtAt || '(date n/a)'} for ${meta.count} hotspot(s).`
-      : 'No reference.json loaded — running on the inference model. Run scripts/build-reference.mjs with your eBird account to populate real frequencies.'),
+      ? `Active region: ${meta.region} — ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'}. ${meta.taxonomy} species have resolved eBird codes.`
+      : 'No region data loaded — running on the inference model.'),
+    el('p.dim', {}, 'Refresh data with the “Refresh eBird data” GitHub Action (see HANDOFF.md) — it rebuilds the per-county files and resolves species codes from the live eBird taxonomy.'),
   ]));
 
   root.append(form);

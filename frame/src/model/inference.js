@@ -51,7 +51,7 @@ export function seasonality(species, monthIdx) {
 /** Best-matching habitat affinity 0–1 for a species at a hotspot. */
 export function habitatAffinity(species, hotspot) {
   let best = 0;
-  for (const hab of hotspot.habitats) {
+  for (const hab of hotspot.habitats || []) {
     const a = species.habitats[hab] || 0;
     if (a > best) best = a;
   }
@@ -63,7 +63,7 @@ export function habitatAffinity(species, hotspot) {
  * Returns { value, inferred, source, rule }.
  */
 export function frequency(species, hotspot, monthIdx) {
-  // 1) Real data path (populated by scripts/build-reference.mjs).
+  // 1) Real data path (populated by the build scripts / county files).
   const real = hotspot.freqByMonth?.[species.code]?.[monthIdx];
   if (typeof real === 'number') {
     return {
@@ -74,7 +74,20 @@ export function frequency(species, hotspot, monthIdx) {
     };
   }
 
-  // 2) Inference model.
+  // 1b) DOCUMENTED hotspot, species absent from its bar chart → a real zero,
+  // NOT an inference. A bar chart lists every species ever reported there, so
+  // absence means "not reported this month," which is honest data. Only a
+  // hotspot with no histogram at all (below) falls through to the model.
+  if (hotspot.freqByMonth) {
+    return {
+      value: 0,
+      inferred: false,
+      source: 'ebird',
+      rule: 'Not reported here in this month across eBird checklists (real absence, not a model estimate).',
+    };
+  }
+
+  // 2) Inference model (only for hotspots with no histogram data at all).
   const a = species.abundance ?? 0.5;
   const h = habitatAffinity(species, hotspot);
   const s = seasonality(species, monthIdx);
