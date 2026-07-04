@@ -40,17 +40,21 @@ committed — update the cookie and re-run with **Resume partial run** checked t
 pick up where it stopped.
 
 **One-time setup — a cookie bookmarklet for iOS Safari** (no dev tools on
-iPad): bookmark any page, then edit the bookmark and replace its URL with:
+iPad): bookmark any page, then edit the bookmark and replace its URL with the
+one-liner below. It copies the cookie **straight to the clipboard** and pops
+up "✓ copied (N characters)" — no fiddly drag-selecting a huge string, and the
+character count lets you spot a truncated grab. If the clipboard API is ever
+refused it falls back to a pre-selected prompt.
 ```
-javascript:prompt('eBird cookie — copy this:',document.cookie)
+javascript:(function(){var t=document.cookie;function ok(){alert('✓ eBird cookie copied to clipboard ('+t.length+' characters). Paste it into the EBIRD_COOKIE secret.')}function fb(){var a=document.createElement('textarea');a.value=t;a.readOnly=true;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.focus();a.setSelectionRange(0,t.length);var c=document.execCommand('copy');document.body.removeChild(a);c?ok():prompt('Auto-copy failed — tap-hold, Select All, Copy:',t)}navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t).then(ok,fb):fb()})();
 ```
 Name it "eBird cookie".
 
 **The refresh, entirely in Safari:**
-1. Go to ebird.org and make sure you're signed in. Tap the bookmarklet,
-   copy the text it shows.
+1. Go to ebird.org and make sure you're signed in. Tap the bookmarklet —
+   the cookie is now on your clipboard.
 2. github.com → this repo → **Settings → Secrets and variables → Actions →
-   `EBIRD_COOKIE`** → update (create it the first time).
+   `EBIRD_COOKIE`** → update (create it the first time) → paste.
 3. **Actions** tab → **Refresh eBird data** → **Run workflow**.
 
 Done — if the data changed it commits and redeploys, and installed apps pick

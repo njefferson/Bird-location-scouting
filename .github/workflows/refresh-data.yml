@@ -2,9 +2,10 @@
 #
 # eBird's bar-chart endpoint is login-gated, so this needs your eBird session
 # cookie stored as the EBIRD_COOKIE repository secret (Settings → Secrets and
-# variables → Actions). Grab the cookie on any device — on iPad, a Safari
-# bookmarklet works: javascript:prompt('eBird cookie',document.cookie) on an
-# ebird.org page while signed in. See frame/HANDOFF.md for the full procedure.
+# variables → Actions). Grab the cookie on any device — on iPad, the Safari
+# copy-to-clipboard bookmarklet in frame/HANDOFF.md does it in one tap on a
+# signed-in ebird.org page (it alerts the character count so a truncated
+# copy is obvious).
 #
 # What the runner does:
 #   1. VALIDATE — resolve every curated species name against the live eBird
