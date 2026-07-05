@@ -177,15 +177,50 @@ async function build(args) {
   console.log(`\nBuilt ${built} county file(s), skipped ${skipped} existing (use --force to rebuild), ${failedCharts} chart failure(s).`);
 }
 
+// --- probe: is the bar-chart endpoint actually login-gated? ------------------
+// Diagnostic only. Fetches ONE well-known hotspot's bar chart several ways and
+// dumps status / final URL / content-type / length / body-head for each, so we
+// can tell from the log whether the data is public (fix = headers, no cookie
+// ever needed) or truly auth-gated (fix = a real session cookie). Never writes.
+async function probe() {
+  const locId = 'L370941'; // Folsom Lake SRA — Beals Point (huge, public hotspot)
+  const year = new Date().getFullYear();
+  const url = `https://ebird.org/barchartData?r=${locId}&bmo=1&emo=12&byr=1900&eyr=${year}&fmt=tsv`;
+  const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+  const attempts = [
+    { label: 'no cookie, simple UA', headers: { 'User-Agent': 'frame-bird-planner/1.0' } },
+    { label: 'no cookie, browser UA + Accept', headers: { 'User-Agent': BROWSER_UA, Accept: 'text/tab-separated-values,text/plain,*/*', Referer: `https://ebird.org/barchart?r=${locId}` } },
+    { label: 'with cookie, browser UA', headers: { 'User-Agent': BROWSER_UA, Accept: 'text/tab-separated-values,text/plain,*/*', Referer: `https://ebird.org/barchart?r=${locId}`, ...(cookie ? { Cookie: cookie } : {}) } },
+  ];
+  console.log(`Probing ${url}\ncookie present in env: ${cookie ? `yes (${cookie.length} chars)` : 'NO'}\n`);
+  for (const a of attempts) {
+    try {
+      const res = await fetch(url, { headers: a.headers, redirect: 'follow' });
+      const text = await res.text();
+      const looksHtml = /^\s*</.test(text) || /<!doctype|<html/i.test(text.slice(0, 300));
+      const looksTsv = /sample size/i.test(text) || /\t/.test(text.slice(0, 2000));
+      console.log(`── ${a.label}`);
+      console.log(`   status=${res.status} finalURL=${res.url} type=${res.headers.get('content-type')} len=${text.length}`);
+      console.log(`   verdict=${looksTsv && !looksHtml ? 'DATA ✓' : looksHtml ? 'HTML (login/consent page)' : 'unknown'}`);
+      console.log(`   head=${JSON.stringify(text.slice(0, 180))}\n`);
+    } catch (e) {
+      console.log(`── ${a.label}\n   ERROR ${e.message}\n`);
+    }
+    await sleep(1500);
+  }
+}
+
 // --- main --------------------------------------------------------------------
 const [cmd, ...rest] = process.argv.slice(2);
 if (cmd === 'taxonomy') { const ok = await taxonomy(); process.exit(ok ? 0 : 1); }
 else if (cmd === 'validate') await validate();
 else if (cmd === 'build') await build(rest);
+else if (cmd === 'probe') await probe();
 else {
-  console.log('Usage: build-counties.mjs <taxonomy | validate | build [--force] [regionCodes...]>');
+  console.log('Usage: build-counties.mjs <taxonomy | validate | build [--force] [regionCodes...] | probe>');
   console.log('  taxonomy  resolve species names → codes (writes data/taxonomy.json)');
   console.log('  validate  check every species name exists in the eBird taxonomy');
-  console.log('  build     [default: region counties] enumerate hotspots + download bar charts');
+  console.log('  build     [default: all counties] enumerate hotspots + download bar charts');
+  console.log('  probe     diagnostic: is the bar-chart endpoint public or login-gated?');
   process.exit(1);
 }

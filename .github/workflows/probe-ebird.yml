@@ -1,0 +1,21 @@
+# Diagnostic (temporary): determine whether eBird's bar-chart data endpoint is
+# public or truly login-gated, by fetching one hotspot several ways from a
+# runner (which — unlike the dev sandbox — can reach ebird.org) and dumping the
+# raw responses to the log. Read the log, then this workflow can be deleted.
+name: Probe eBird endpoint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probe bar-chart endpoint
+        env:
+          EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
+        run: node frame/scripts/build-counties.mjs probe
