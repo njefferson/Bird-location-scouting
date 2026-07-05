@@ -50,8 +50,12 @@
       <rect x="82" y="246" width="6" height="104"/>
       <rect x="77" y="220" width="16" height="46" rx="8"/>
     </g>
-    <!-- tail: behind the branch -->
-    <path d="M262 268 L 346 330 L 326 350 L 248 292 C 252 284, 256 276, 262 268 Z" fill="#e07f42"/>
+    <!-- tail: behind the branch. Drawn here (before the tree) for stacking, but
+         rotated with the SAME pivot as the body group below so it stays attached
+         to the bird's rear when the posture changes. -->
+    <g transform="rotate(-20 228 150)">
+      <path d="M262 268 L 346 330 L 326 350 L 248 292 C 252 284, 256 276, 262 268 Z" fill="#e07f42"/>
+    </g>
     <!-- tree on the right -->
     <g fill="#4c3418">
       <path d="M478 0 C 472 90, 470 200, 474 340 C 476 400, 479 460, 484 512 L 512 512 L 512 0 Z"/>

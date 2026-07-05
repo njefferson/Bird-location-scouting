@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v15',
+    date: '2026-07-05',
+    changes: [
+      'Icon fix: the bird’s tail had detached when its posture straightened in v14 — it’s reattached and follows the body now.',
+    ],
+  },
+  {
     version: 'v14',
     date: '2026-07-05',
     changes: [
