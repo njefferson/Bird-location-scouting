@@ -1,30 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#10231c"/>
-  <!-- viewfinder frame -->
-  <g fill="none" stroke="#4dd0a0" stroke-width="18" stroke-linecap="round">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2a4a"/>
+      <stop offset="1" stop-color="#0f1526"/>
+    </linearGradient>
+    <linearGradient id="bird" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc46b"/>
+      <stop offset="1" stop-color="#f28c4f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#sky)"/>
+  <g fill="none" stroke="#e9edf5" stroke-opacity="0.9" stroke-width="16" stroke-linecap="round">
     <path d="M120 84 H84 V120"/>
     <path d="M392 84 H428 V120"/>
     <path d="M120 428 H84 V392"/>
     <path d="M392 428 H428 V392"/>
   </g>
-  <!-- perched songbird, side profile facing right -->
-  <g fill="#4dd0a0">
-    <!-- tail -->
-    <path d="M238 310 L150 388 L186 398 L256 330 Z"/>
-    <!-- body + head + beak -->
-    <path d="M232 332
-             C 196 306, 194 244, 232 212
-             C 244 172, 296 158, 330 184
-             L 382 200
-             L 334 220
-             C 344 258, 332 300, 296 326
-             C 272 344, 250 344, 232 332 Z"/>
-    <!-- legs -->
-    <path d="M258 340 L252 374 L266 374 L268 342 Z"/>
-    <path d="M292 330 L296 374 L310 374 L300 326 Z"/>
+  <g fill="url(#bird)">
+    <!-- left wing: broad at shoulder, sweeping up, scalloped trailing edge -->
+    <path d="M250 272
+             C 214 258, 178 224, 158 158
+             C 156 150, 162 146, 168 151
+             C 208 182, 240 220, 260 258
+             C 254 264, 250 266, 250 272 Z"/>
+    <path d="M248 276 C 216 270, 186 252, 168 220 C 200 236, 232 252, 256 264 Z"/>
+    <!-- right wing -->
+    <path d="M290 266
+             C 314 226, 352 190, 404 170
+             C 412 167, 416 173, 412 180
+             C 384 232, 344 268, 302 286
+             C 296 278, 292 272, 290 266 Z"/>
+    <path d="M296 290 C 330 288, 362 274, 384 246 C 350 254, 318 266, 292 278 Z"/>
+    <!-- body: slim, head up, short beak right -->
+    <path d="M254 262
+             C 254 236, 264 216, 282 210
+             C 298 205, 312 214, 314 228
+             L 344 240
+             L 312 248
+             C 310 292, 296 334, 268 362
+             C 254 374, 240 370, 236 356
+             C 240 324, 246 292, 254 262 Z"/>
+    <!-- tail fan -->
+    <path d="M240 356 L 206 416 L 226 420 L 252 366 Z"/>
+    <path d="M236 352 L 188 398 L 204 408 L 244 362 Z"/>
   </g>
-  <!-- perch branch -->
-  <rect x="128" y="372" width="256" height="14" rx="7" fill="#4dd0a0" opacity="0.85"/>
-  <!-- eye -->
-  <circle cx="308" cy="200" r="10" fill="#10231c"/>
+  <circle cx="292" cy="226" r="8" fill="#0f1526"/>
 </svg>
