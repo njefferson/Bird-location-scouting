@@ -9,6 +9,14 @@
 
 export const CHANGELOG = [
   {
+    version: 'v13',
+    date: '2026-07-05',
+    changes: [
+      'After an update, the app now shows this one-time “What’s new” pop-up — once per release, then never again.',
+      'New app icon: a golden-hour wetland scene — bird perched on a branch, reeds, a dock and the setting sun, all inside the viewfinder.',
+    ],
+  },
+  {
     version: 'v12',
     date: '2026-07-04',
     changes: [

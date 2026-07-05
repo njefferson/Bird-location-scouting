@@ -6,6 +6,7 @@ import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSe
 import { loadActiveRegion } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { mountAbout } from './ui/about.js';
+import { maybeShowWhatsNew } from './ui/whatsnew.js';
 
 const state = {
   monthIdx: new Date().getMonth(), // default = current month (§5)
@@ -59,6 +60,7 @@ window.addEventListener('hashchange', render);
   app.replaceChildren(el('p.empty', {}, 'Loading…'));
   await loadActiveRegion();      // county data + species codes for the active region
   render();
+  maybeShowWhatsNew();           // one-time release notes after an update
   const recent = await recentInBox({ back: 14 }); // live overlay (graceful)
   if (recent) { state.recent = recent; render(); }
 })();
