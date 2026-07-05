@@ -1,13 +1,93 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#10231c"/>
-  <!-- viewfinder frame -->
-  <g fill="none" stroke="#4dd0a0" stroke-width="18" stroke-linecap="round">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fa8d0"/>
+      <stop offset="0.55" stop-color="#f0b97e"/>
+      <stop offset="1" stop-color="#fbd9a3"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c8cb8"/>
+      <stop offset="1" stop-color="#35618c"/>
+    </linearGradient>
+    <linearGradient id="bird" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf7d"/>
+      <stop offset="1" stop-color="#ef8f4d"/>
+    </linearGradient>
+    <clipPath id="rr"><rect width="512" height="512" rx="96"/></clipPath>
+  </defs>
+  <g clip-path="url(#rr)">
+    <rect width="512" height="340" fill="url(#sky)"/>
+    <circle cx="120" cy="300" r="60" fill="#fff3c9" opacity="0.4"/>
+    <circle cx="120" cy="300" r="37" fill="#fff7d6"/>
+    <g fill="#fdf1dd">
+      <path d="M46 148 a15 15 0 0 1 29 -4 a12 12 0 0 1 21 8 a8 8 0 0 1 -4 14 h-57 a9 9 0 0 1 -2 -17 a13 13 0 0 1 13 -1 Z"/>
+    </g>
+    <rect y="340" width="512" height="172" fill="url(#water)"/>
+    <g fill="#ffe9b0" opacity="0.6">
+      <rect x="98" y="354" width="44" height="8" rx="4"/>
+      <rect x="110" y="374" width="26" height="7" rx="3.5"/>
+      <rect x="94" y="394" width="50" height="7" rx="3.5"/>
+      <rect x="114" y="416" width="22" height="6" rx="3"/>
+    </g>
+    <!-- dock: bottom center, receding straight toward the horizon -->
+    <g>
+      <path d="M206 512 L 306 512 L 276 384 L 236 384 Z" fill="#8a6134"/>
+      <path d="M206 512 L 236 384 L 243 384 L 220 512 Z" fill="#6d4b26"/>
+      <path d="M306 512 L 276 384 L 269 384 L 292 512 Z" fill="#6d4b26"/>
+      <g stroke="#6d4b26" stroke-width="6">
+        <line x1="222" y1="478" x2="290" y2="478"/>
+        <line x1="228" y1="448" x2="284" y2="448"/>
+        <line x1="233" y1="422" x2="279" y2="422"/>
+        <line x1="237" y1="400" x2="275" y2="400"/>
+      </g>
+      <rect x="237" y="366" width="8" height="22" fill="#4c3418"/>
+      <rect x="268" y="366" width="8" height="22" fill="#4c3418"/>
+    </g>
+    <!-- reeds, far left -->
+    <g fill="#3d2c15">
+      <rect x="48" y="216" width="7" height="134"/>
+      <rect x="42" y="188" width="19" height="52" rx="9"/>
+      <rect x="82" y="246" width="6" height="104"/>
+      <rect x="77" y="220" width="16" height="46" rx="8"/>
+    </g>
+    <!-- tail: behind the branch -->
+    <path d="M262 268 L 346 330 L 326 350 L 248 292 C 252 284, 256 276, 262 268 Z" fill="#e07f42"/>
+    <!-- tree on the right -->
+    <g fill="#4c3418">
+      <path d="M478 0 C 472 90, 470 200, 474 340 C 476 400, 479 460, 484 512 L 512 512 L 512 0 Z"/>
+      <path d="M480 296 C 396 294, 296 298, 196 306 C 182 307, 172 309, 166 312 C 174 316, 184 318, 198 318 C 296 312, 396 310, 480 314 Z"/>
+      <path d="M478 128 C 432 124, 388 128, 350 140 C 344 142, 340 144, 338 147 C 342 150, 348 151, 356 150 C 392 142, 434 140, 478 144 Z"/>
+      <path d="M478 216 C 452 214, 428 216, 410 222 C 406 223, 404 225, 403 227 C 406 229, 410 230, 416 229 C 434 224, 456 224, 478 228 Z"/>
+    </g>
+    <!-- leaves: pointed, on short angles off the upper branch -->
+    <g fill="#55703c">
+      <path d="M358 136 C 352 118, 340 106, 324 104 C 330 120, 342 132, 358 136 Z"/>
+      <path d="M390 132 C 386 112, 374 100, 358 98 C 364 114, 375 126, 390 132 Z"/>
+      <path d="M422 130 C 418 110, 407 98, 391 96 C 396 112, 407 124, 422 130 Z"/>
+      <path d="M454 128 C 451 108, 440 96, 424 94 C 429 110, 439 122, 454 128 Z"/>
+      <path d="M374 148 C 371 164, 359 174, 343 175 C 349 160, 360 151, 374 148 Z"/>
+      <path d="M408 146 C 405 162, 394 172, 378 173 C 384 158, 394 149, 408 146 Z"/>
+      <path d="M442 144 C 440 160, 429 170, 413 171 C 418 156, 428 147, 442 144 Z"/>
+    </g>
+    <!-- bird: rotated onto its feet (slight forward lean), legs vertical -->
+    <rect x="219" y="272" width="8" height="38" fill="#4c3418"/>
+    <rect x="252" y="272" width="8" height="38" fill="#4c3418"/>
+    <g transform="rotate(-9 240 300)">
+      <path d="M195 257
+               C 174 218, 177 164, 204 137
+               C 216 101, 258 86, 288 104
+               C 309 116, 315 140, 306 161
+               C 312 203, 300 245, 264 272
+               C 240 287, 213 281, 195 257 Z" fill="url(#bird)"/>
+      <path d="M228 194 C 252 176, 285 176, 306 194 C 291 224, 258 236, 228 224 Z" fill="#e07f42"/>
+      <path d="M204 131 L 147 146 L 207 158 Z" fill="#4c3418"/>
+      <circle cx="228" cy="137" r="11" fill="#2b1c0c"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.95" stroke-width="16" stroke-linecap="round">
     <path d="M120 84 H84 V120"/>
     <path d="M392 84 H428 V120"/>
     <path d="M120 428 H84 V392"/>
     <path d="M392 428 H428 V392"/>
   </g>
-  <!-- bird silhouette -->
-  <path fill="#4dd0a0" d="M150 300c40-10 70-44 96-86 8 26 26 40 54 40-6 18-22 30-44 34 30 10 58 6 86-12-14 34-46 58-92 62-58 5-104-22-132-66 12 0 22-2 32-6z"/>
-  <circle cx="300" cy="214" r="9" fill="#10231c"/>
 </svg>

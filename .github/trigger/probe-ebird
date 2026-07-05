@@ -1,0 +1,3 @@
+Bump this file (any change) and push to fire the "Probe eBird endpoint"
+workflow. See the push-to-trigger note in .github/workflows/probe-ebird.yml.
+fired: 2026-07-05T15:05Z
