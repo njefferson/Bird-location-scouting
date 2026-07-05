@@ -37,6 +37,20 @@ on:
         default: false
   schedule:
     - cron: '0 14 1 */3 *'   # 1st of Jan/Apr/Jul/Oct, 06:00/07:00 Pacific
+  # PUSH-TO-TRIGGER: creating/bumping .github/trigger/refresh-data on a
+  # claude/* working branch fires this run — so the Claude session can start a
+  # refresh with plain `git push`, needing neither the Actions UI button nor
+  # any GitHub API access. A commit message containing [resume] runs in resume
+  # mode (skip already-built counties). The run itself still checks out and
+  # commits MAIN, regardless of which branch carried the trigger.
+  push:
+    branches: [ 'claude/**' ]
+    paths: [ '.github/trigger/refresh-data' ]
+
+# Never two refreshes at once (a trigger during a running build queues instead).
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -69,7 +83,7 @@ jobs:
         env:
           EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
           EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
-          RESUME: ${{ inputs.resume }}
+          RESUME: ${{ inputs.resume || contains(github.event.head_commit.message, '[resume]') }}
         run: |
           if [ -z "$EBIRD_COOKIE" ]; then
             echo "::error::No EBIRD_COOKIE secret. Sign into ebird.org, copy document.cookie (bookmarklet on iPad — see frame/HANDOFF.md), and save it as the EBIRD_COOKIE repository secret."

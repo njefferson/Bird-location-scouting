@@ -1,11 +1,16 @@
-# Diagnostic (temporary): determine whether eBird's bar-chart data endpoint is
-# public or truly login-gated, by fetching one hotspot several ways from a
-# runner (which — unlike the dev sandbox — can reach ebird.org) and dumping the
-# raw responses to the log. Read the log, then this workflow can be deleted.
+# Diagnostic: checks whether the stored EBIRD_COOKIE is a live signed-in
+# session by fetching one hotspot's bar chart several ways and dumping the raw
+# responses to the log. ~15 seconds; harmless; run it before a 20-minute build
+# whenever the cookie's freshness is in doubt.
 name: Probe eBird endpoint
 
 on:
   workflow_dispatch:
+  # PUSH-TO-TRIGGER (see refresh-data.yml): bump .github/trigger/probe-ebird on
+  # a claude/* branch to fire this with plain `git push` — no UI, no API.
+  push:
+    branches: [ 'claude/**' ]
+    paths: [ '.github/trigger/probe-ebird' ]
 
 jobs:
   probe:
