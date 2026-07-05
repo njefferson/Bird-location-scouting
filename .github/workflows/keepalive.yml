@@ -1,0 +1,36 @@
+# Keepalive — defeats GitHub's rule that pauses scheduled workflows after 60
+# days without repository activity (the quarterly data refresh has 88-day gaps,
+# so it would otherwise be pause-eligible every quarter). A monthly heartbeat
+# commit is repo activity, which keeps EVERY schedule in this repo enabled with
+# margin to spare. The GITHUB_TOKEN push deliberately triggers no other
+# workflows (GitHub suppresses workflow triggers from GITHUB_TOKEN pushes), so
+# this costs one tiny commit a month and nothing else.
+name: Keepalive (prevent schedule pause)
+
+on:
+  schedule:
+    - cron: '0 8 3 * *'   # 3rd of every month — every gap far under 60 days
+  workflow_dispatch:
+  # Push-to-trigger (see CLAUDE.md rule 2): bump .github/trigger/keepalive
+  push:
+    branches: [ 'claude/**' ]
+    paths: [ '.github/trigger/keepalive' ]
+
+permissions:
+  contents: write
+
+jobs:
+  beat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Commit heartbeat
+        run: |
+          date -u +%Y-%m-%dT%H:%M:%SZ > .github/keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive
+          git commit -m "Keepalive heartbeat (keeps scheduled workflows enabled)"
+          git push origin main
