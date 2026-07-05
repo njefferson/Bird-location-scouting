@@ -17,64 +17,58 @@
   </defs>
   <g clip-path="url(#rr)">
     <rect width="512" height="340" fill="url(#sky)"/>
-    <!-- sun low left -->
-    <circle cx="128" cy="300" r="62" fill="#fff3c9" opacity="0.4"/>
-    <circle cx="128" cy="300" r="38" fill="#fff7d6"/>
-    <!-- clouds: small, below the top brackets, far from the bird -->
+    <circle cx="120" cy="300" r="60" fill="#fff3c9" opacity="0.4"/>
+    <circle cx="120" cy="300" r="37" fill="#fff7d6"/>
+    <!-- clouds: corners, away from the bird's head -->
     <g fill="#fdf1dd">
-      <path d="M52 152 a15 15 0 0 1 29 -4 a12 12 0 0 1 21 8 a8 8 0 0 1 -4 14 h-57 a9 9 0 0 1 -2 -17 a13 13 0 0 1 13 -1 Z"/>
-      <path d="M418 150 a13 13 0 0 1 26 -3 a11 11 0 0 1 18 7 a7 7 0 0 1 -3 12 h-52 a8 8 0 0 1 -2 -15 a12 12 0 0 1 13 -1 Z"/>
+      <path d="M46 148 a15 15 0 0 1 29 -4 a12 12 0 0 1 21 8 a8 8 0 0 1 -4 14 h-57 a9 9 0 0 1 -2 -17 a13 13 0 0 1 13 -1 Z"/>
     </g>
-    <!-- water -->
     <rect y="340" width="512" height="172" fill="url(#water)"/>
     <g fill="#ffe9b0" opacity="0.6">
-      <rect x="106" y="354" width="44" height="8" rx="4"/>
-      <rect x="118" y="374" width="26" height="7" rx="3.5"/>
-      <rect x="102" y="394" width="50" height="7" rx="3.5"/>
-      <rect x="122" y="416" width="22" height="6" rx="3"/>
-    </g>
-    <!-- dock with sign, bottom right, clear of everything -->
-    <g>
-      <path d="M338 512 L 502 512 L 452 356 L 414 356 Z" fill="#8a6134"/>
-      <path d="M338 512 L 414 356 L 420 356 L 354 512 Z" fill="#6d4b26"/>
-      <path d="M502 512 L 452 356 L 446 356 L 484 512 Z" fill="#6d4b26"/>
-      <g stroke="#6d4b26" stroke-width="6">
-        <line x1="356" y1="472" x2="494" y2="472"/>
-        <line x1="372" y1="434" x2="482" y2="434"/>
-        <line x1="388" y1="400" x2="470" y2="400"/>
-        <line x1="400" y1="376" x2="460" y2="376"/>
-      </g>
-      <rect x="428" y="334" width="7" height="46" fill="#4c3418"/>
-      <rect x="402" y="300" width="60" height="38" rx="5" fill="#5a3f1e"/>
-      <g fill="#ffe9b0" opacity="0.8">
-        <rect x="411" y="311" width="42" height="5" rx="2.5"/>
-        <rect x="411" y="322" width="28" height="5" rx="2.5"/>
-      </g>
+      <rect x="98" y="354" width="44" height="8" rx="4"/>
+      <rect x="110" y="374" width="26" height="7" rx="3.5"/>
+      <rect x="94" y="394" width="50" height="7" rx="3.5"/>
+      <rect x="114" y="416" width="22" height="6" rx="3"/>
     </g>
     <!-- reeds, far left -->
     <g fill="#3d2c15">
-      <rect x="52" y="210" width="7" height="140"/>
-      <rect x="46" y="182" width="19" height="52" rx="9"/>
-      <rect x="86" y="240" width="6" height="110"/>
-      <rect x="81" y="214" width="16" height="46" rx="8"/>
+      <rect x="48" y="216" width="7" height="134"/>
+      <rect x="42" y="188" width="19" height="52" rx="9"/>
+      <rect x="82" y="246" width="6" height="104"/>
+      <rect x="77" y="220" width="16" height="46" rx="8"/>
     </g>
-    <!-- tail: behind the branch, rooted where the body will sit -->
-    <path d="M262 248 L 342 330 L 322 350 L 244 268 C 249 260, 255 253, 262 248 Z" fill="#e07f42"/>
-    <!-- branch: enters from the LEFT, tapers to a tip before the dock -->
-    <path d="M-8 296 C 90 300, 210 300, 330 306 C 348 307, 360 309, 366 312 C 358 316, 346 318, 328 318 C 210 314, 90 312, -8 310 Z" fill="#4c3418"/>
-    <!-- bird: centered, upright, facing the sun -->
+    <!-- tail: behind the branch -->
+    <path d="M258 272 L 342 336 L 322 354 L 244 294 C 248 286, 252 278, 258 272 Z" fill="#e07f42"/>
+    <!-- tree on the right: trunk edge + branches reaching in -->
+    <g fill="#4c3418">
+      <path d="M478 0 C 472 90, 470 200, 474 340 C 476 400, 479 460, 484 512 L 512 512 L 512 0 Z"/>
+      <!-- main branch (the perch) -->
+      <path d="M480 296 C 396 294, 296 298, 196 306 C 182 307, 172 309, 166 312 C 174 316, 184 318, 198 318 C 296 312, 396 310, 480 314 Z"/>
+      <!-- upper branch -->
+      <path d="M478 128 C 432 124, 388 128, 350 140 C 344 142, 340 144, 338 147 C 342 150, 348 151, 356 150 C 392 142, 434 140, 478 144 Z"/>
+      <!-- small stub between -->
+      <path d="M478 216 C 452 214, 428 216, 410 222 C 406 223, 404 225, 403 227 C 406 229, 410 230, 416 229 C 434 224, 456 224, 478 228 Z"/>
+    </g>
+    <!-- leaf clusters on the upper branch -->
+    <g fill="#5d7a42">
+      <ellipse cx="364" cy="122" rx="26" ry="15"/>
+      <ellipse cx="402" cy="110" rx="30" ry="17"/>
+      <ellipse cx="442" cy="120" rx="26" ry="15"/>
+      <ellipse cx="420" cy="136" rx="24" ry="13"/>
+    </g>
+    <!-- bird: BIG, centered, upright, facing the sun -->
     <g>
-      <rect x="238" y="272" width="5" height="32" fill="#4c3418"/>
-      <rect x="260" y="272" width="5" height="32" fill="#4c3418"/>
-      <path d="M222 262
-               C 208 236, 210 200, 228 182
-               C 236 158, 264 148, 284 160
-               C 298 168, 302 184, 296 198
-               C 300 226, 292 254, 268 272
-               C 252 282, 234 278, 222 262 Z" fill="url(#bird)"/>
-      <path d="M244 220 C 260 208, 282 208, 296 220 C 286 240, 264 248, 244 240 Z" fill="#e07f42"/>
-      <path d="M228 178 L 190 188 L 230 196 Z" fill="#4c3418"/>
-      <circle cx="244" cy="182" r="8" fill="#2b1c0c"/>
+      <rect x="219" y="272" width="8" height="38" fill="#4c3418"/>
+      <rect x="252" y="272" width="8" height="38" fill="#4c3418"/>
+      <path d="M195 257
+               C 174 218, 177 164, 204 137
+               C 216 101, 258 86, 288 104
+               C 309 116, 315 140, 306 161
+               C 312 203, 300 245, 264 272
+               C 240 287, 213 281, 195 257 Z" fill="url(#bird)"/>
+      <path d="M228 194 C 252 176, 285 176, 306 194 C 291 224, 258 236, 228 224 Z" fill="#e07f42"/>
+      <path d="M204 131 L 147 146 L 207 158 Z" fill="#4c3418"/>
+      <circle cx="228" cy="137" r="11" fill="#2b1c0c"/>
     </g>
   </g>
   <g fill="none" stroke="#ffffff" stroke-opacity="0.95" stroke-width="16" stroke-linecap="round">
