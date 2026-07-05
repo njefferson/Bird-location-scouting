@@ -8,14 +8,6 @@
 
 export const ROADMAP = [
   {
-    title: 'Region switcher',
-    detail: 'Up to 3 named regions (Home, Humboldt, …) as pills at the top — one tap moves the whole planner.',
-  },
-  {
-    title: 'County picker map',
-    detail: 'A pinch-zoom California map (plus the Tahoe/Reno counties): tap counties to color-select them, mirrored by an alphabetical checklist, then save and name the set as a region.',
-  },
-  {
     title: 'Location auto-switch',
     detail: 'On open, the app notices which of your regions you’re standing in and switches to it.',
   },

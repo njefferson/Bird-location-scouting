@@ -138,6 +138,54 @@ table.species-table tr[onclick] { cursor: pointer; }
 .kv { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--dim); }
 .kv input { background: var(--bg2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px; }
 
+/* region switcher pills (prepended to every view) */
+.regionbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  padding: 2px 40px 10px 0; margin-bottom: 2px; }
+.region-pill { background: var(--card); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 999px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+  max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.region-pill.active { background: var(--accent); border-color: var(--accent); color: #06160f; font-weight: 700; }
+.region-pill.add { color: var(--dim); font-weight: 700; padding: 5px 12px; }
+.region-pill:active { transform: translateY(1px); }
+
+/* county picker map */
+.map-wrap { position: relative; width: 100%; margin: 4px 0 10px; border: 1px solid var(--line);
+  border-radius: var(--r); overflow: hidden; background: var(--bg2);
+  touch-action: none; -webkit-user-select: none; user-select: none; }
+.county-map { display: block; width: 100%; height: auto; }
+.county-map .county { fill: var(--card2); stroke: var(--line); stroke-width: 1;
+  cursor: pointer; transition: fill .1s; vector-effect: non-scaling-stroke; }
+.county-map .county:hover { fill: #24463a; }
+.county-map .county.sel { fill: var(--accent); stroke: var(--accent2); }
+.map-zoom { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; }
+.map-zbtn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--ink);
+  font-size: 18px; line-height: 1; cursor: pointer; display: grid; place-content: center; }
+.map-zbtn:active { transform: translateY(1px); }
+
+.pick-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+.pick-count { color: var(--dim); font-size: 13px; }
+.btn.small { padding: 4px 10px; font-size: 12px; }
+
+.county-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 12px; margin-bottom: 14px; }
+.county-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 14px; cursor: pointer; }
+.county-item input { width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
+
+.pick-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.region-name-wrap { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--dim); flex: 1 1 220px; }
+.region-name { background: var(--bg2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 8px; padding: 10px; font-size: 16px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #06160f; font-weight: 700; }
+.btn.primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn.danger { background: none; border-color: #7a2e2e; color: #e58b8b; }
+
+/* settings → region rows */
+.region-rows { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 10px; }
+.region-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; }
+.region-row-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.dim.small, .small { font-size: 12px; }
+
 /* tab bar */
 .tabs { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--tab-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom); background: var(--bg2); border-top: 1px solid var(--line);

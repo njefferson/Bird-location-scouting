@@ -58,11 +58,11 @@ async function call(path, params = {}) {
  * Recent observations across the whole box. Returns a map of
  * speciesCode → newest obsDt, or null if the overlay is unavailable.
  */
-export async function recentInBox({ back = 14 } = {}) {
-  const { lat, lng } = boxCenter();
-  // Radius (km) that comfortably covers the box from its center.
-  const dist = 30;
-  const obs = await call('/v2/data/obs/geo/recent', { lat: lat.toFixed(3), lng: lng.toFixed(3), dist, back });
+export async function recentInBox({ back = 14, lat, lng, dist = 30 } = {}) {
+  // Default to the Sacramento box center; the app passes the active region's
+  // center when it isn't Home, so the "seen recently" badges follow the region.
+  if (lat == null || lng == null) ({ lat, lng } = boxCenter());
+  const obs = await call('/v2/data/obs/geo/recent', { lat: (+lat).toFixed(3), lng: (+lng).toFixed(3), dist, back });
   if (!Array.isArray(obs)) return null;
   const bySpecies = {};
   for (const o of obs) {
