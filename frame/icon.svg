@@ -1,48 +1,70 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1b2a4a"/>
-      <stop offset="1" stop-color="#0f1526"/>
+      <stop offset="0" stop-color="#1c2f52"/>
+      <stop offset="0.62" stop-color="#b96a4e"/>
+      <stop offset="1" stop-color="#f7b26b"/>
     </linearGradient>
-    <linearGradient id="bird" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffc46b"/>
-      <stop offset="1" stop-color="#f28c4f"/>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c4468"/>
+      <stop offset="1" stop-color="#0e1c30"/>
     </linearGradient>
+    <clipPath id="rr"><rect width="512" height="512" rx="96"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="96" fill="url(#sky)"/>
-  <g fill="none" stroke="#e9edf5" stroke-opacity="0.9" stroke-width="16" stroke-linecap="round">
+  <g clip-path="url(#rr)">
+    <!-- sky -->
+    <rect width="512" height="340" fill="url(#sky)"/>
+    <!-- sun + glow -->
+    <circle cx="176" cy="296" r="64" fill="#ffd98a" opacity="0.35"/>
+    <circle cx="176" cy="296" r="40" fill="#ffdf9e"/>
+    <!-- clouds -->
+    <g fill="#f4c08e" opacity="0.85">
+      <path d="M300 120 a22 22 0 0 1 44 0 a18 18 0 0 1 34 6 h-108 a20 20 0 0 1 30 -6 Z"/>
+      <path d="M120 170 a16 16 0 0 1 32 0 a14 14 0 0 1 26 4 h-82 a15 15 0 0 1 24 -4 Z"/>
+    </g>
+    <!-- water -->
+    <rect y="340" width="512" height="172" fill="url(#water)"/>
+    <!-- sun reflection -->
+    <g fill="#f7b26b" opacity="0.5">
+      <rect x="156" y="352" width="40" height="8" rx="4"/>
+      <rect x="166" y="372" width="24" height="7" rx="3.5"/>
+      <rect x="150" y="392" width="48" height="7" rx="3.5"/>
+      <rect x="170" y="414" width="20" height="6" rx="3"/>
+    </g>
+    <!-- reeds / cattails, left -->
+    <g fill="#181209">
+      <rect x="66" y="200" width="7" height="150"/>
+      <rect x="60" y="172" width="19" height="52" rx="9"/>
+      <rect x="102" y="230" width="6" height="120"/>
+      <rect x="97" y="204" width="16" height="46" rx="8"/>
+      <rect x="136" y="256" width="6" height="94"/>
+      <rect x="131" y="232" width="16" height="42" rx="8"/>
+      <path d="M84 350 C 86 300, 80 260, 88 224 L 92 225 C 87 262, 93 302, 90 350 Z"/>
+    </g>
+    <!-- branch from right + perched bird silhouette (facing left, into the sun) -->
+    <g fill="#181209">
+      <path d="M512 236 C 448 232, 380 240, 318 252 L 318 266 C 384 254, 450 248, 512 252 Z"/>
+      <!-- bird: perched profile facing LEFT -->
+      <path d="M352 246
+               C 380 238, 388 196, 360 172
+               C 352 142, 312 132, 286 152
+               L 246 164
+               L 282 180
+               C 274 210, 284 236, 310 250
+               C 326 258, 342 254, 352 246 Z"/>
+      <!-- tail up-right -->
+      <path d="M348 230 L 420 180 L 430 194 L 362 244 Z"/>
+      <!-- legs -->
+      <path d="M318 248 L 316 262 L 326 262 L 328 250 Z"/>
+    </g>
+    <!-- eye highlight -->
+    <circle cx="300" cy="162" r="7" fill="#f7b26b"/>
+  </g>
+  <!-- viewfinder frame -->
+  <g fill="none" stroke="#f5f0e8" stroke-opacity="0.92" stroke-width="16" stroke-linecap="round">
     <path d="M120 84 H84 V120"/>
     <path d="M392 84 H428 V120"/>
     <path d="M120 428 H84 V392"/>
     <path d="M392 428 H428 V392"/>
   </g>
-  <g fill="url(#bird)">
-    <!-- left wing: broad at shoulder, sweeping up, scalloped trailing edge -->
-    <path d="M250 272
-             C 214 258, 178 224, 158 158
-             C 156 150, 162 146, 168 151
-             C 208 182, 240 220, 260 258
-             C 254 264, 250 266, 250 272 Z"/>
-    <path d="M248 276 C 216 270, 186 252, 168 220 C 200 236, 232 252, 256 264 Z"/>
-    <!-- right wing -->
-    <path d="M290 266
-             C 314 226, 352 190, 404 170
-             C 412 167, 416 173, 412 180
-             C 384 232, 344 268, 302 286
-             C 296 278, 292 272, 290 266 Z"/>
-    <path d="M296 290 C 330 288, 362 274, 384 246 C 350 254, 318 266, 292 278 Z"/>
-    <!-- body: slim, head up, short beak right -->
-    <path d="M254 262
-             C 254 236, 264 216, 282 210
-             C 298 205, 312 214, 314 228
-             L 344 240
-             L 312 248
-             C 310 292, 296 334, 268 362
-             C 254 374, 240 370, 236 356
-             C 240 324, 246 292, 254 262 Z"/>
-    <!-- tail fan -->
-    <path d="M240 356 L 206 416 L 226 420 L 252 366 Z"/>
-    <path d="M236 352 L 188 398 L 204 408 L 244 362 Z"/>
-  </g>
-  <circle cx="292" cy="226" r="8" fill="#0f1526"/>
 </svg>
