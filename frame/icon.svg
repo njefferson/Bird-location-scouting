@@ -1,67 +1,92 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1c2f52"/>
-      <stop offset="0.62" stop-color="#b96a4e"/>
-      <stop offset="1" stop-color="#f7b26b"/>
+      <stop offset="0" stop-color="#7fa8d0"/>
+      <stop offset="0.55" stop-color="#f0b97e"/>
+      <stop offset="1" stop-color="#fbd9a3"/>
     </linearGradient>
     <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2c4468"/>
-      <stop offset="1" stop-color="#0e1c30"/>
+      <stop offset="0" stop-color="#5c8cb8"/>
+      <stop offset="1" stop-color="#35618c"/>
+    </linearGradient>
+    <linearGradient id="bird" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf7d"/>
+      <stop offset="1" stop-color="#ef8f4d"/>
     </linearGradient>
     <clipPath id="rr"><rect width="512" height="512" rx="96"/></clipPath>
   </defs>
   <g clip-path="url(#rr)">
-    <!-- sky -->
     <rect width="512" height="340" fill="url(#sky)"/>
     <!-- sun + glow -->
-    <circle cx="176" cy="296" r="64" fill="#ffd98a" opacity="0.35"/>
-    <circle cx="176" cy="296" r="40" fill="#ffdf9e"/>
-    <!-- clouds -->
-    <g fill="#f4c08e" opacity="0.85">
-      <path d="M300 120 a22 22 0 0 1 44 0 a18 18 0 0 1 34 6 h-108 a20 20 0 0 1 30 -6 Z"/>
-      <path d="M120 170 a16 16 0 0 1 32 0 a14 14 0 0 1 26 4 h-82 a15 15 0 0 1 24 -4 Z"/>
+    <circle cx="176" cy="292" r="70" fill="#fff3c9" opacity="0.4"/>
+    <circle cx="176" cy="292" r="44" fill="#fff7d6"/>
+    <!-- clouds: classic puffy, rounded bottoms -->
+    <g fill="#fdf1dd">
+      <path d="M290 118 a24 24 0 0 1 46 -6 a20 20 0 0 1 34 12 a12 12 0 0 1 -6 22 h-92 a14 14 0 0 1 -2 -28 a22 22 0 0 1 20 0 Z"/>
+      <path d="M96 176 a17 17 0 0 1 33 -4 a14 14 0 0 1 24 9 a9 9 0 0 1 -4 16 h-66 a10 10 0 0 1 -2 -20 a15 15 0 0 1 15 -1 Z"/>
     </g>
     <!-- water -->
     <rect y="340" width="512" height="172" fill="url(#water)"/>
-    <!-- sun reflection -->
-    <g fill="#f7b26b" opacity="0.5">
-      <rect x="156" y="352" width="40" height="8" rx="4"/>
-      <rect x="166" y="372" width="24" height="7" rx="3.5"/>
-      <rect x="150" y="392" width="48" height="7" rx="3.5"/>
-      <rect x="170" y="414" width="20" height="6" rx="3"/>
+    <g fill="#ffe9b0" opacity="0.6">
+      <rect x="152" y="354" width="44" height="8" rx="4"/>
+      <rect x="164" y="374" width="26" height="7" rx="3.5"/>
+      <rect x="148" y="394" width="50" height="7" rx="3.5"/>
+      <rect x="168" y="416" width="22" height="6" rx="3"/>
     </g>
-    <!-- reeds / cattails, left -->
-    <g fill="#181209">
+    <!-- dock: receding from bottom-right toward horizon, sign on it -->
+    <g>
+      <path d="M328 512 L 500 512 L 448 352 L 408 352 Z" fill="#8a6134"/>
+      <path d="M328 512 L 408 352 L 414 352 L 344 512 Z" fill="#6d4b26"/>
+      <path d="M500 512 L 448 352 L 442 352 L 480 512 Z" fill="#6d4b26"/>
+      <g stroke="#6d4b26" stroke-width="6">
+        <line x1="348" y1="470" x2="492" y2="470"/>
+        <line x1="366" y1="430" x2="478" y2="430"/>
+        <line x1="382" y1="396" x2="466" y2="396"/>
+        <line x1="394" y1="372" x2="456" y2="372"/>
+      </g>
+      <!-- sign standing on the dock -->
+      <rect x="422" y="330" width="7" height="46" fill="#4c3418"/>
+      <rect x="396" y="296" width="60" height="38" rx="5" fill="#5a3f1e"/>
+      <g fill="#ffe9b0" opacity="0.8">
+        <rect x="405" y="307" width="42" height="5" rx="2.5"/>
+        <rect x="405" y="318" width="28" height="5" rx="2.5"/>
+      </g>
+    </g>
+    <!-- reeds -->
+    <g fill="#3d2c15">
       <rect x="66" y="200" width="7" height="150"/>
       <rect x="60" y="172" width="19" height="52" rx="9"/>
       <rect x="102" y="230" width="6" height="120"/>
       <rect x="97" y="204" width="16" height="46" rx="8"/>
       <rect x="136" y="256" width="6" height="94"/>
       <rect x="131" y="232" width="16" height="42" rx="8"/>
-      <path d="M84 350 C 86 300, 80 260, 88 224 L 92 225 C 87 262, 93 302, 90 350 Z"/>
     </g>
-    <!-- branch from right + perched bird silhouette (facing left, into the sun) -->
-    <g fill="#181209">
-      <path d="M512 236 C 448 232, 380 240, 318 252 L 318 266 C 384 254, 450 248, 512 252 Z"/>
-      <!-- bird: perched profile facing LEFT -->
-      <path d="M352 246
-               C 380 238, 388 196, 360 172
-               C 352 142, 312 132, 286 152
-               L 246 164
-               L 282 180
-               C 274 210, 284 236, 310 250
-               C 326 258, 342 254, 352 246 Z"/>
-      <!-- tail up-right -->
-      <path d="M348 230 L 420 180 L 430 194 L 362 244 Z"/>
+    <!-- branch -->
+    <path d="M512 240 C 448 236, 380 244, 312 256 L 312 270 C 384 258, 450 252, 512 256 Z" fill="#4c3418"/>
+    <!-- bird: bright, perched, legs visible, facing the sun -->
+    <g>
+      <!-- tail -->
+      <path d="M366 208 L 440 148 L 464 170 L 384 232 C 374 228, 368 220, 366 208 Z" fill="#e07f42"/>
       <!-- legs -->
-      <path d="M318 248 L 316 262 L 326 262 L 328 250 Z"/>
+      <rect x="336" y="224" width="5" height="34" fill="#4c3418"/>
+      <rect x="360" y="222" width="5" height="36" fill="#4c3418"/>
+      <!-- body + head -->
+      <path d="M320 214
+               C 306 190, 312 158, 336 144
+               C 344 122, 372 114, 390 128
+               C 402 136, 406 150, 400 162
+               C 404 190, 396 216, 372 228
+               C 352 238, 332 232, 320 214 Z" fill="url(#bird)"/>
+      <!-- beak: dark, pointing left, clear of everything -->
+      <path d="M336 140 L 296 150 L 338 158 Z" fill="#4c3418"/>
+      <!-- eye -->
+      <circle cx="352" cy="146" r="8" fill="#2b1c0c"/>
+      <!-- wing detail -->
+      <path d="M340 190 C 352 176, 374 172, 392 180 C 380 196, 360 202, 340 190 Z" fill="#e07f42"/>
     </g>
-    <!-- eye highlight -->
-    <circle cx="300" cy="162" r="7" fill="#f7b26b"/>
   </g>
   <!-- viewfinder frame -->
-  <g fill="none" stroke="#f5f0e8" stroke-opacity="0.92" stroke-width="16" stroke-linecap="round">
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.95" stroke-width="16" stroke-linecap="round">
     <path d="M120 84 H84 V120"/>
     <path d="M392 84 H428 V120"/>
     <path d="M120 428 H84 V392"/>
