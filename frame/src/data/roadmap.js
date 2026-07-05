@@ -7,12 +7,5 @@
 // =============================================================================
 
 export const ROADMAP = [
-  {
-    title: 'Location auto-switch',
-    detail: 'On open, the app notices which of your regions you’re standing in and switches to it.',
-  },
-  {
-    title: 'Hotspot map view',
-    detail: 'A map of the active region with every eBird hotspot pinned and highways for orientation — tap a pin to open that hotspot’s page in the app.',
-  },
+  // (empty — everything planned so far has shipped. Add the next ideas here.)
 ];

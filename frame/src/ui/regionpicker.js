@@ -9,8 +9,9 @@
 // =============================================================================
 import { el, clear } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
-import { COUNTIES } from '../data/counties.js';
+import { COUNTIES, DEFAULT_DEPTH } from '../data/counties.js';
 import { saveRegion, deleteRegion, savedRegions, loadActiveRegion, setActiveRegion } from '../model/regions.js';
+import { attachPanZoom } from './panzoom.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -19,14 +20,13 @@ const CODES_ALPHA = Object.keys(COUNTY_SHAPES)
   .sort((a, b) => (COUNTIES[a]?.name || a).localeCompare(COUNTIES[b]?.name || b));
 
 // --- The interactive map ----------------------------------------------------
-// Returns { node, refresh(code) }. Pan with one finger / drag, pinch or wheel to
-// zoom; a tap that didn't pan toggles the county under it via onToggle(code).
+// Returns { node, refresh(code) }. Pan/pinch-zoom comes from ui/panzoom.js; a
+// tap that didn't pan toggles the county under it via onToggle(code).
 function buildMap(selected, onToggle) {
   const { w: W, h: H } = MAP_VIEWBOX;
   const wrap = el('div.map-wrap');
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'county-map');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
   const pathByCode = {};
@@ -43,85 +43,14 @@ function buildMap(selected, onToggle) {
   }
   wrap.append(svg);
 
-  // viewBox pan/zoom state.
-  let vx = 0, vy = 0, vw = W, vh = H;
-  const setVB = () => svg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
-  function clampPan() {
-    vx = Math.min(Math.max(vx, 0), W - vw);
-    vy = Math.min(Math.max(vy, 0), H - vh);
-  }
-  function zoomAt(clientX, clientY, factor) {
-    const rect = svg.getBoundingClientRect();
-    const px = (clientX - rect.left) / rect.width;
-    const py = (clientY - rect.top) / rect.height;
-    const ax = vx + px * vw, ay = vy + py * vh; // svg point under the cursor
-    vw = Math.min(Math.max(vw / factor, W / 8), W); // zoom range 1×–8×
-    vh = vw * (H / W);
-    vx = ax - px * vw;
-    vy = ay - py * vh;
-    clampPan();
-    setVB();
-  }
-  function panBy(dxScreen, dyScreen) {
-    const rect = svg.getBoundingClientRect();
-    vx -= dxScreen * vw / rect.width;
-    vy -= dyScreen * vh / rect.height;
-    clampPan();
-    setVB();
-  }
-
-  // Pan/zoom + tap on the SVG only (the zoom buttons sit in the wrap OUTSIDE the
-  // svg, so capturing the pointer here never steals their clicks). A tap that
-  // didn't pan toggles whichever county is under the finger — we resolve it in
-  // pointerup via elementFromPoint rather than a per-path click, because pointer
-  // capture would otherwise redirect the native click away from the path.
-  const pts = new Map(); // pointerId → {x,y}
-  let moved = false, downX = 0, downY = 0, lastDist = null;
-  svg.addEventListener('pointerdown', (e) => {
-    svg.setPointerCapture(e.pointerId);
-    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pts.size === 1) { moved = false; downX = e.clientX; downY = e.clientY; }
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; lastDist = Math.hypot(a.x - b.x, a.y - b.y); }
-  });
-  svg.addEventListener('pointermove', (e) => {
-    if (!pts.has(e.pointerId)) return;
-    const prev = pts.get(e.pointerId);
-    const cur = { x: e.clientX, y: e.clientY };
-    pts.set(e.pointerId, cur);
-    if (Math.hypot(cur.x - downX, cur.y - downY) > 8) moved = true;
-    const arr = [...pts.values()];
-    if (arr.length === 1) {
-      panBy(cur.x - prev.x, cur.y - prev.y);
-    } else if (arr.length >= 2) {
-      const [a, b] = arr;
-      const nd = Math.hypot(a.x - b.x, a.y - b.y);
-      if (lastDist) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, nd / lastDist);
-      lastDist = nd;
-    }
-  });
-  svg.addEventListener('pointerup', (e) => {
-    const wasTap = pts.size === 1 && !moved;
-    pts.delete(e.pointerId);
-    if (pts.size < 2) lastDist = null;
-    if (wasTap) {
+  const pz = attachPanZoom(wrap, svg, {
+    W, H,
+    onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-code]');
       if (hit && pathByCode[hit.dataset.code]) onToggle(hit.dataset.code);
-    }
+    },
   });
-  svg.addEventListener('pointercancel', (e) => { pts.delete(e.pointerId); if (pts.size < 2) lastDist = null; });
-  svg.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
-  }, { passive: false });
-
-  const zoomBtns = el('div.map-zoom', {}, [
-    el('button.map-zbtn', { title: 'Zoom in', onclick: () => zoomAt(centerX(), centerY(), 1.4) }, '+'),
-    el('button.map-zbtn', { title: 'Zoom out', onclick: () => zoomAt(centerX(), centerY(), 1 / 1.4) }, '−'),
-    el('button.map-zbtn', { title: 'Reset', onclick: () => { vx = 0; vy = 0; vw = W; vh = H; setVB(); } }, '⤢'),
-  ]);
-  function centerX() { const r = svg.getBoundingClientRect(); return r.left + r.width / 2; }
-  function centerY() { const r = svg.getBoundingClientRect(); return r.top + r.height / 2; }
-  wrap.append(zoomBtns);
+  wrap.append(pz.controls());
 
   return {
     node: wrap,
@@ -130,22 +59,27 @@ function buildMap(selected, onToggle) {
 }
 
 // --- The picker view --------------------------------------------------------
-export function renderRegionPicker(root, state, nav, editId) {
+// editId — a saved region to edit; prefill — { name, counties } from a share
+// link (#/import), pre-selecting the shared set to be saved as a NEW region.
+export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   clear(root);
   const editing = editId ? savedRegions().find((r) => r.id === editId) : null;
-  const selected = new Set(editing ? editing.counties.filter((c) => COUNTY_SHAPES[c]) : []);
+  const seedCounties = editing ? editing.counties : (prefill?.counties || []);
+  const selected = new Set(seedCounties.filter((c) => COUNTY_SHAPES[c]));
   const checkboxByCode = {};
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/settings') }, '‹ Regions'),
     el('div.title-row', {}, [
-      el('h1', {}, editing ? 'Edit region' : 'New region'),
-      el('span.subtitle', {}, 'Tap counties on the map or the list, then name and save.'),
+      el('h1', {}, editing ? 'Edit region' : prefill ? 'Import region' : 'New region'),
+      el('span.subtitle', {}, prefill
+        ? 'Someone shared this county set with you — adjust if you like, then save.'
+        : 'Tap counties on the map or the list, then name and save.'),
     ]),
   ]));
 
   const nameInput = el('input.region-name', {
-    type: 'text', placeholder: 'Region name (e.g. North Coast)', value: editing?.name || '',
+    type: 'text', placeholder: 'Region name (e.g. North Coast)', value: editing?.name || prefill?.name || '',
     maxlength: 40,
   });
 
@@ -191,6 +125,12 @@ export function renderRegionPicker(root, state, nav, editId) {
     editing ? el('button.btn.danger', { onclick: onDelete }, 'Delete region') : null,
   ]);
   root.append(actions);
+
+  // Honest coverage note: statewide counties carry the build's default depth;
+  // featured home-turf counties go deeper (see counties.js `depth`).
+  const featured = Object.entries(COUNTIES).filter(([, c]) => c.depth).map(([, c]) => c.name.replace(' (NV)', ''));
+  root.append(el('p.legend', {},
+    `Each county carries its top ${DEFAULT_DEPTH} eBird hotspots from the quarterly build; ${featured.join(', ')} go deeper (40). Any region you save works instantly.`));
 
   updateCount();
 

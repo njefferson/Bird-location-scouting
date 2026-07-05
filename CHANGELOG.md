@@ -5,6 +5,13 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v17 — 2026-07-05
+- New Map tab: every hotspot in the active region pinned on the county map, opening zoomed to your region. Pin brightness follows this month's photographer score — tap a pin to open that hotspot.
+- Location auto-switch (off by default, in Settings): when enabled, the app notices which of your regions you're standing in on open and switches to it.
+- Share any region as a link (Settings → Share): opening it on another device drops its counties into the picker, ready to save. Handy for moving regions between iPad and phone.
+- The live-sightings search radius now scales with the size of the active region (25–50 km) instead of a fixed 30 km circle.
+- The county picker now says how deep each county's hotspot data goes.
+
 ## v16 — 2026-07-05
 - Settings cleaned up: the leftover "box" coordinates section is gone (regions cover that now), and the data-provenance details moved into the Regions section.
 - The species pages' live "last reported at…" line now searches around your active region, not always the Sacramento area.

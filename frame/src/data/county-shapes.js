@@ -3,8 +3,13 @@
 // counties, projected into a shared 1000×1178 viewBox (equirectangular, scaled
 // for CA's mid-latitude). Keyed by eBird region code (US-XX-###), matching
 // COUNTIES in counties.js and the per-county data files. Consumed by the
-// county-picker map (ui/map.js). 63 counties, ~1539 points.
+// county-picker map (ui/regionpicker.js) and the hotspot map (ui/mapview.js).
+// MAP_PROJECTION lets model/geo.js project any lat/lng into this viewBox:
+//   x = (lng·kx − minX)·scale,  y = (−lat − minY)·scale
+// 63 counties, ~1539 points.
 export const MAP_VIEWBOX = { w: 1000, h: 1178 };
+
+export const MAP_PROJECTION = { kx: 0.7826081568524139, minX: -97.36396070727267, minY: -42.009518, scale: 124.32048811010026 };
 
 export const COUNTY_SHAPES = {
   'US-CA-001': 'M248.5 562.5L229.3 565.6L223.8 560.9L218.6 539.7L210.4 533.0L209.3 530.8L210.8 529.1L202.3 525.3L202.0 522.1L204.9 519.6L203.9 511.2L216.3 520.8L234.0 527.1L234.3 530.9L238.3 533.4L277.5 521.2L277.6 555.3L285.8 562.9L248.5 562.5Z',
