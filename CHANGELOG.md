@@ -5,6 +5,10 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v13 — 2026-07-05
+- After an update, the app now shows a one-time "What's new" pop-up — once per release, then never again.
+- New app icon: a golden-hour wetland scene — bird perched on a branch, reeds, a dock and the setting sun, all inside the viewfinder.
+
 ## v12 — 2026-07-04
 - Groundwork for multiple regions: the planner now loads its hotspots from per-county data files, so it can cover the coast (Humboldt) and the mountains, not just the Sacramento box. No visible change yet — the region switcher and county picker come next.
 - The ⓘ panel now shows a "Coming next" roadmap of planned features, above "What's new".
