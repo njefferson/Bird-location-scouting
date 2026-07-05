@@ -5,6 +5,11 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v16 — 2026-07-05
+- Settings cleaned up: the leftover "box" coordinates section is gone (regions cover that now), and the data-provenance details moved into the Regions section.
+- The species pages' live "last reported at…" line now searches around your active region, not always the Sacramento area.
+- Removed the never-used "edge" chip and freshened region-era wording throughout (search subtitle, badge tooltips, the ⓘ panel).
+
 ## v15 — 2026-07-05
 - Icon fix: the bird's tail had detached when its posture straightened in v14 — it's reattached and follows the body now.
 

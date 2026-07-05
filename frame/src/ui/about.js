@@ -13,7 +13,8 @@ const ABOUT_HTML = `
   <p>Most birding tools rank places by <em>rarity</em> — what a lister chases.
   Frame ranks them by <strong>photographic opportunity</strong>: where you can
   actually point a lens and come home with a usable frame of a bird, this month,
-  in the Sacramento foothills.</p>
+  in your region — from the Sacramento foothills to the Humboldt coast, or any
+  set of counties you save from the map.</p>
 
   <h3>How the score works</h3>
   <p class="about-formula">HotspotScore = Σ&nbsp;frequency × photoability</p>

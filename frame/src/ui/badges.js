@@ -19,9 +19,10 @@ export function inferredChip(count, rule) {
 export function liveBadge(daysAgo) {
   if (daysAgo == null) return null;
   const txt = daysAgo === 0 ? 'seen today' : `seen ${daysAgo}d ago`;
-  // Honesty: the overlay is one query for the WHOLE box (~30 km), so this says
-  // a top species was reported somewhere in the area — not at this hotspot.
-  return el('span.badge.live', { title: 'One of this card’s top species was reported to eBird in the area (anywhere in the box, not necessarily this hotspot).' }, txt);
+  // Honesty: the overlay is one query around the active region's center
+  // (~30 km), so this says a top species was reported somewhere in the area —
+  // not at this hotspot.
+  return el('span.badge.live', { title: 'One of this card’s top species was reported to eBird in the area (somewhere around the active region, not necessarily this hotspot).' }, txt);
 }
 
 export function nBadge(n) {
