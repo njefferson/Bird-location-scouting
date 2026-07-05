@@ -7,7 +7,24 @@
     <path d="M120 428 H84 V392"/>
     <path d="M392 428 H428 V392"/>
   </g>
-  <!-- bird silhouette -->
-  <path fill="#4dd0a0" d="M150 300c40-10 70-44 96-86 8 26 26 40 54 40-6 18-22 30-44 34 30 10 58 6 86-12-14 34-46 58-92 62-58 5-104-22-132-66 12 0 22-2 32-6z"/>
-  <circle cx="300" cy="214" r="9" fill="#10231c"/>
+  <!-- perched songbird, side profile facing right -->
+  <g fill="#4dd0a0">
+    <!-- tail -->
+    <path d="M238 310 L150 388 L186 398 L256 330 Z"/>
+    <!-- body + head + beak -->
+    <path d="M232 332
+             C 196 306, 194 244, 232 212
+             C 244 172, 296 158, 330 184
+             L 382 200
+             L 334 220
+             C 344 258, 332 300, 296 326
+             C 272 344, 250 344, 232 332 Z"/>
+    <!-- legs -->
+    <path d="M258 340 L252 374 L266 374 L268 342 Z"/>
+    <path d="M292 330 L296 374 L310 374 L300 326 Z"/>
+  </g>
+  <!-- perch branch -->
+  <rect x="128" y="372" width="256" height="14" rx="7" fill="#4dd0a0" opacity="0.85"/>
+  <!-- eye -->
+  <circle cx="308" cy="200" r="10" fill="#10231c"/>
 </svg>
