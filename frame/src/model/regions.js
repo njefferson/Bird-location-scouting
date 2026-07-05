@@ -3,8 +3,9 @@
 // =============================================================================
 // A "region" is a named set of counties (eBird region codes). The app loads
 // only the active region's per-county data files (data/counties/<code>.json),
-// so statewide coverage never bloats one download. Switching regions (v13 UI)
-// just points this module at a different county set and re-renders.
+// so statewide coverage never bloats one download. Switching regions (v14 UI:
+// header pills + the county-picker map) just points this module at a different
+// county set and re-renders.
 //
 // This module also owns SPECIES CODE RESOLUTION: species.js is keyed by common
 // name and carries no codes, so on boot we load data/taxonomy.json (name→code,
@@ -22,11 +23,68 @@
 
 import { SPECIES } from '../data/species.js';
 import { HOTSPOTS as CURATED } from '../data/hotspots.js';
-import { REGIONS } from '../data/counties.js';
+import { REGIONS, COUNTIES } from '../data/counties.js';
 
-// Region definitions live in data/counties.js (shared with the build pipeline).
-// v12 scope: Home + Humboldt. Home is active by default.
+// Region definitions live in data/counties.js (shared with the build pipeline):
+// REGIONS is the built-in seed set (Home + Humboldt), always present and not
+// editable. On top of that the user can save up to MAX_SAVED regions ON-DEVICE
+// (localStorage) via the county-picker map (v14). `regions()` returns the seed
+// regions followed by the saved ones. Home is active by default.
 export { REGIONS };
+
+const SAVED_KEY = 'frame.regions';
+export const MAX_SAVED = 3;
+
+function loadSaved() {
+  try {
+    const a = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+    return Array.isArray(a) ? a.filter((r) => r && r.id && Array.isArray(r.counties)) : [];
+  } catch { return []; }
+}
+function persistSaved(list) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch {}
+}
+
+/** All regions the switcher shows: built-in seeds first, then saved regions. */
+export function regions() { return [...REGIONS, ...loadSaved()]; }
+export function savedRegions() { return loadSaved(); }
+export function isDefaultRegion(id) { return REGIONS.some((r) => r.id === id); }
+export function canAddRegion() { return loadSaved().length < MAX_SAVED; }
+
+function uniqueId(name, saved) {
+  const base = 'r-' + (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'region');
+  const taken = new Set([...REGIONS.map((r) => r.id), ...saved.map((r) => r.id)]);
+  if (!taken.has(base)) return base;
+  let i = 2; while (taken.has(`${base}-${i}`)) i++;
+  return `${base}-${i}`;
+}
+
+/**
+ * Create or update a saved region. Pass an existing saved `id` to update it;
+ * omit it (or pass a built-in id) to mint a new one. County codes are validated
+ * against the vocabulary and de-duplicated. Returns the region id.
+ */
+export function saveRegion({ id, name, counties }) {
+  const saved = loadSaved();
+  name = (name || '').trim() || 'My region';
+  counties = [...new Set(counties)].filter((c) => COUNTIES[c]);
+  if (id && !isDefaultRegion(id)) {
+    const i = saved.findIndex((r) => r.id === id);
+    if (i >= 0) saved[i] = { id, name, counties };
+    else saved.push({ id, name, counties });
+  } else {
+    id = uniqueId(name, saved);
+    saved.push({ id, name, counties });
+  }
+  persistSaved(saved);
+  return id;
+}
+
+/** Delete a saved region. If it was active, fall back to Home. */
+export function deleteRegion(id) {
+  persistSaved(loadSaved().filter((r) => r.id !== id));
+  if (_activeId === id) setActiveRegion('home');
+}
 
 const CURATED_BY_LOCID = Object.fromEntries(CURATED.filter((h) => h.locId).map((h) => [h.locId, h]));
 
@@ -39,14 +97,14 @@ function loadSavedActiveId() {
   try { return localStorage.getItem('frame.region') || 'home'; } catch { return 'home'; }
 }
 
-export function regions() { return REGIONS; }
-export function activeRegion() { return REGIONS.find((r) => r.id === _activeId) || REGIONS[0]; }
 export function regionMeta() { return _meta; }
 export function getHotspots() { return _hotspots; }
 export function speciesByCode(code) { return _codeIndex[code]; }
 
+export function activeRegion() { return regions().find((r) => r.id === _activeId) || REGIONS[0]; }
+
 export function setActiveRegion(id) {
-  if (!REGIONS.some((r) => r.id === id)) return;
+  if (!regions().some((r) => r.id === id)) return;
   _activeId = id;
   try { localStorage.setItem('frame.region', id); } catch {}
 }

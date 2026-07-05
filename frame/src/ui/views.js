@@ -9,7 +9,7 @@ import { hotspotMapLink, BOX } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
-import { getHotspots, regionMeta } from '../model/regions.js';
+import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion } from '../model/regions.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 
 function daysAgo(obsDt) {
@@ -349,6 +349,31 @@ export function renderSettings(root, state, nav) {
 
   const e = ebirdSettings();
   const form = el('div.settings');
+
+  // --- Regions (v14) --------------------------------------------------------
+  const saved = savedRegions();
+  const activeId = activeRegion().id;
+  const regionRows = regions().map((r) => {
+    const isSaved = saved.some((s) => s.id === r.id);
+    const nCounty = r.counties.length;
+    return el('div.region-row', {}, [
+      el('div.region-row-main', {}, [
+        el('strong', {}, r.name),
+        r.id === activeId ? el('span.chip', {}, 'active') : null,
+        el('span.dim', {}, ` ${nCounty} count${nCounty === 1 ? 'y' : 'ies'}`),
+      ]),
+      isSaved
+        ? el('button.btn.ghost.small', { onclick: () => nav.go(`#/regions/${encodeURIComponent(r.id)}`) }, 'Edit')
+        : el('span.dim.small', {}, 'built-in'),
+    ]);
+  });
+  form.append(section('Regions', [
+    el('p.dim', {}, 'Switch regions from the pills at the top. Built-in regions can’t be changed; your own saved regions (up to 3) can be edited or deleted here.'),
+    el('div.region-rows', {}, regionRows),
+    canAddRegion()
+      ? el('button.btn.primary', { onclick: () => nav.go('#/regions') }, '+ New region from map')
+      : el('p.dim', {}, 'You’ve saved the maximum of 3 regions — edit or delete one to add another.'),
+  ]));
 
   form.append(section('The box (§1)', [
     el('p.dim', {}, 'The geographic rectangle the planner covers.'),

@@ -9,6 +9,16 @@
 
 export const CHANGELOG = [
   {
+    version: 'v14',
+    date: '2026-07-05',
+    changes: [
+      'Region switcher: pills at the top (Home, Humboldt, and up to 3 of your own regions) — one tap moves the whole planner to that region.',
+      'County picker map: a pinch-zoomable map of California plus the Tahoe/Reno counties. Tap counties to select them (mirrored by an alphabetical checklist), name the set, and save it as a region. Every county already has bar-chart data, so any selection works instantly.',
+      'Manage your saved regions from Settings → Regions (edit or delete). Your regions live on this device.',
+      'The live “seen recently” overlay now follows the active region instead of always centering on the Sacramento box.',
+    ],
+  },
+  {
     version: 'v13',
     date: '2026-07-05',
     changes: [

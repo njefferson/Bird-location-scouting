@@ -5,6 +5,12 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v14 — 2026-07-05
+- Region switcher: pills at the top (Home, Humboldt, and up to 3 of your own regions) — one tap moves the whole planner to that region.
+- County picker map: a pinch-zoomable map of California plus the Tahoe/Reno counties. Tap counties to select them (mirrored by an alphabetical checklist), name the set, and save it as a region. Every county already has bar-chart data, so any selection works instantly.
+- Manage your saved regions from Settings → Regions (edit or delete). Your regions live on this device.
+- The live "seen recently" overlay now follows the active region instead of always centering on the Sacramento box.
+
 ## v13 — 2026-07-05
 - After an update, the app now shows a one-time "What's new" pop-up — once per release, then never again.
 - New app icon: a golden-hour wetland scene — bird perched on a branch, reeds, a dock and the setting sun, all inside the viewfinder.

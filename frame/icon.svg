@@ -69,10 +69,14 @@
       <path d="M408 146 C 405 162, 394 172, 378 173 C 384 158, 394 149, 408 146 Z"/>
       <path d="M442 144 C 440 160, 429 170, 413 171 C 418 156, 428 147, 442 144 Z"/>
     </g>
-    <!-- bird: rotated onto its feet (slight forward lean), legs vertical -->
-    <rect x="219" y="272" width="8" height="38" fill="#4c3418"/>
-    <rect x="252" y="272" width="8" height="38" fill="#4c3418"/>
-    <g transform="rotate(-9 240 300)">
+    <!-- bird: faces LEFT (beak left, tail right). It used to lean back onto its
+         tail; pivoting the body forward about the head (counter-clockwise) dips
+         the head/chest forward and lifts the tail. Head/eye stays put; the feet
+         move back (toward the tail) to sit under the new centre of mass — legs
+         run from the belly down to the branch. -->
+    <rect x="261.0" y="262.4" width="8" height="48.6" fill="#4c3418"/>
+    <rect x="292.0" y="251.1" width="8" height="59.9" fill="#4c3418"/>
+    <g transform="rotate(-20 228 150)">
       <path d="M195 257
                C 174 218, 177 164, 204 137
                C 216 101, 258 86, 288 104
