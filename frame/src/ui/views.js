@@ -5,11 +5,11 @@
 import { el, clear, pct, sparkline } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { SPECIES } from '../data/species.js';
-import { hotspotMapLink, BOX } from '../data/hotspots.js';
+import { hotspotMapLink } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
-import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion } from '../model/regions.js';
+import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 
 function daysAgo(obsDt) {
@@ -114,7 +114,6 @@ function card(r, state, nav) {
         nBadge(r.n),
         inferredChip(r.inferredCount),
         live,
-        h.outsideBox ? el('span.chip.dim', { title: 'Just outside the strict box — toggle in Settings.' }, 'edge') : null,
       ]),
     ]),
     scoreRing,
@@ -264,7 +263,7 @@ export function renderSpecies(root, state, nav) {
   clear(root);
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Find a species'),
-    el('span.subtitle', {}, 'Where in the box, and which month, to photograph one bird.'),
+    el('span.subtitle', {}, 'Where in your region, and which month, to photograph one bird.'),
   ]));
 
   const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
@@ -326,7 +325,7 @@ function speciesPanel(s, state, nav) {
   panel.append(liveLine);
   setTimeout(() => {
     if (!liveLine.isConnected) return; // superseded by a newer render
-    nearestForSpecies(s.code).then((obs) => {
+    nearestForSpecies(s.code, { ...(regionCenter() || {}) }).then((obs) => {
       if (!obs || !obs.length) { liveLine.textContent = 'No live eBird sighting nearby (or overlay disabled).'; return; }
       const o = obs[0];
       liveLine.classList.remove('dim');
@@ -341,7 +340,9 @@ function speciesPanel(s, state, nav) {
 }
 
 // =============================================================================
-// SETTINGS — editable box + eBird overlay config (§1, §6)
+// SETTINGS — regions (with their data provenance) + the live eBird overlay.
+// The old "box" section is gone: regions define coverage now; the box survives
+// only as the build-script seed and the overlay's fallback center.
 // =============================================================================
 export function renderSettings(root, state, nav) {
   clear(root);
@@ -350,7 +351,7 @@ export function renderSettings(root, state, nav) {
   const e = ebirdSettings();
   const form = el('div.settings');
 
-  // --- Regions (v14) --------------------------------------------------------
+  // --- Regions + their data (v14/v16) ---------------------------------------
   const saved = savedRegions();
   const activeId = activeRegion().id;
   const regionRows = regions().map((r) => {
@@ -367,43 +368,28 @@ export function renderSettings(root, state, nav) {
         : el('span.dim.small', {}, 'built-in'),
     ]);
   });
+  const meta = regionMeta();
   form.append(section('Regions', [
     el('p.dim', {}, 'Switch regions from the pills at the top. Built-in regions can’t be changed; your own saved regions (up to 3) can be edited or deleted here.'),
     el('div.region-rows', {}, regionRows),
     canAddRegion()
       ? el('button.btn.primary', { onclick: () => nav.go('#/regions') }, '+ New region from map')
       : el('p.dim', {}, 'You’ve saved the maximum of 3 regions — edit or delete one to add another.'),
+    el('p.dim', {}, meta.loaded
+      ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
+      : 'No region data loaded — running on the inference model.'),
   ]));
 
-  form.append(section('The box (§1)', [
-    el('p.dim', {}, 'The geographic rectangle the planner covers.'),
-    grid([
-      field('SW lat', BOX.swLat), field('SW lng', BOX.swLng),
-      field('NE lat', BOX.neLat), field('NE lng', BOX.neLng),
-    ]),
-    el('p.dim', {}, 'Editing the box live is a v1 item; it currently re-seeds the hotspot pull in the build script.'),
-  ]));
-
-  form.append(section('Live eBird overlay (§2C)', [
+  form.append(section('Live eBird overlay', [
     el('label.row', {}, [el('span', {}, 'Enabled'), checkbox(e.enabled, (v) => saveEbirdSettings({ enabled: v }))]),
     el('label.row', {}, [el('span', {}, 'Proxy base URL'),
       el('input', { value: e.proxyBase, placeholder: '/api/ebird', onchange: (ev) => saveEbirdSettings({ proxyBase: ev.target.value }) })]),
-    el('p.dim', {}, 'The overlay calls a same-origin proxy that injects your eBird key. Never ship the key in the client bundle (§6). A sample Cloudflare Pages Function is in scripts/ebird-proxy/.'),
+    el('p.dim', {}, 'Powers the “seen recently” badges and the live line on species pages. Calls a same-origin proxy that injects the eBird key server-side; everything else works offline without it.'),
     el('button.btn', { onclick: async (ev) => { ev.target.textContent = 'Probing…'; const ok = await probe(); ev.target.textContent = ok ? '✓ Overlay reachable' : '✗ Not reachable (app still works offline)'; } }, 'Test overlay'),
-  ]));
-
-  const meta = regionMeta();
-  form.append(section('Static reference data (§2A)', [
-    el('p', {}, meta.loaded
-      ? `Active region: ${meta.region} — ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'}. ${meta.taxonomy} species have resolved eBird codes.`
-      : 'No region data loaded — running on the inference model.'),
-    el('p.dim', {}, 'Refresh data with the “Refresh eBird data” GitHub Action (see HANDOFF.md) — it rebuilds the per-county files and resolves species codes from the live eBird taxonomy.'),
   ]));
 
   root.append(form);
 }
 
 function section(title, kids) { return el('section.card.setting', {}, [el('h2', {}, title), ...kids]); }
-function grid(kids) { return el('div.kv-grid', {}, kids); }
-function field(label, value) { return el('label.kv', {}, [el('span', {}, label), el('input', { value, disabled: true })]); }
 function checkbox(checked, onchange) { const c = el('input', { type: 'checkbox' }); c.checked = checked; c.addEventListener('change', () => onchange(c.checked)); return c; }

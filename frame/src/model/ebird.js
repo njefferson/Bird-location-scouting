@@ -72,10 +72,11 @@ export async function recentInBox({ back = 14, lat, lng, dist = 30 } = {}) {
   return bySpecies;
 }
 
-/** Nearest recent place to photograph species X (§2C). */
-export async function nearestForSpecies(speciesCode, { back = 30 } = {}) {
-  const { lat, lng } = boxCenter();
-  const obs = await call(`/v2/data/nearest/geo/recent/${speciesCode}`, { lat: lat.toFixed(3), lng: lng.toFixed(3), back });
+/** Nearest recent place to photograph species X (§2C). Pass the active
+ *  region's center via lat/lng; defaults to the home box otherwise. */
+export async function nearestForSpecies(speciesCode, { back = 30, lat, lng } = {}) {
+  if (lat == null || lng == null) ({ lat, lng } = boxCenter());
+  const obs = await call(`/v2/data/nearest/geo/recent/${speciesCode}`, { lat: (+lat).toFixed(3), lng: (+lng).toFixed(3), back });
   return Array.isArray(obs) ? obs : null;
 }
 

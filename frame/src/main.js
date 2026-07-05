@@ -4,7 +4,7 @@
 import { el } from './ui/dom.js';
 import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSettings } from './ui/views.js';
 import { renderRegionPicker } from './ui/regionpicker.js';
-import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, getHotspots } from './model/regions.js';
+import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { mountAbout } from './ui/about.js';
 import { maybeShowWhatsNew } from './ui/whatsnew.js';
@@ -67,17 +67,6 @@ async function switchRegion(id) {
   await loadActiveRegion();
   render();
   refreshOverlay();
-}
-
-// Center the live overlay on the active region (avg of its loaded hotspots) so
-// "seen recently" badges aren't stuck on the Sacramento box for other regions.
-function regionCenter() {
-  const hs = getHotspots();
-  if (!hs.length) return null;
-  return {
-    lat: hs.reduce((a, h) => a + h.lat, 0) / hs.length,
-    lng: hs.reduce((a, h) => a + h.lng, 0) / hs.length,
-  };
 }
 
 async function refreshOverlay() {

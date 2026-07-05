@@ -9,6 +9,15 @@
 
 export const CHANGELOG = [
   {
+    version: 'v16',
+    date: '2026-07-05',
+    changes: [
+      'Settings cleaned up: the leftover “box” coordinates section is gone (regions cover that now), and the data-provenance details moved into the Regions section.',
+      'The species pages’ live “last reported at…” line now searches around your active region, not always the Sacramento area.',
+      'Removed the never-used “edge” chip and freshened region-era wording throughout (search subtitle, badge tooltips, the ⓘ panel).',
+    ],
+  },
+  {
     version: 'v15',
     date: '2026-07-05',
     changes: [

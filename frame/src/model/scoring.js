@@ -144,7 +144,7 @@ function medianRaw(rows) {
 }
 
 // --- Species-centric query (§5 "search a species") -------------------------
-/** Best places & months to photograph one species across the box. */
+/** Best places & months to photograph one species across the region. */
 export function bestForSpecies(species, hotspots) {
   const perHotspot = hotspots.map((h) => {
     const months = Array.from({ length: 12 }, (_, m) => {

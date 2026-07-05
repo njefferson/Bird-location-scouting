@@ -101,6 +101,20 @@ export function regionMeta() { return _meta; }
 export function getHotspots() { return _hotspots; }
 export function speciesByCode(code) { return _codeIndex[code]; }
 
+/**
+ * Geographic center of the active region (average of its loaded hotspots), or
+ * null before data loads. Used to aim the live eBird overlay — both the
+ * "seen recently" badges and the species pages' nearest-sighting line — at
+ * wherever the planner currently is, instead of a fixed home point.
+ */
+export function regionCenter() {
+  if (!_hotspots.length) return null;
+  return {
+    lat: _hotspots.reduce((a, h) => a + h.lat, 0) / _hotspots.length,
+    lng: _hotspots.reduce((a, h) => a + h.lng, 0) / _hotspots.length,
+  };
+}
+
 export function activeRegion() { return regions().find((r) => r.id === _activeId) || REGIONS[0]; }
 
 export function setActiveRegion(id) {
@@ -161,7 +175,6 @@ export async function loadActiveRegion() {
         county: code,
         habitats: curated?.habitats,          // undefined for uncurated hotspots
         access: curated?.access || null,
-        outsideBox: curated?.outsideBox || false,
         freqByMonth: h.freqByMonth || null,
         checklistsByMonth: h.checklistsByMonth || null,
       });
