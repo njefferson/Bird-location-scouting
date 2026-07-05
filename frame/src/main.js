@@ -1,11 +1,13 @@
 // =============================================================================
 // Frame — app bootstrap, state, hash routing.
 // =============================================================================
-import { el } from './ui/dom.js';
+import { el, toast } from './ui/dom.js';
 import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSettings } from './ui/views.js';
 import { renderRegionPicker } from './ui/regionpicker.js';
-import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter } from './model/regions.js';
+import { renderMapView } from './ui/mapview.js';
+import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter, regionOverlayDist } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
+import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
 import { mountAbout } from './ui/about.js';
 import { maybeShowWhatsNew } from './ui/whatsnew.js';
 
@@ -28,6 +30,7 @@ const nav = {
 const TABS = [
   { hash: '#/', label: 'Ranking', icon: '◆' },
   { hash: '#/matrix', label: 'Planner', icon: '▦' },
+  { hash: '#/map', label: 'Map', icon: '🗺' },
   { hash: '#/species', label: 'Species', icon: '🔎' },
   { hash: '#/settings', label: 'Settings', icon: '⚙' },
 ];
@@ -70,10 +73,26 @@ async function switchRegion(id) {
 }
 
 async function refreshOverlay() {
-  const recent = await recentInBox({ back: 14, ...(regionCenter() || {}) });
+  // Radius sized to the region's spread (25–50 km) so sprawling multi-county
+  // regions aren't under-served by one small circle.
+  const recent = await recentInBox({ back: 14, dist: regionOverlayDist(), ...(regionCenter() || {}) });
   // Don't re-render over the county picker mid-selection — the overlay only
   // affects the ranking/hotspot views anyway.
-  if (recent) { state.recent = recent; if (!location.hash.startsWith('#/regions')) render(); }
+  if (recent) { state.recent = recent; if (!location.hash.startsWith('#/regions') && !location.hash.startsWith('#/import')) render(); }
+}
+
+// Location auto-switch (opt-in, Settings): find which region's counties the
+// device is standing in; if it isn't the active one, switch and say so.
+function maybeAutoSwitch() {
+  if (!autoSwitchEnabled() || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const active = activeRegion();
+    if (active.counties.some((c) => pointInCounty(lat, lng, c))) return; // already right
+    const here = regions().find((r) => r.counties.some((c) => pointInCounty(lat, lng, c)));
+    if (!here) return; // outside every region → leave it alone
+    switchRegion(here.id).then(() => toast(`📍 You’re in ${here.name} — switched.`));
+  }, () => {}, { maximumAge: 600000, timeout: 8000 });
 }
 
 function render() {
@@ -84,8 +103,17 @@ function render() {
     const id = h.startsWith('#/regions/') ? decodeURIComponent(h.slice('#/regions/'.length)) : null;
     return renderRegionPicker(app, state, nav, id);
   }
+  if (h.startsWith('#/import')) {
+    // Region share link: #/import?n=<name>&c=<code,code,…> → picker, prefilled.
+    const q = new URLSearchParams(h.split('?')[1] || '');
+    return renderRegionPicker(app, state, nav, null, {
+      name: q.get('n') || '',
+      counties: (q.get('c') || '').split(',').filter(Boolean),
+    });
+  }
   if (h.startsWith('#/hotspot/')) renderHotspotDetail(app, state, nav, decodeURIComponent(h.slice('#/hotspot/'.length)));
   else if (h === '#/matrix') renderMatrix(app, state, nav);
+  else if (h === '#/map') renderMapView(app, state, nav);
   else if (h === '#/species') renderSpecies(app, state, nav);
   else if (h === '#/settings') renderSettings(app, state, nav);
   else renderCards(app, state, nav);
@@ -103,6 +131,7 @@ window.addEventListener('hashchange', render);
   render();
   maybeShowWhatsNew();           // one-time release notes after an update
   refreshOverlay();              // live overlay (graceful), centered on the active region
+  maybeAutoSwitch();             // opt-in: hop to the region you're standing in
 })();
 
 // Register the service worker for offline / installable PWA.

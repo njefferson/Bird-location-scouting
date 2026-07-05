@@ -115,6 +115,26 @@ export function regionCenter() {
   };
 }
 
+/**
+ * Live-overlay search radius (km) sized to the active region: half the
+ * hotspot bounding-box diagonal plus a 10 km cushion, clamped to 25–50 km
+ * (50 is the eBird API's maximum). A compact region stays tight; a sprawling
+ * multi-county region gets as much reach as the API allows.
+ */
+export function regionOverlayDist() {
+  if (_hotspots.length < 2) return 30;
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  for (const h of _hotspots) {
+    if (h.lat < minLat) minLat = h.lat; if (h.lat > maxLat) maxLat = h.lat;
+    if (h.lng < minLng) minLng = h.lng; if (h.lng > maxLng) maxLng = h.lng;
+  }
+  const midLat = ((minLat + maxLat) / 2) * Math.PI / 180;
+  const dLatKm = (maxLat - minLat) * 111;
+  const dLngKm = (maxLng - minLng) * 111 * Math.cos(midLat);
+  const diag = Math.hypot(dLatKm, dLngKm);
+  return Math.round(Math.min(50, Math.max(25, diag / 2 + 10)));
+}
+
 export function activeRegion() { return regions().find((r) => r.id === _activeId) || REGIONS[0]; }
 
 export function setActiveRegion(id) {

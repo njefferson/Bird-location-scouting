@@ -37,6 +37,15 @@ export function clear(node) { while (node.firstChild) node.removeChild(node.firs
 
 export function pct(x) { return `${Math.round(x * 100)}%`; }
 
+/** Brief non-blocking toast above the tab bar (auto-dismisses). */
+export function toast(msg, ms = 3500) {
+  document.querySelector('.toast')?.remove();
+  const t = el('div.toast', {}, msg);
+  document.body.append(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, ms);
+}
+
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */
 export function sparkline(series, { w = 96, h = 22, inferred = false, months = true } = {}) {
   const max = Math.max(0.0001, ...series.map((s) => (typeof s === 'number' ? s : s.value)));

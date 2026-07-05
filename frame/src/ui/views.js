@@ -10,6 +10,7 @@ import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
+import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 
 function daysAgo(obsDt) {
@@ -39,7 +40,7 @@ function ebirdLink(s) {
 }
 
 // --- Shared controls --------------------------------------------------------
-function monthSelector(state, onChange) {
+export function monthSelector(state, onChange) {
   const sel = el('div.months');
   MONTHS.forEach((m, i) => {
     sel.append(el('button.month', {
@@ -363,9 +364,12 @@ export function renderSettings(root, state, nav) {
         r.id === activeId ? el('span.chip', {}, 'active') : null,
         el('span.dim', {}, ` ${nCounty} count${nCounty === 1 ? 'y' : 'ies'}`),
       ]),
-      isSaved
-        ? el('button.btn.ghost.small', { onclick: () => nav.go(`#/regions/${encodeURIComponent(r.id)}`) }, 'Edit')
-        : el('span.dim.small', {}, 'built-in'),
+      el('div.region-row-actions', {}, [
+        el('button.btn.ghost.small', { onclick: (ev) => shareRegion(r, ev.target) }, 'Share'),
+        isSaved
+          ? el('button.btn.ghost.small', { onclick: () => nav.go(`#/regions/${encodeURIComponent(r.id)}`) }, 'Edit')
+          : el('span.dim.small', {}, 'built-in'),
+      ]),
     ]);
   });
   const meta = regionMeta();
@@ -375,6 +379,11 @@ export function renderSettings(root, state, nav) {
     canAddRegion()
       ? el('button.btn.primary', { onclick: () => nav.go('#/regions') }, '+ New region from map')
       : el('p.dim', {}, 'You’ve saved the maximum of 3 regions — edit or delete one to add another.'),
+    el('label.row', {}, [
+      el('span', {}, 'Auto-switch region by location'),
+      checkbox(autoSwitchEnabled(), (v) => setAutoSwitch(v)),
+    ]),
+    el('p.dim', {}, 'When on, the app checks which of your regions you’re standing in each time it opens and switches to it (asks the browser for location permission once). Share sends a region as a link — opening it on another device imports the counties.'),
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
       : 'No region data loaded — running on the inference model.'),
@@ -393,3 +402,16 @@ export function renderSettings(root, state, nav) {
 
 function section(title, kids) { return el('section.card.setting', {}, [el('h2', {}, title), ...kids]); }
 function checkbox(checked, onchange) { const c = el('input', { type: 'checkbox' }); c.checked = checked; c.addEventListener('change', () => onchange(c.checked)); return c; }
+
+// Share a region as an import link: the native share sheet where available
+// (iOS/iPadOS), else copy to the clipboard with inline button feedback.
+function shareRegion(r, btn) {
+  const url = `${location.origin}${location.pathname}#/import?n=${encodeURIComponent(r.name)}&c=${r.counties.join(',')}`;
+  if (navigator.share) {
+    navigator.share({ title: `Frame region: ${r.name}`, url }).catch(() => {});
+    return;
+  }
+  navigator.clipboard?.writeText(url).then(
+    () => { const t = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = t; }, 1500); },
+    () => { btn.textContent = 'Copy failed'; });
+}

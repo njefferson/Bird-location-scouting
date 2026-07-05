@@ -9,6 +9,17 @@
 
 export const CHANGELOG = [
   {
+    version: 'v17',
+    date: '2026-07-05',
+    changes: [
+      'New Map tab: every hotspot in the active region pinned on the county map, opening zoomed to your region. Pin brightness follows this month’s photographer score — tap a pin to open that hotspot.',
+      'Location auto-switch (off by default, in Settings): when enabled, the app notices which of your regions you’re standing in on open and switches to it.',
+      'Share any region as a link (Settings → Share): opening it on another device drops its counties into the picker, ready to save. Handy for moving regions between iPad and phone.',
+      'The live-sightings search radius now scales with the size of the active region (25–50 km) instead of a fixed 30 km circle.',
+      'The county picker now says how deep each county’s hotspot data goes.',
+    ],
+  },
+  {
     version: 'v16',
     date: '2026-07-05',
     changes: [
