@@ -3,6 +3,11 @@
   --bg: #0c1a15; --bg2: #10231c; --card: #152c24; --card2: #1b362c;
   --ink: #e8f3ee; --dim: #8fb3a6; --line: #244a3c;
   --accent: #4dd0a0; --accent2: #2e7d32; --warn: #b8860b;
+  /* Distant (out-of-region) counties on the hotspot map: a lifted floor so
+     they read as present-but-quiet instead of dissolving into the --bg2 map
+     background. Kept below the active region's --card2 so the region still
+     dominates — shadows alive, not crushed. */
+  --far: color-mix(in srgb, var(--card2) 55%, var(--bg2));
   --r: 14px; --tab-h: 60px;
 }
 * { box-sizing: border-box; }
@@ -15,6 +20,12 @@ h2 { font-size: 16px; margin: 0 0 6px; }
 a { color: var(--accent); }
 .dim { color: var(--dim); }
 .empty { color: var(--dim); text-align: center; padding: 40px 0; }
+/* dead-end states — never a blank screen: what happened + a way forward */
+.dead-end { background: var(--card); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 20px 16px; margin: 10px 0; text-align: center; }
+.dead-end h2 { margin-bottom: 8px; }
+.dead-end p { margin: 0 auto 14px; max-width: 42ch; }
+.dead-end .btn { display: inline-block; }
 
 /* header / controls */
 .bar { position: sticky; top: 0; z-index: 5; background: linear-gradient(var(--bg) 70%, transparent);
@@ -156,8 +167,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 .county-map .county.sel { fill: var(--accent); stroke: var(--accent2); }
 /* hotspot map view */
 .map-tall .county-map { max-height: 62vh; }
-.county-map .county.far { fill: var(--bg2); stroke: var(--line); cursor: default; }
-.county-map .county.far:hover { fill: var(--bg2); }
+.county-map .county.far { fill: var(--far); stroke: var(--line); cursor: default; }
+.county-map .county.far:hover { fill: var(--far); }
 .county-map .county.region { fill: var(--card2); stroke: var(--accent2); cursor: default; }
 .county-map .county.region:hover { fill: var(--card2); }
 .hotspot-map .pin { --s: 0; cursor: pointer; stroke: #06160f; stroke-width: .5;
@@ -170,6 +181,13 @@ table.species-table tr[onclick] { cursor: pointer; }
   background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--ink);
   font-size: 18px; line-height: 1; cursor: pointer; display: grid; place-content: center; }
 .map-zbtn:active { transform: translateY(1px); }
+
+/* standing mode indicator over the map bottom — announces the picker mode,
+   never steals a county tap (pointer-events: none) */
+.pick-mode { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+  max-width: 90%; padding: 5px 12px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+  background: color-mix(in srgb, var(--card2) 88%, transparent); color: var(--ink); border: 1px solid var(--accent2);
+  font-size: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .4); backdrop-filter: blur(6px); }
 
 .pick-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
 .pick-count { color: var(--dim); font-size: 13px; }
@@ -202,6 +220,11 @@ table.species-table tr[onclick] { cursor: pointer; }
   font-size: 13px; box-shadow: 0 8px 26px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s, transform .25s;
   pointer-events: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+/* actionable toast (Undo etc.) — must catch taps, so it opts back in */
+.toast.has-action { display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; pointer-events: auto; }
+.toast-action { flex: 0 0 auto; background: var(--accent); color: #06160f; border: 0; border-radius: 999px;
+  padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.toast-action:active { transform: translateY(1px); }
 
 /* tab bar */
 .tabs { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--tab-h) + env(safe-area-inset-bottom));

@@ -65,6 +65,23 @@ function filterBar(state, onChange) {
   return bar;
 }
 
+// A region with no loaded hotspots is a dead end unless we point somewhere.
+// Built-in regions can't be edited, so we send those to the picker; a saved
+// region offers to edit its counties. Either way, an honest label + a button.
+export function regionDeadEnd(nav, title) {
+  const region = activeRegion();
+  const editable = savedRegions().some((r) => r.id === region.id);
+  return el('div.dead-end', {}, [
+    el('h2', {}, title),
+    el('p.dim', {}, editable
+      ? `“${region.name}” has no built hotspot data. Edit its counties, or switch regions with the pills above.`
+      : `“${region.name}” has no hotspots loaded. Switch regions with the pills above, or build your own from the county map.`),
+    editable
+      ? el('button.btn.primary', { onclick: () => nav.go(`#/regions/${encodeURIComponent(region.id)}`) }, 'Edit counties')
+      : el('button.btn.primary', { onclick: () => nav.go('#/regions') }, 'Build a region'),
+  ]);
+}
+
 // =============================================================================
 // CARDS (default view)
 // =============================================================================
@@ -78,6 +95,13 @@ export function renderCards(root, state, nav) {
     monthSelector(state, (i) => nav.setMonth(i)),
     filterBar(state, (k) => nav.setFilter(k)),
   ]));
+
+  // Dead-end guard: a region with no built hotspot data shouldn't leave the
+  // user staring at a blank list — say what happened and offer a way forward.
+  if (!getHotspots().length) {
+    root.append(regionDeadEnd(nav, 'No hotspot data for this region'));
+    return;
+  }
 
   const ranked = rankHotspots(getHotspots(), state.monthIdx);
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);

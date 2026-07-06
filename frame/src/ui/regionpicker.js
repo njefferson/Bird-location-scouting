@@ -7,7 +7,7 @@
 // switcher pills point at. Every county already has bar-chart data built, so any
 // selection works instantly (model/regions.js loads it on switch).
 // =============================================================================
-import { el, clear } from './dom.js';
+import { el, clear, toast } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES, DEFAULT_DEPTH } from '../data/counties.js';
 import { saveRegion, deleteRegion, savedRegions, loadActiveRegion, setActiveRegion } from '../model/regions.js';
@@ -78,6 +78,15 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
     ]),
   ]));
 
+  // Dead-end guard: a share link that carried no usable counties would drop the
+  // user on a blank picker. Say so, and the map below is the way forward.
+  if (prefill && selected.size === 0) {
+    root.append(el('div.dead-end', {}, [
+      el('h2', {}, 'This share link had no counties'),
+      el('p.dim', {}, 'The link didn’t include any counties we recognise — it may have been truncated. Build the region from the map below, or go back.'),
+    ]));
+  }
+
   const nameInput = el('input.region-name', {
     type: 'text', placeholder: 'Region name (e.g. North Coast)', value: editing?.name || prefill?.name || '',
     maxlength: 40,
@@ -86,9 +95,17 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   const count = el('span.pick-count');
   const saveBtn = el('button.btn.primary', { onclick: onSave }, editing ? 'Save changes' : 'Save region');
 
+  // Standing mode indicator, floated over the bottom of the map (clear of the
+  // reach zone, pointer-transparent). It announces what tapping does and points
+  // at the exit — the picker is a direct-manipulation mode, so it says so.
+  const modeBanner = el('div.pick-mode');
+
   function updateCount() {
     const n = selected.size;
     count.textContent = n ? `${n} count${n === 1 ? 'y' : 'ies'} selected` : 'No counties selected';
+    modeBanner.textContent = n
+      ? `${n} selected · name & save below`
+      : 'Tap counties to build your region';
     saveBtn.disabled = n === 0;
   }
   function setSel(code, on) {
@@ -99,12 +116,23 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   }
 
   const map = buildMap(selected, (code) => setSel(code, !selected.has(code)));
+  map.node.append(modeBanner);    // floats over the map's bottom edge
   root.append(map.node);
 
-  // Toolbar: count + clear.
+  // Toolbar: count + clear. Clear is undoable — it stashes the wiped set and
+  // offers to put it right back (no destructive action without an unwind path).
+  function onClear() {
+    const wiped = [...selected];
+    if (!wiped.length) return;
+    for (const c of wiped) setSel(c, false);
+    const n = wiped.length;
+    toast(`Cleared ${n} count${n === 1 ? 'y' : 'ies'}.`, {
+      action: { label: 'Undo', onClick: () => { for (const c of wiped) setSel(c, true); } },
+    });
+  }
   root.append(el('div.pick-toolbar', {}, [
     count,
-    el('button.btn.ghost.small', { onclick: () => { for (const c of [...selected]) setSel(c, false); } }, 'Clear'),
+    el('button.btn.ghost.small', { onclick: onClear }, 'Clear'),
   ]));
 
   // Alphabetical, mirrored checklist.
@@ -144,8 +172,18 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   }
   async function onDelete() {
     if (!editing) return;
-    deleteRegion(editing.id);
+    const { removed, wasActive } = deleteRegion(editing.id);
     await loadActiveRegion();       // active may have fallen back to Home
     nav.go('#/settings');
+    if (removed) {
+      toast(`Deleted “${removed.name}”.`, {
+        action: { label: 'Undo', onClick: async () => {
+          saveRegion({ id: removed.id, name: removed.name, counties: removed.counties });
+          if (wasActive) setActiveRegion(removed.id);
+          await loadActiveRegion();
+          nav.go('#/settings');     // re-render so the restored region row reappears
+        } },
+      });
+    }
   }
 }

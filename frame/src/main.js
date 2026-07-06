@@ -91,7 +91,10 @@ function maybeAutoSwitch() {
     if (active.counties.some((c) => pointInCounty(lat, lng, c))) return; // already right
     const here = regions().find((r) => r.counties.some((c) => pointInCounty(lat, lng, c)));
     if (!here) return; // outside every region → leave it alone
-    switchRegion(here.id).then(() => toast(`📍 You’re in ${here.name} — switched.`));
+    const from = active.id; // remember where we were, so the switch has an exit
+    switchRegion(here.id).then(() => toast(`📍 You’re in ${here.name} — switched.`, {
+      action: { label: 'Undo', onClick: () => switchRegion(from) },
+    }));
   }, () => {}, { maximumAge: 600000, timeout: 8000 });
 }
 
