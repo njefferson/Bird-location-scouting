@@ -261,17 +261,25 @@ table.species-table tr[onclick] { cursor: pointer; }
   padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .toast-action:active { transform: translateY(1px); }
 
-/* tab bar */
+/* tab bar — the bar itself bleeds edge to edge, but its five buttons line up
+   with the 760px content column so wide screens (iPad landscape) read as one
+   aligned column instead of content-in-the-middle, tabs-at-the-corners. */
 .tabs { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--tab-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom); background: var(--bg2); border-top: 1px solid var(--line);
+  padding-left: max(0px, (100% - 760px) / 2); padding-right: max(0px, (100% - 760px) / 2);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
 .tab { background: none; border: 0; color: var(--dim); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }
 .tab.active { color: var(--accent); }
 .tab-icon { display: flex; align-items: center; justify-content: center; line-height: 0; }
 
+/* Floating corner buttons hug the content column on wide screens (the .view
+   is max-width 760px with 12px side padding), and fall back to the screen
+   corner on narrow ones — same boundary as everything else. */
+:root { --col-edge: max(10px, (100% - 760px) / 2 + 12px); }
+
 /* about — unobtrusive floating info button + modal */
-.about-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 10px; z-index: 8;
+.about-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: var(--col-edge); z-index: 8;
   width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
   background: var(--card2); color: var(--dim); font-size: 15px; line-height: 1; cursor: pointer;
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
@@ -280,7 +288,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Dawn Mode toggle — floating moon/sun, sits just left of the About button so
    the theme is switchable from any screen. */
-.theme-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 48px; z-index: 8;
+.theme-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: calc(var(--col-edge) + 38px); z-index: 8;
   width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
   background: var(--card2); color: var(--dim); cursor: pointer;
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
