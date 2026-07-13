@@ -28,6 +28,19 @@ straight to production before this existed — don't repeat that.)
   `next-version` — deploy.yml publishes a Cloudflare PREVIEW at
   https://next-version.bird-location-scouting.pages.dev, production untouched.
   Hand over that URL, wait for the go, then PR + merge to main.
+- LEAVE A DURABLE "WAITING ON NOAH" SIGNAL (learned 2026-07-13, the hard way):
+  a candidate on `next-version` that the acceptance pass never reaches is
+  invisible once the session ends. On 2026-07-06 a finished v18 sat there for a
+  week; a later session, seeing only main (still v17), rebuilt a parallel v18
+  and nearly clobbered it. So the moment you push to `next-version`, ALSO open a
+  DRAFT PR from that branch to main titled "vN — awaiting on-device acceptance",
+  with the VERIFIED / NEEDS-HIS-HANDS notes in the body. That draft PR is the
+  handoff that survives the session. Merge it (undraft) only after the go.
+- START EVERY UPDATE BY CHECKING FOR A STAGED CANDIDATE FIRST: `git fetch`, then
+  compare `next-version` to `main` and list open PRs. If `next-version` is ahead
+  of `main`, or an "awaiting on-device acceptance" PR exists, that candidate is
+  already waiting on Noah — surface it and continue/hand it off; do NOT start a
+  fresh parallel version or reuse a version number it already claims.
 - Docs-only changes (this file, HANDOFF.md) may merge without the gate.
 - Always state what was VERIFIED (headless Chromium, request inspection)
   versus what still NEEDS HIS HANDS: real pinch on iPad Safari, share sheet,
@@ -56,12 +69,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
-- Auto-switch toast needs an Undo button (mode change with no exit today).
-- Undo/confirm for region delete and the picker's Clear (no undo anywhere).
-- Map view: `.far` counties nearly crushed into the background — lift them.
-- Dead ends: empty region and empty import-link offer no way forward.
 - Month scrubbing by dragging across sparklines/matrix (direct manipulation).
 - Review the IRstudio repo for the user's UI patterns (see session-scope note).
+## Shipped from this backlog (don't rebuild):
+- v18 (2026-07-13): auto-switch Undo; Undo for region delete and picker Clear;
+  `.far` counties lifted off the map background; dead-end rescue for empty
+  regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
 - Session repo access is FIXED at session creation. add_repo/list_repos hang
@@ -71,6 +84,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   in the source picker WHEN CREATING the session. Verified 2026-07-05.
 - App: `frame/` PWA, no build step; deploys to bird-location-scouting.pages.dev
   via `.github/workflows/deploy.yml` on push to main (previews: next-version).
+- v18 shipped 2026-07-13: reversibility pass — the toast() helper (ui/dom.js)
+  gained an optional `action` button (Undo); wired into auto-switch (main.js),
+  region delete (model/regions.js `deleteRegion` returns `{removed, wasActive}`)
+  and picker Clear (ui/regionpicker.js). Plus `.far` map counties lifted via a
+  new `--far` token, dead-end states (ui/views.js `regionDeadEnd`), and the
+  picker's standing `.pick-mode` indicator.
 - v17 shipped 2026-07-05: region switcher pills, county-picker map, hotspot
   Map tab, location auto-switch (opt-in), region share links (#/import),
   overlay radius 25–50 km by region spread. Saved regions live in
