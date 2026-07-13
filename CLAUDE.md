@@ -85,6 +85,20 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   in the source picker WHEN CREATING the session. Verified 2026-07-05.
 - App: `frame/` PWA, no build step; deploys to bird-location-scouting.pages.dev
   via `.github/workflows/deploy.yml` on push to main (previews: staging).
+- v19 shipped 2026-07-13: "Field Notebook" reskin. All colors are :root tokens
+  in styles.css with a `[data-theme="dark"]` Dawn Mode override — restyle by
+  swapping tokens, never hex-in-place. Theme state lives in ui/theme.js
+  (floating moon/sun button + Settings checkbox + localStorage `frame.theme`
+  + theme-color meta, all synced; a <head> boot script in index.html applies
+  the stored theme pre-paint). IBM Plex Sans/Serif/Mono load from Google Fonts
+  in index.html; mono is used for EVERY number. Tab icons are inline SVGs in
+  main.js TABS. Trust badges color via `.badge.trust-<key>` theme tokens (the
+  hexes in scoring.js TRUST are reference only). On wide screens everything
+  aligns to the 760px column: the tab bar is a floating dock (same width/
+  radius/border as cards) and the corner buttons hug the column edge.
+  Known pre-existing wart (NOT from v19): the sticky month/filter header fades
+  to transparent at its bottom, so scrolled card titles can collide with the
+  filter-hint text — a fix was offered but not yet requested.
 - v18 shipped 2026-07-13: reversibility pass — the toast() helper (ui/dom.js)
   gained an optional `action` button (Undo); wired into auto-switch (main.js),
   region delete (model/regions.js `deleteRegion` returns `{removed, wasActive}`)
