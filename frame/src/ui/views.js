@@ -12,6 +12,7 @@ import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.j
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
+import { currentTheme, setTheme } from './theme.js';
 
 function daysAgo(obsDt) {
   if (!obsDt) return null;
@@ -411,6 +412,16 @@ export function renderSettings(root, state, nav) {
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
       : 'No region data loaded — running on the inference model.'),
+  ]));
+
+  const themeToggle = checkbox(currentTheme() === 'dark', (v) => setTheme(v));
+  themeToggle.classList.add('theme-checkbox'); // kept in step with the floating moon/sun button
+  form.append(section('Appearance', [
+    el('label.row', {}, [
+      el('span', {}, 'Dawn Mode (dark)'),
+      themeToggle,
+    ]),
+    el('p.dim', {}, 'A warm, low-light palette for pre-dawn scouting and dark rooms. Also toggled anywhere from the moon/sun button, top-right. Remembered on this device.'),
   ]));
 
   form.append(section('Live eBird overlay', [

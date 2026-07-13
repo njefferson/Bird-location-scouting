@@ -2,9 +2,10 @@
 import { el } from './dom.js';
 
 export function trustBadge(trust) {
-  return el('span.badge', {
+  // Colour comes from a theme token (.badge.trust-<key> in styles.css) so Dawn
+  // Mode reskins it; scoring.js still carries the light hex for reference.
+  return el(`span.badge.trust-${trust.key}`, {
     title: trust.blurb,
-    style: `--c:${trust.color}`,
   }, trust.label);
 }
 

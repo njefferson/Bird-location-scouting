@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#10231c" />
+  <meta name="theme-color" content="#ebe1cf" />
+  <!-- Apply the stored theme before first paint so Dawn Mode never flashes. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('frame.theme');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#141210' : '#ebe1cf');
+      } catch (e) {}
+    })();
+  </script>
   <title>Frame — bird photography hotspot planner</title>
   <meta name="description" content="Where to go, in which month, to photograph which birds — ranked by photographic opportunity across your California &amp; Nevada regions." />
   <link rel="manifest" href="./manifest.webmanifest" />
@@ -11,6 +22,9 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./src/styles.css" />
 </head>
 <body>

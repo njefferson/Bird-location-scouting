@@ -5,6 +5,12 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v19 — 2026-07-13
+- A fresh "Field Notebook" look: warm, paper-toned colours with the IBM Plex type family — a serif for names and titles, and a monospace for every number so scores and frequencies line up cleanly.
+- New Dawn Mode: a warm dark theme for pre-dawn scouting and dark rooms. Tap the moon/sun button in the top-right corner from any screen to switch (also under Settings → Appearance); your choice is remembered on this device and applied instantly, with no flash on open.
+- Crisper tab icons — hand-drawn line symbols for Ranking, Planner, Map, Species and Settings in place of the old glyphs.
+- Same rankings, same data, same everything else — this is a visual refresh only.
+
 ## v18 — 2026-07-06
 - Auto-switch now offers an Undo: when the app hops to the region you're standing in, the notice has an Undo button that puts you right back where you were.
 - Undo for the county picker's Clear — wipe your selection by accident and a tap brings every county back.

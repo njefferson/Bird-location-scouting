@@ -17,11 +17,11 @@ import { frequency, seasonality, habitatAffinity } from './inference.js';
 // Driven by checklist count N for the month. Without real N (build script not
 // run), a hotspot is "Inferred": the whole row came from the model.
 export const TRUST = {
-  documented:  { key: 'documented',  label: 'Documented',  color: '#2e7d32', blurb: 'Heavy eBird coverage — frequencies are trustworthy.' },
-  opportunity: { key: 'opportunity', label: 'Opportunity', color: '#1565c0', blurb: 'Thin coverage, but a similar nearby hotspot anchors the estimate.' },
-  exploratory: { key: 'exploratory', label: 'Exploratory', color: '#8e24aa', blurb: 'Thin coverage and no good neighbour — genuinely unknown.' },
-  thin:        { key: 'thin',        label: 'Thin',        color: '#9e9e9e', blurb: 'Well covered, but little photographable diversity — "people looked, it’s barren."' },
-  inferred:    { key: 'inferred',    label: 'Inferred',    color: '#b8860b', blurb: 'No eBird histogram loaded yet — this row is the habitat/season model. Run the build script for real data.' },
+  documented:  { key: 'documented',  label: 'Documented',  color: '#3f7d54', blurb: 'Heavy eBird coverage — frequencies are trustworthy.' },
+  opportunity: { key: 'opportunity', label: 'Opportunity', color: '#3f77a4', blurb: 'Thin coverage, but a similar nearby hotspot anchors the estimate.' },
+  exploratory: { key: 'exploratory', label: 'Exploratory', color: '#8a6bab', blurb: 'Thin coverage and no good neighbour — genuinely unknown.' },
+  thin:        { key: 'thin',        label: 'Thin',        color: '#9a8f7c', blurb: 'Well covered, but little photographable diversity — "people looked, it’s barren."' },
+  inferred:    { key: 'inferred',    label: 'Inferred',    color: '#a9781f', blurb: 'No eBird histogram loaded yet — this row is the habitat/season model. Run the build script for real data.' },
 };
 
 const DOCUMENTED_N = 30;   // ≥ ~30 checklists/month bin ⇒ trustworthy (§3)

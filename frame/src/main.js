@@ -9,6 +9,7 @@ import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion,
 import { recentInBox } from './model/ebird.js';
 import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
 import { mountAbout } from './ui/about.js';
+import { mountThemeToggle } from './ui/theme.js';
 import { maybeShowWhatsNew } from './ui/whatsnew.js';
 
 const state = {
@@ -27,12 +28,17 @@ const nav = {
   setFilter(k) { state.filter = k; render(); },
 };
 
+// 22px line icons, stroke=currentColor so the tab's colour (--dim / active
+// --accent) drives them. Ranking = ascending bars, Planner = window grid,
+// Map = pin, Species = magnifier, Settings = two sliders.
+const svgIcon = (paths) =>
+  `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 const TABS = [
-  { hash: '#/', label: 'Ranking', icon: '◆' },
-  { hash: '#/matrix', label: 'Planner', icon: '▦' },
-  { hash: '#/map', label: 'Map', icon: '🗺' },
-  { hash: '#/species', label: 'Species', icon: '🔎' },
-  { hash: '#/settings', label: 'Settings', icon: '⚙' },
+  { hash: '#/', label: 'Ranking', icon: svgIcon('<line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="5"/>') },
+  { hash: '#/matrix', label: 'Planner', icon: svgIcon('<rect x="4" y="4" width="16" height="16" rx="1.5"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/>') },
+  { hash: '#/map', label: 'Map', icon: svgIcon('<path d="M12 21s-6-5.686-6-10a6 6 0 0 1 12 0c0 4.314-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>') },
+  { hash: '#/species', label: 'Species', icon: svgIcon('<circle cx="11" cy="11" r="6"/><line x1="20" y1="20" x2="15.5" y2="15.5"/>') },
+  { hash: '#/settings', label: 'Settings', icon: svgIcon('<line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.5"/><circle cx="15" cy="16" r="2.5"/>') },
 ];
 
 function renderTabs() {
@@ -41,7 +47,7 @@ function renderTabs() {
     el('button.tab', {
       class: (h === t.hash || (t.hash === '#/' && h.startsWith('#/hotspot'))) ? 'active' : '',
       onclick: () => nav.go(t.hash),
-    }, [el('span.tab-icon', {}, t.icon), el('span.tab-label', {}, t.label)])));
+    }, [el('span.tab-icon', { html: t.icon }), el('span.tab-label', {}, t.label)])));
 }
 
 // Region switcher pills, prepended to every view (except the picker itself).
@@ -129,6 +135,7 @@ window.addEventListener('hashchange', render);
 // data files, so render only after they load (a quick, SW-cached local fetch).
 (async function boot() {
   mountAbout();                  // floating "about" button, available everywhere
+  mountThemeToggle();            // floating moon/sun Dawn Mode toggle, everywhere
   app.replaceChildren(el('p.empty', {}, 'Loading…'));
   await loadActiveRegion();      // county data + species codes for the active region
   render();
