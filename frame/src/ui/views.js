@@ -12,6 +12,7 @@ import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.j
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
+import { currentTheme, setTheme } from './theme.js';
 
 function daysAgo(obsDt) {
   if (!obsDt) return null;
@@ -413,12 +414,14 @@ export function renderSettings(root, state, nav) {
       : 'No region data loaded — running on the inference model.'),
   ]));
 
+  const themeToggle = checkbox(currentTheme() === 'dark', (v) => setTheme(v));
+  themeToggle.classList.add('theme-checkbox'); // kept in step with the floating moon/sun button
   form.append(section('Appearance', [
     el('label.row', {}, [
       el('span', {}, 'Dawn Mode (dark)'),
-      checkbox(currentTheme() === 'dark', (v) => setTheme(v)),
+      themeToggle,
     ]),
-    el('p.dim', {}, 'A warm, low-light palette for pre-dawn scouting and dark rooms. Remembered on this device.'),
+    el('p.dim', {}, 'A warm, low-light palette for pre-dawn scouting and dark rooms. Also toggled anywhere from the moon/sun button, top-right. Remembered on this device.'),
   ]));
 
   form.append(section('Live eBird overlay', [
@@ -433,16 +436,6 @@ export function renderSettings(root, state, nav) {
 }
 
 function section(title, kids) { return el('section.card.setting', {}, [el('h2', {}, title), ...kids]); }
-
-// Dawn Mode: flip [data-theme] on <html>, persist, and keep the browser chrome
-// colour in sync. The <head> boot script applies this before first paint.
-function currentTheme() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
-function setTheme(dark) {
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  try { localStorage.setItem('frame.theme', dark ? 'dark' : 'light'); } catch (e) { /* private mode */ }
-  const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute('content', dark ? '#141210' : '#ebe1cf');
-}
 function checkbox(checked, onchange) { const c = el('input', { type: 'checkbox' }); c.checked = checked; c.addEventListener('change', () => onchange(c.checked)); return c; }
 
 // Share a region as an import link: the native share sheet where available

@@ -78,12 +78,14 @@ a { color: var(--accent); }
 .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .card-head-main { min-width: 0; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.score { --s: 0; flex: 0 0 auto; width: 58px; height: 58px; border-radius: 50%;
+.score { --s: 0; flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%;
   display: grid; place-content: center; text-align: center;
-  background: radial-gradient(closest-side, var(--card) 60%, transparent 61%),
+  /* A slim ring: the inner disk covers ~82% of the radius so the mono digits
+     never touch the band, and the accent arc reads as a thin stroke. */
+  background: radial-gradient(closest-side, var(--card) 82%, transparent 83%),
     conic-gradient(var(--accent) calc(var(--s) * 1%), var(--track) 0); }
-.score-num { font-size: 20px; font-weight: 800; line-height: 1; }
-.score-cap { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: .5px; }
+.score-num { font-size: 17px; font-weight: 700; line-height: 1; }
+.score-cap { font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
 
 .badge { --c: #555; font-size: 11px; font-weight: 700; color: #fff; background: var(--c);
   padding: 2px 8px; border-radius: 6px; }
@@ -181,7 +183,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* region switcher pills (prepended to every view) */
 .regionbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
-  padding: 2px 40px 10px 0; margin-bottom: 2px; }
+  padding: 2px 84px 10px 0; margin-bottom: 2px; }
 .region-pill { background: var(--card); border: 1px solid var(--line); color: var(--ink);
   border-radius: 999px; padding: 5px 14px; font-size: 13px; cursor: pointer;
   max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -275,6 +277,16 @@ table.species-table tr[onclick] { cursor: pointer; }
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
 .about-btn:hover, .about-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); outline: none; }
 .about-btn:active { transform: translateY(1px); }
+
+/* Dawn Mode toggle — floating moon/sun, sits just left of the About button so
+   the theme is switchable from any screen. */
+.theme-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 48px; z-index: 8;
+  width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--card2); color: var(--dim); cursor: pointer;
+  display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
+.theme-btn:hover, .theme-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); outline: none; }
+.theme-btn:active { transform: translateY(1px); }
+.theme-btn svg { display: block; }
 
 .about-dialog { position: fixed; inset: 0; margin: auto; width: min(92vw, 560px); max-height: 84vh;
   padding: 0; overflow: hidden;

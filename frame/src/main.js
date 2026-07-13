@@ -9,6 +9,7 @@ import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion,
 import { recentInBox } from './model/ebird.js';
 import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
 import { mountAbout } from './ui/about.js';
+import { mountThemeToggle } from './ui/theme.js';
 import { maybeShowWhatsNew } from './ui/whatsnew.js';
 
 const state = {
@@ -134,6 +135,7 @@ window.addEventListener('hashchange', render);
 // data files, so render only after they load (a quick, SW-cached local fetch).
 (async function boot() {
   mountAbout();                  // floating "about" button, available everywhere
+  mountThemeToggle();            // floating moon/sun Dawn Mode toggle, everywhere
   app.replaceChildren(el('p.empty', {}, 'Loading…'));
   await loadActiveRegion();      // county data + species codes for the active region
   render();
