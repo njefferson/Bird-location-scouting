@@ -1,0 +1,75 @@
+# Deletes the Cloudflare Pages deployments for a stale PREVIEW branch alias.
+# Deleting a git branch does NOT remove its Cloudflare deployments, so the
+# `<branch>.bird-location-scouting.pages.dev` URL keeps serving the last build —
+# a "zombie" preview. This workflow finds that branch's deployments via the
+# Cloudflare API and deletes them, killing the alias.
+#
+# Manual only (workflow_dispatch). Defaults to a DRY RUN — set confirm=DELETE to
+# actually delete. Refuses to touch main/staging, and never deletes a
+# production deployment, so it can only ever clean a preview branch.
+name: Cleanup stale preview deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Preview branch whose Cloudflare deployments to delete
+        required: true
+        default: next-version
+      confirm:
+        description: Type DELETE to actually delete; anything else is a dry run
+        required: true
+        default: dryrun
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete (or dry-run) the branch's preview deployments
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TARGET_BRANCH: ${{ inputs.branch }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          proj=bird-location-scouting
+
+          # Guard rails: never let this near production or the live staging alias.
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "staging" ]; then
+            echo "::error::Refusing to clean protected branch '$TARGET_BRANCH'."; exit 1
+          fi
+
+          base="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/$proj/deployments"
+          page=1; matched=0; deleted=0
+
+          echo "Scanning deployments for branch='$TARGET_BRANCH' (confirm='$CONFIRM')"
+          echo "--- all deployments seen (branch | env | id) ---"
+          while :; do
+            resp=$(curl -sf -H "Authorization: Bearer $CF_API_TOKEN" "$base?per_page=25&page=$page")
+            n=$(echo "$resp" | jq '.result | length')
+            [ "$n" -eq 0 ] && break
+
+            # Diagnostic: show what every deployment reports, so a wrong filter is obvious.
+            echo "$resp" | jq -r '.result[] | ((.deployment_trigger.metadata.branch // "?") + " | " + (.environment // "?") + " | " + .id)'
+
+            ids=$(echo "$resp" | jq -r --arg b "$TARGET_BRANCH" \
+              '.result[] | select((.deployment_trigger.metadata.branch // "") == $b) | select((.environment // "") != "production") | .id')
+            for id in $ids; do
+              matched=$((matched+1))
+              if [ "$CONFIRM" = "DELETE" ]; then
+                echo "deleting $id"
+                curl -sf -X DELETE -H "Authorization: Bearer $CF_API_TOKEN" "$base/$id?force=true" >/dev/null
+                deleted=$((deleted+1))
+              else
+                echo "[dry-run] would delete $id"
+              fi
+            done
+            page=$((page+1))
+          done
+
+          echo "--- summary ---"
+          echo "branch=$TARGET_BRANCH  matched=$matched  deleted=$deleted  confirm=$CONFIRM"
+          if [ "$matched" -eq 0 ]; then
+            echo "No deployments matched — that alias is already clean."
+          fi
