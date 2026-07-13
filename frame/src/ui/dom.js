@@ -37,13 +37,36 @@ export function clear(node) { while (node.firstChild) node.removeChild(node.firs
 
 export function pct(x) { return `${Math.round(x * 100)}%`; }
 
-/** Brief non-blocking toast above the tab bar (auto-dismisses). */
-export function toast(msg, ms = 3500) {
+/**
+ * Toast above the tab bar (auto-dismisses). Optionally actionable:
+ *   toast('Deleted "X"', { action: { label: 'Undo', onClick } })
+ * An actionable toast catches taps (the plain one stays pointer-transparent),
+ * lingers longer so the offer is reachable, and dismisses the instant the
+ * action fires. Back-compat: the second arg may still be a plain number of ms.
+ * Returns a dismiss() so a caller can retract it early.
+ */
+export function toast(msg, opts = {}) {
+  if (typeof opts === 'number') opts = { ms: opts };
+  const action = opts.action || null;
+  const ms = opts.ms ?? (action ? 6500 : 3500);
   document.querySelector('.toast')?.remove();
-  const t = el('div.toast', {}, msg);
+  const t = el('div.toast', {}, [el('span.toast-msg', {}, msg)]);
+  let done = false;
+  const dismiss = () => {
+    if (done) return; done = true;
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  };
+  if (action) {
+    t.classList.add('has-action');
+    t.append(el('button.toast-action', {
+      onclick: () => { dismiss(); action.onClick(); },
+    }, action.label));
+  }
   document.body.append(t);
   requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, ms);
+  setTimeout(dismiss, ms);
+  return dismiss;
 }
 
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */

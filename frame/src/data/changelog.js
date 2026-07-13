@@ -9,6 +9,18 @@
 
 export const CHANGELOG = [
   {
+    version: 'v18',
+    date: '2026-07-06',
+    changes: [
+      'Auto-switch now offers an Undo: when the app hops to the region you’re standing in, the notice has an Undo button that puts you right back where you were.',
+      'Undo for the county picker’s Clear — wipe your selection by accident and a tap brings every county back.',
+      'Deleting a saved region can be undone too: a “Deleted …” notice restores the region (and re-selects it if it was active) if you tap Undo.',
+      'The hotspot Map tab now shows the surrounding counties as a quiet backdrop instead of near-black — the region you’re in still stands out, but you can see where it sits.',
+      'The county picker shows a standing “Tap counties to build your region” indicator so it’s always clear you’re building a set and how to finish.',
+      'Empty regions and broken share links now explain themselves and offer a way forward instead of showing a blank screen.',
+    ],
+  },
+  {
     version: 'v17',
     date: '2026-07-05',
     changes: [

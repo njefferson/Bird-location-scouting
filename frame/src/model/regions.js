@@ -80,10 +80,17 @@ export function saveRegion({ id, name, counties }) {
   return id;
 }
 
-/** Delete a saved region. If it was active, fall back to Home. */
+/**
+ * Delete a saved region. If it was active, fall back to Home. Returns the
+ * removed region plus whether it had been active, so the caller can offer a
+ * full undo (re-save it and restore the active selection).
+ */
 export function deleteRegion(id) {
+  const removed = loadSaved().find((r) => r.id === id) || null;
+  const wasActive = _activeId === id;
   persistSaved(loadSaved().filter((r) => r.id !== id));
-  if (_activeId === id) setActiveRegion('home');
+  if (wasActive) setActiveRegion('home');
+  return { removed, wasActive };
 }
 
 const CURATED_BY_LOCID = Object.fromEntries(CURATED.filter((h) => h.locId).map((h) => [h.locId, h]));

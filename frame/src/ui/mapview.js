@@ -14,7 +14,7 @@ import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
 import { MONTHS } from '../model/inference.js';
-import { monthSelector } from './views.js';
+import { monthSelector, regionDeadEnd } from './views.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -47,7 +47,7 @@ export function renderMapView(root, state, nav) {
   ]));
 
   if (!hotspots.length) {
-    root.append(el('p.empty', {}, 'No hotspots loaded for this region yet.'));
+    root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
     return;
   }
 
