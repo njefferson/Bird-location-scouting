@@ -41,31 +41,38 @@ jobs:
           fi
 
           base="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/$proj/deployments"
-          page=1; matched=0; deleted=0
 
           echo "Scanning deployments for branch='$TARGET_BRANCH' (confirm='$CONFIRM')"
           echo "--- all deployments seen (branch | env | id) ---"
+
+          # Phase 1 — enumerate ALL matching ids FIRST, before deleting anything.
+          # Deleting mid-scan shifts the pagination window and silently skips
+          # items (that leaves stragglers — the very thing we're here to kill).
+          ids=""
+          page=1
           while :; do
             resp=$(curl -sf -H "Authorization: Bearer $CF_API_TOKEN" "$base?per_page=25&page=$page")
             n=$(echo "$resp" | jq '.result | length')
             [ "$n" -eq 0 ] && break
-
-            # Diagnostic: show what every deployment reports, so a wrong filter is obvious.
             echo "$resp" | jq -r '.result[] | ((.deployment_trigger.metadata.branch // "?") + " | " + (.environment // "?") + " | " + .id)'
-
-            ids=$(echo "$resp" | jq -r --arg b "$TARGET_BRANCH" \
+            match=$(echo "$resp" | jq -r --arg b "$TARGET_BRANCH" \
               '.result[] | select((.deployment_trigger.metadata.branch // "") == $b) | select((.environment // "") != "production") | .id')
-            for id in $ids; do
-              matched=$((matched+1))
-              if [ "$CONFIRM" = "DELETE" ]; then
-                echo "deleting $id"
-                curl -sf -X DELETE -H "Authorization: Bearer $CF_API_TOKEN" "$base/$id?force=true" >/dev/null
-                deleted=$((deleted+1))
-              else
-                echo "[dry-run] would delete $id"
-              fi
-            done
+            ids="$ids $match"
             page=$((page+1))
+          done
+          ids=$(printf '%s\n' $ids | sort -u)
+          matched=$(printf '%s\n' $ids | grep -c . || true)
+
+          # Phase 2 — act on the frozen list.
+          deleted=0
+          for id in $ids; do
+            if [ "$CONFIRM" = "DELETE" ]; then
+              echo "deleting $id"
+              curl -sf -X DELETE -H "Authorization: Bearer $CF_API_TOKEN" "$base/$id?force=true" >/dev/null
+              deleted=$((deleted+1))
+            else
+              echo "[dry-run] would delete $id"
+            fi
           done
 
           echo "--- summary ---"
