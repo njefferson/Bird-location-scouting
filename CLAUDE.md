@@ -25,19 +25,20 @@ straight to production before this existed — don't repeat that.)
 - Never merge a product change to main (= production deploy) without the
   user's explicit go on his actual device.
 - Staging mechanism that already exists: push the finished candidate branch to
-  `next-version` — deploy.yml publishes a Cloudflare PREVIEW at
-  https://next-version.bird-location-scouting.pages.dev, production untouched.
-  Hand over that URL, wait for the go, then PR + merge to main.
+  `staging` — deploy.yml publishes a Cloudflare PREVIEW at
+  https://staging.bird-location-scouting.pages.dev, production untouched.
+  Hand over that URL, wait for the go, then PR + merge to main. (This branch was
+  called `next-version` through v18; renamed to `staging` 2026-07-13.)
 - LEAVE A DURABLE "WAITING ON NOAH" SIGNAL (learned 2026-07-13, the hard way):
-  a candidate on `next-version` that the acceptance pass never reaches is
+  a candidate on `staging` that the acceptance pass never reaches is
   invisible once the session ends. On 2026-07-06 a finished v18 sat there for a
   week; a later session, seeing only main (still v17), rebuilt a parallel v18
-  and nearly clobbered it. So the moment you push to `next-version`, ALSO open a
+  and nearly clobbered it. So the moment you push to `staging`, ALSO open a
   DRAFT PR from that branch to main titled "vN — awaiting on-device acceptance",
   with the VERIFIED / NEEDS-HIS-HANDS notes in the body. That draft PR is the
   handoff that survives the session. Merge it (undraft) only after the go.
 - START EVERY UPDATE BY CHECKING FOR A STAGED CANDIDATE FIRST: `git fetch`, then
-  compare `next-version` to `main` and list open PRs. If `next-version` is ahead
+  compare `staging` to `main` and list open PRs. If `staging` is ahead
   of `main`, or an "awaiting on-device acceptance" PR exists, that candidate is
   already waiting on Noah — surface it and continue/hand it off; do NOT start a
   fresh parallel version or reuse a version number it already claims.
@@ -83,7 +84,7 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   fetches. To work with IRstudio (or any second repo), the user must select it
   in the source picker WHEN CREATING the session. Verified 2026-07-05.
 - App: `frame/` PWA, no build step; deploys to bird-location-scouting.pages.dev
-  via `.github/workflows/deploy.yml` on push to main (previews: next-version).
+  via `.github/workflows/deploy.yml` on push to main (previews: staging).
 - v18 shipped 2026-07-13: reversibility pass — the toast() helper (ui/dom.js)
   gained an optional `action` button (Undo); wired into auto-switch (main.js),
   region delete (model/regions.js `deleteRegion` returns `{removed, wasActive}`)
