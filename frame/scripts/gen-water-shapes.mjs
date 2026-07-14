@@ -26,7 +26,10 @@ const MIRRORS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
-const DELAY_MS = 1200; // courtesy pause between queries — a one-off batch of ~40
+// Overpass etiquette (learned from run 3's 42× HTTP 429): identify yourself,
+// ask ONCE (a single combined query — not one per reservoir), and when told to
+// back off, back off in minutes, not seconds.
+const UA = 'bird-location-scouting-basemap/1.0 (+https://github.com/njefferson/Bird-location-scouting)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // --- county rings for the honesty check --------------------------------------
@@ -73,14 +76,20 @@ function ringArea(ring) { // signed shoelace on projected coords
 
 async function overpass(query) {
   let lastErr;
-  for (const url of MIRRORS) {
-    for (let attempt = 0; attempt < 2; attempt++) {
+  for (let round = 0; round < 3; round++) {
+    for (const url of MIRRORS) {
       try {
-        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: query });
-        if (res.status === 429 || res.status === 504) { lastErr = new Error(`${res.status}`); await sleep(5000); continue; }
+        console.log(`  querying ${new URL(url).host}…`);
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain', 'User-Agent': UA }, body: query });
+        if (res.status === 429 || res.status === 504) {
+          lastErr = new Error(`${res.status}`);
+          console.log(`  ${res.status} — cooling down 75 s before the next attempt`);
+          await sleep(75000);
+          continue;
+        }
         if (!res.ok) throw new Error(`${res.status}`);
         return await res.json();
-      } catch (e) { lastErr = e; await sleep(2500); }
+      } catch (e) { lastErr = e; await sleep(8000); }
     }
   }
   throw lastErr || new Error('all mirrors failed');
@@ -120,48 +129,64 @@ function elementRings(el) {
 
 const norm = (s) => (s || '').toLowerCase().replace(/\b(reservoir|res\.?|lake|the)\b/g, '').replace(/[^a-z]/g, '');
 
+// ONE combined query for every reservoir (43 separate queries is what tripped
+// the rate limiter): union all the around-clauses, fetch once, match locally.
+const clauses = RESERVOIRS.map((r) =>
+  `  way["natural"="water"](around:8000,${r.lat},${r.lng});\n  relation["natural"="water"](around:8000,${r.lat},${r.lng});`).join('\n');
+const query = `[out:json][timeout:180];\n(\n${clauses}\n);\nout geom qt;`;
+
+console.log(`One combined Overpass query for ${RESERVOIRS.length} waters…`);
+const res = await overpass(query);
+console.log(`  ${res.elements?.length ?? 0} water elements returned`);
+
+// Pre-project every candidate ring once (elements are shared by all matchers).
+const candidates = [];
+const seenEl = new Set();
+for (const el of res.elements || []) {
+  const key = `${el.type}/${el.id}`;
+  if (seenEl.has(key)) continue;
+  seenEl.add(key);
+  for (const ringLL of elementRings(el)) {
+    const ring = ringLL.map(([lng, lat]) => proj(lng, lat));
+    const area = ringArea(ring);
+    if (area < 0.5) continue; // sub-pixel puddles
+    candidates.push({ ring, area, name: el.tags?.name || '' });
+  }
+}
+
+const minDistTo = (px, py, ring) => {
+  let d = Infinity;
+  for (const [x, y] of ring) { const dd = Math.hypot(x - px, y - py); if (dd < d) d = dd; }
+  return d;
+};
+
 const shapes = [];
 const misses = [];
 for (const r of RESERVOIRS) {
-  const q = `[out:json][timeout:45];
-(
-  way["natural"="water"](around:8000,${r.lat},${r.lng});
-  relation["natural"="water"](around:8000,${r.lat},${r.lng});
-);
-out geom qt;`;
-  try {
-    const res = await overpass(q);
-    const [px, py] = proj(r.lng, r.lat);
-    let best = null;
-    for (const el of res.elements || []) {
-      const nameMatch = el.tags?.name && (norm(el.tags.name) === norm(r.t) || norm(el.tags.name).includes(norm(r.t)) || norm(r.t).includes(norm(el.tags.name)));
-      for (const ringLL of elementRings(el)) {
-        const ring = ringLL.map(([lng, lat]) => proj(lng, lat));
-        const area = ringArea(ring);
-        if (area < 0.5) continue; // sub-pixel puddles
-        const containsPt = inRings(px, py, [ring]);
-        // Prefer: named match > contains the curated point > sheer size.
-        const scoreVal = (nameMatch ? 2e6 : 0) + (containsPt ? 1e6 : 0) + area;
-        if (!best || scoreVal > best.scoreVal) best = { ring, area, scoreVal, osmName: el.tags?.name || '(unnamed)' };
-      }
-    }
-    if (!best) { misses.push(`${r.t}: no water polygon within 8 km`); continue; }
-    // Honesty check: the polygon's biggest ring must overlap the declared county
-    // (test the curated point AND the ring centroid).
-    let cx = 0, cy = 0;
-    for (const [x, y] of best.ring) { cx += x; cy += y; }
-    cx /= best.ring.length; cy /= best.ring.length;
-    const okCounty = r.in.some((code) => ringsByCode[code] && (inRings(px, py, ringsByCode[code]) || inRings(cx, cy, ringsByCode[code])));
-    if (!okCounty) { misses.push(`${r.t}: polygon landed outside ${r.in.join('/')}`); continue; }
-    const simp = rdp(best.ring, 0.35);
-    if (simp.length < 4) { misses.push(`${r.t}: degenerate after simplify`); continue; }
-    const d = simp.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('') + 'Z';
-    shapes.push({ t: r.t, d, pts: simp.length, osm: best.osmName });
-    console.log(`  ✓ ${r.t} ← OSM "${best.osmName}" (${simp.length} pts)`);
-  } catch (e) {
-    misses.push(`${r.t}: ${e.message}`);
+  const [px, py] = proj(r.lng, r.lat);
+  let best = null;
+  for (const c of candidates) {
+    const nameMatch = c.name && (norm(c.name) === norm(r.t) || norm(c.name).includes(norm(r.t)) || norm(r.t).includes(norm(c.name)));
+    const containsPt = inRings(px, py, [c.ring]);
+    // Anonymous far-away giants must not win: without a name match or point
+    // containment, a candidate only qualifies if it hugs the curated point.
+    if (!nameMatch && !containsPt && minDistTo(px, py, c.ring) > 4) continue;
+    const scoreVal = (nameMatch ? 2e6 : 0) + (containsPt ? 1e6 : 0) + c.area;
+    if (!best || scoreVal > best.scoreVal) best = { ...c, scoreVal };
   }
-  await sleep(DELAY_MS);
+  if (!best) { misses.push(`${r.t}: no water polygon near the point`); continue; }
+  // Honesty check: the polygon must overlap the declared county
+  // (test the curated point AND the ring centroid).
+  let cx = 0, cy = 0;
+  for (const [x, y] of best.ring) { cx += x; cy += y; }
+  cx /= best.ring.length; cy /= best.ring.length;
+  const okCounty = r.in.some((code) => ringsByCode[code] && (inRings(px, py, ringsByCode[code]) || inRings(cx, cy, ringsByCode[code])));
+  if (!okCounty) { misses.push(`${r.t}: polygon landed outside ${r.in.join('/')}`); continue; }
+  const simp = rdp(best.ring, 0.35);
+  if (simp.length < 4) { misses.push(`${r.t}: degenerate after simplify`); continue; }
+  const d = simp.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('') + 'Z';
+  shapes.push({ t: r.t, d, pts: simp.length, osm: best.name || '(unnamed)' });
+  console.log(`  ✓ ${r.t} ← OSM "${best.name || '(unnamed)'}" (${simp.length} pts)`);
 }
 
 console.log(`\n${shapes.length}/${RESERVOIRS.length} shorelines fetched.`);
