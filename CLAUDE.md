@@ -56,6 +56,12 @@ is HttpOnly — `document.cookie` (and therefore any bookmarklet) can NEVER
 capture it. The only way is desktop DevTools → Network → any ebird.org request
 → Request Headers → copy the `cookie:` value. eBird's bar-chart endpoint was
 PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
+- ALSO SETTLED — do not re-offer (a session re-suggested it 2026-07-14 and was
+  corrected by the user): storing his eBird username/password as secrets so a
+  runner logs in automatically is AGAINST eBird's terms and policies. The
+  manual cookie from his own signed-in browser session is the only acceptable
+  path; it is quarterly and takes a minute. Never propose credential
+  automation for eBird again.
 
 ## The user's product taste (from his written summary, 2026-07-05)
 - Visuals: maximum saturation, gentle contrast, shadows alive — never crush
