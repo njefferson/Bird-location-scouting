@@ -43,7 +43,7 @@ export function renderMapView(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Hotspot map'),
-      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} score · tap a pin`),
+      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} bird presence · tap a pin`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
@@ -89,8 +89,9 @@ export function renderMapView(root, state, nav) {
   // pin at a constant on-screen size once you zoom past the opening view —
   // no more donut-sized blobs pinched all the way in.
   const spec = rankingSpec();
-  const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly });
-  const scoreById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.score]));
+  const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species });
+  const visById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.vis]));
+  const divById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.diversity]));
   const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
   const home = homeBox(bbox, W, H);
   const homeZoom = W / home.w;
@@ -101,17 +102,18 @@ export function renderMapView(root, state, nav) {
   pinNames.setAttribute('aria-hidden', 'true');
   for (const h of hotspots) {
     const [x, y] = latLngToMap(h.lat, h.lng);
-    const score = scoreById[h.id] ?? 0;
+    const vis = visById[h.id] ?? 0;
+    const div = divById[h.id] ?? 0;
     const pin = document.createElementNS(SVG_NS, 'circle');
     pin.setAttribute('cx', x.toFixed(1));
     pin.setAttribute('cy', y.toFixed(1));
     pin.setAttribute('r', r.toFixed(1));
     pin.setAttribute('class', 'pin');
-    pin.style.setProperty('--s', score);
+    pin.style.setProperty('--s', vis);
     pin.style.setProperty('--pr', r.toFixed(1));
     pin.dataset.id = h.id;
     const title = document.createElementNS(SVG_NS, 'title');
-    title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} score ${score}`;
+    title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} · ${div} species likely`;
     pin.append(title);
     svg.append(pin);
     // The pin's NAME — hidden until you zoom in past ~2× the opening view,
@@ -151,7 +153,7 @@ export function renderMapView(root, state, nav) {
   wrap.append(pz.controls());
   root.append(wrap);
 
-  root.append(scoreScale(`Fuller colour = higher photographer score this ${MONTHS[state.monthIdx]}. Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
+  root.append(scoreScale(`Fuller colour = more bird presence this ${MONTHS[state.monthIdx]} (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {

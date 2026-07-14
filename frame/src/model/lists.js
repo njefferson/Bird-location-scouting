@@ -1,37 +1,42 @@
 // =============================================================================
-// LIST-DRIVEN RANKING — how your Target and Seen lists shape the hotspot score.
+// LIST-DRIVEN RANKING — how your lists and filters shape which birds count.
 // =============================================================================
-// Two independent, opt-in modes sit on top of the default photographer score.
-// This module resolves BOTH into a single spec the ranked views pass straight to
-// rankHotspots(), so cards, planner, map and hotspot detail all agree:
+// Hotspots are always ranked by PRESENCE (Σ frequency over a working set of
+// species). Three independent, opt-in tools narrow that working set. This
+// module resolves ALL of them into a single spec the ranked views pass straight
+// to rankHotspots(), so cards, planner, map and hotspot detail all agree:
 //
-//   default            → every curated species, Σ frequency × photoability
-//   Rank by presence   → only your TARGET species, Σ frequency (no photoability)
-//   New for me         → drop the species you've already SEEN from the set
+//   default            → every curated species
+//   Rank by presence   → only your TARGET species
+//   New for me         → drop the species you've already SEEN
+//   Facet filters      → keep only species matching your icon filters
 //
-// They compose. With both on you rank spots by the presence of the targets you
-// still NEED — target subset, minus seen, presence-scored. Each mode keeps its
-// own standing bar and its own one-tap exit; neither ever edits a list.
+// They compose (AND): with all on you rank spots by the presence of the
+// wanted-facet targets you still NEED. Each tool keeps its own standing bar and
+// one-tap exit; none ever edits a list.
 // =============================================================================
 
 import { SPECIES } from '../data/species.js';
 import { targetsRankActive, targetSubset } from './targets.js';
 import { newBirdsActive, isSeen } from './seen.js';
+import { facetsActive, applyFacetFilter } from './facets.js';
 
 /**
- * The species set + scoring mode the ranked views should use right now.
- *   { species, presenceOnly, targetsMode, newMode }
+ * The species set + active modes the ranked views should use right now.
+ *   { species, targetsMode, newMode, facetsMode }
+ * Scoring is always presence-based; there is no photoability weight any more.
  */
 export function rankingSpec() {
   const targetsMode = targetsRankActive();
   const newMode = newBirdsActive();
+  const facetsMode = facetsActive();
   let species = targetsMode ? targetSubset() : SPECIES;
-  const presenceOnly = targetsMode;
   if (newMode) species = species.filter((s) => !isSeen(s.name));
-  return { species, presenceOnly, targetsMode, newMode };
+  if (facetsMode) species = applyFacetFilter(species);
+  return { species, targetsMode, newMode, facetsMode };
 }
 
-/** Any list-driven mode currently steering the ranking? */
+/** Any list- or filter-driven mode currently steering the ranking? */
 export function anyRankingMode() {
-  return targetsRankActive() || newBirdsActive();
+  return targetsRankActive() || newBirdsActive() || facetsActive();
 }

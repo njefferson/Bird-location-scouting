@@ -10,15 +10,17 @@ opportunity (not by lister rarity). Built for a Nikon Z50 II + 50–250mm DX
 > sources, and the release process live in the [root README](../README.md).
 
 ## The idea (one line)
-`HotspotScore(h, m) = Σ_species frequency(s,h,m) × photoability(s)`, normalized
-0–100 per month. A bird must be **present** (frequency) *and* **shootable**
-(photoability) to count — we multiply, never add.
+`presence(h, m) = Σ_species frequency(s,h,m)` over the working species set,
+trust-shrunk and ranked per month. Each hotspot shows which **kinds** of birds
+are actually there (facet icons, bright by real frequency); the old subjective
+`photoability` weight was removed in v23 — the app shows the facts and lets you
+filter by what you care about.
 
 ## Three data layers (spec §2)
 | Layer | What | Source | State |
 |---|---|---|---|
 | **A. Reference** | per-species × month frequency + checklist effort (N) | eBird histogram CSV / EBD (static, quarterly) | **inferred** until you run the build script |
-| **B. Photoability** | how shootable each species is, 0–1 | curated table in `src/data/species.js` | shipped |
+| **B. Facets** | objective per-species type / size / nest / behaviour (icons + filters) | curated table in `src/data/species.js` + `src/data/facets.js` | shipped |
 | **C. Live overlay** | "seen in last N days", notable, nearest-recent | eBird API 2.0 at runtime, via proxy | optional, degrades gracefully |
 
 ### Honesty rules (spec §0/§3/§6) — enforced in code
@@ -107,11 +109,13 @@ week to week.
   cookie into the repo secret and tap "Run workflow" (see `HANDOFF.md`).
 
 ## Screens (spec §5)
-- **Ranking** — current-month top-15 cards: score, trust tag, N, top-3
-  photographable species with frequency %, live "seen" badge, Maps + matrix +
-  access buttons. Month selector drives everything. Four opportunity filters
-  (Shoot Now / Underrated / Be the Documenter / Skip-Thin).
-- **Planner** — hotspot × month heatmap of HotspotScore; tap a cell → detail.
+- **Ranking** — current-month cards: bird-group facet icons (bright by real
+  frequency, tappable tri-state filters), "N species likely", trust tag, N,
+  top-3 present species with frequency %, live "seen" badge, Maps + matrix +
+  access buttons. Month selector drives everything. Facet filters (type / size /
+  nest / behaviour) plus four opportunity filters (Shoot Now / Underrated / Be
+  the Documenter / Skip-Thin).
+- **Planner** — hotspot × month heatmap of species-likely count; tap a cell → detail.
 - **Species** — search a bird → best hotspot + month, per-hotspot sparklines,
   live "nearest recent".
 - **Settings** — the editable box, live-overlay config, data provenance.
@@ -123,15 +127,15 @@ frame/
   src/
     main.js                 app bootstrap + hash routing
     styles.css
-    data/   species.js  hotspots.js  habitats.js  counties.js   # curated reference
-    model/  inference.js  scoring.js  ebird.js  regions.js
-    ui/     dom.js  badges.js  views.js
+    data/   species.js  facets.js  hotspots.js  habitats.js  counties.js   # curated reference
+    model/  inference.js  scoring.js  facets.js  lists.js  ebird.js  regions.js
+    ui/     dom.js  badges.js  views.js  facetbar.js  scoreinfo.js
   data/     counties/US-CA-###.json  (per-county eBird data)  taxonomy.json  (name→code)
   scripts/  build-counties.mjs  barchart-lib.mjs  ebird-proxy/
 ```
 
 ## Status vs. the spec milestones (§7)
-- **v0 (MVP):** ✅ hotspots, photoability, scoring, current-month top list, month
+- **v0 (MVP):** ✅ hotspots, scoring, current-month top list, month
   selector — end-to-end.
 - **v1:** ✅ trust tags + N, four opportunity filters, Maps links, **real eBird
   frequency + checklist counts** for every hotspot (per-county files) — hotspots

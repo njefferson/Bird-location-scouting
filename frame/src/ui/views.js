@@ -4,8 +4,11 @@
 // =============================================================================
 import { el, clear, pct, sparkline, scoreScale } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
-import { openScoreInfo } from './scoreinfo.js';
+import { openIconInfo } from './scoreinfo.js';
+import { facetEntryChip } from './facetbar.js';
 import { SPECIES } from '../data/species.js';
+import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
+import { cycleFacet, facetState } from '../model/facets.js';
 import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
@@ -78,11 +81,17 @@ function filterBar(state, onChange) {
 // their one-tap exits, so the way forward is already on screen.
 function emptyModeNote(spec) {
   if (spec.species.length) return null;
+  let msg;
+  if (spec.facetsMode) {
+    msg = 'Your icon filters don’t leave any curated birds to count. Tap “Show all birds” on the filter bar, or open the filters and loosen them.';
+  } else if (spec.targetsMode) {
+    msg = 'Every one of your target birds is already on your seen list, so “New for me” leaves nothing to rank. Show all birds, turn off “New for me”, or star a bird you still need.';
+  } else {
+    msg = 'Every curated bird is on your seen list — congratulations! Turn off “New for me” to rank all birds again.';
+  }
   return el('div.dead-end', {}, [
     el('h2', {}, 'Nothing left to count'),
-    el('p.dim', {}, spec.targetsMode
-      ? 'Every one of your target birds is already on your seen list, so “New for me” leaves nothing to rank. Show all birds, turn off “New for me”, or star a bird you still need.'
-      : 'Every curated bird is on your seen list — congratulations! Turn off “New for me” to rank all birds again.'),
+    el('p.dim', {}, msg),
   ]);
 }
 
@@ -111,10 +120,11 @@ export function renderCards(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Frame'),
-      el('span.subtitle', {}, `Photographer’s hotspot ranking · ${MONTHS[state.monthIdx]}`),
+      el('span.subtitle', {}, `Where the birds are · ${MONTHS[state.monthIdx]}`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
     filterBar(state, (k) => nav.setFilter(k)),
+    facetEntryChip(nav),
   ]));
 
   // Dead-end guard: a region with no built hotspot data shouldn't leave the
@@ -127,7 +137,7 @@ export function renderCards(root, state, nav) {
   const spec = rankingSpec();
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly });
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species });
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
@@ -150,17 +160,13 @@ function card(r, state, nav) {
     if (ds.length) live = liveBadge(Math.min(...ds));
   }
 
-  // Tap the score to see what it means and how it was worked out.
-  const scoreRing = el('button.score', {
-    style: `--s:${r.score}`,
-    title: 'What does this score mean?',
-    'aria-label': `Score ${r.score} — tap for what it means`,
-    onclick: () => openScoreInfo(r, MONTHS[state.monthIdx]),
-  }, [
-    el('span.score-num', {}, String(r.score)),
-    el('span.score-cap', {}, 'score'),
-    el('span.score-q', { 'aria-hidden': 'true' }, '?'),
-  ]);
+  // "N birds likely" — how many species clear the 5%-of-checklists bar this
+  // month. Tap it for what the icons mean.
+  const divChip = el('button.div-chip', {
+    title: `${r.diversity} species clear 5% of checklists in ${MONTHS[state.monthIdx]} — tap for how the icons work`,
+    'aria-label': `${r.diversity} species likely — tap for what the icons mean`,
+    onclick: () => openIconInfo(r, MONTHS[state.monthIdx]),
+  }, [`${r.diversity} bird${r.diversity === 1 ? '' : 's'} likely`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]);
 
   const head = el('div.card-head', {}, [
     el('div.card-head-main', {}, [
@@ -168,12 +174,17 @@ function card(r, state, nav) {
       el('div.tags', {}, [
         trustBadge(r.trust),
         nBadge(r.n),
+        divChip,
         inferredChip(r.inferredCount),
         live,
       ]),
     ]),
-    scoreRing,
   ]);
+
+  // The tappable guild icon row: which KINDS of birds are here this month, and
+  // the filter control in one. Computed over ALL species so brightness is
+  // honest even when a guild is filtered out.
+  const guildRow = guildIconRow(h, state.monthIdx, nav);
 
   const habs = el('div.habs', {}, (h.habitats || []).map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
 
@@ -183,7 +194,7 @@ function card(r, state, nav) {
         el('span.tsp-freq', { title: c.freq.rule }, pct(c.freq.value) + (c.freq.inferred ? '*' : '')),
         el('span.tsp-bar', {}, el('i', { style: `width:${Math.round(c.freq.value * 100)}%` })),
       ]))
-    : el('span.dim', {}, 'Nothing notably photographable this month.'));
+    : el('span.dim', {}, 'No birds notably present this month.'));
 
   const links = hotspotMapLinks(h);
   const actions = el('div.card-actions', {}, [
@@ -193,9 +204,54 @@ function card(r, state, nav) {
     el('button.btn.ghost', { onclick: () => toggleNotes(card, h) }, 'Access'),
   ]);
 
-  const node = el('div.card', {}, [head, habs, species, actions]);
+  const node = el('div.card', {}, [head, guildRow, habs, species, actions]);
   node._hotspot = h;
   return node;
+}
+
+// Brightness thresholds for a guild's summed frequency at a hotspot this month.
+const GUILD_LOTS = 0.5;   // ≥ one of these on ~every other checklist
+const GUILD_SOME = 0.05;  // ≥ one on ~1 in 20 checklists
+
+/** Summed frequency per guild (over ALL species) + whether any is real eBird. */
+function guildPresence(h, monthIdx) {
+  const sums = {}, realN = {};
+  for (const s of SPECIES) {
+    const f = frequency(s, h, monthIdx);
+    if (f.value <= 0) continue;
+    sums[s.guild] = (sums[s.guild] || 0) + f.value;
+    if (!f.inferred) realN[s.guild] = (realN[s.guild] || 0) + 1;
+  }
+  return { sums, realN };
+}
+
+/**
+ * The tri-state guild icon row for a card / hotspot header. Each icon shows
+ * this month's presence (none/some/lots), dashes when it's modeled-only, and
+ * carries the guild's filter state (wanted ✓ / excluded ✕). Tapping cycles the
+ * filter and re-renders.
+ */
+function guildIconRow(h, monthIdx, nav) {
+  const { sums, realN } = guildPresence(h, monthIdx);
+  const row = el('div.facet-row.guild-row', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
+  for (const key of GUILD_KEYS) {
+    const g = sums[key] || 0;
+    const level = g >= GUILD_LOTS ? 'lots' : g >= GUILD_SOME ? 'some' : 'none';
+    const inferred = level !== 'none' && !realN[key];
+    const st = facetState('guild', key); // neutral | wanted | excluded
+    const gu = GUILDS[key];
+    const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'none noted';
+    const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
+    const filt = st === 'wanted' ? ' · wanted — tap to exclude' : st === 'excluded' ? ' · excluded — tap to clear' : ' · tap to want';
+    row.append(el('button.fi', {
+      class: [`fi-${level}`, inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
+      title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}${filt}`,
+      'aria-label': `${gu.label}: ${where}, filter ${st}`,
+      html: facetSvg(gu.icon),
+      onclick: () => { cycleFacet('guild', key); nav.rerender(); },
+    }));
+  }
+  return row;
 }
 
 function toggleNotes(_, h) {
@@ -223,7 +279,7 @@ export function renderMatrix(root, state, nav) {
   clear(root);
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, 'HotspotScore by month — tap a cell for that month’s detail.'),
+    el('span.subtitle', {}, 'Species likely by month — tap a cell for that month’s detail.'),
   ]));
 
   // Pre-rank each month so cell color is comparable within a month column.
@@ -231,7 +287,7 @@ export function renderMatrix(root, state, nav) {
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
   const byMonth = MONTHS.map((_, m) => {
-    const ranked = rankHotspots(getHotspots(), m, { species: spec.species, presenceOnly: spec.presenceOnly });
+    const ranked = rankHotspots(getHotspots(), m, { species: spec.species });
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
   });
 
@@ -240,8 +296,8 @@ export function renderMatrix(root, state, nav) {
     el('th', { class: i === state.monthIdx ? 'col-active' : '' }, m))]);
   table.append(head);
 
-  // Order rows by their best month score.
-  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].score)) }))
+  // Order rows by their best month's presence intensity.
+  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].vis)) }))
     .sort((a, b) => b.best - a.best);
 
   for (const { h } of order) {
@@ -250,16 +306,16 @@ export function renderMatrix(root, state, nav) {
       const r = byMonth[m][h.id];
       const cell = el('td.cell', {
         class: m === state.monthIdx ? 'col-active' : '',
-        style: `--s:${r.score}`,
-        title: `${h.name} · ${MONTHS[m]} · score ${r.score} · ${r.trust.label}`,
+        style: `--s:${r.vis}`,
+        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
-      }, String(r.score));
+      }, String(r.diversity));
       tr.append(cell);
     });
     table.append(tr);
   }
   root.append(el('div.matrix-wrap', {}, table));
-  root.append(scoreScale('Fuller colour = higher photographer score that month. Each month is scored on its own (normalized within its column). Tap a cell for that month’s detail — and the score there for what it means.'));
+  root.append(scoreScale('Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================
@@ -271,17 +327,18 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   if (!h) { root.append(el('p.empty', {}, 'Unknown hotspot.')); return; }
 
   const spec = rankingSpec();
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly }).find((r) => r.hotspot.id === h.id);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species }).find((r) => r.hotspot.id === h.id);
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
     el('div.title-row', {}, [el('h1', {}, h.name),
       el('button.score-inline', {
-        title: 'What does this score mean?',
-        'aria-label': `${MONTHS[state.monthIdx]} score ${ranked.score} — tap for what it means`,
-        onclick: () => openScoreInfo(ranked, MONTHS[state.monthIdx]),
-      }, [`${MONTHS[state.monthIdx]} score ${ranked.score}`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]),
+        title: 'What do the icons mean?',
+        'aria-label': `${MONTHS[state.monthIdx]}: ${ranked.diversity} species likely — tap for what the icons mean`,
+        onclick: () => openIconInfo(ranked, MONTHS[state.monthIdx]),
+      }, [`${MONTHS[state.monthIdx]} · ${ranked.diversity} species likely`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]),
       trustBadge(ranked.trust), nBadge(ranked.n)]),
+    guildIconRow(h, state.monthIdx, nav),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
@@ -292,16 +349,17 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
       el('a.btn', { href: links.google, target: '_blank', rel: 'noopener' }, 'Google Maps'),
     ])]));
 
-  // Species table: name · photoability · this-month freq · sparkline · shoot subscore.
+  // Species table: name · facet icons · this-month freq · sparkline. Sorted by
+  // how present the bird is here this month.
   const rows = SPECIES.map((s) => {
     const series = frequencySeries(s, h);
     const fNow = series[state.monthIdx];
-    return { s, series, fNow, shoot: fNow.value * s.photoability };
+    return { s, series, fNow };
   }).filter((r) => r.series.some((f) => f.value > 0.01))
-    .sort((a, b) => b.shoot - a.shoot);
+    .sort((a, b) => b.fNow.value - a.fNow.value);
 
   const table = el('table.species-table');
-  table.append(el('tr', {}, ['', 'Species', 'Photoability', `${MONTHS[state.monthIdx]} freq`, '12-mo', 'Shoot-it'].map((t) => el('th', {}, t))));
+  table.append(el('tr', {}, ['', 'Species', 'Facets', `${MONTHS[state.monthIdx]} freq`, '12-mo'].map((t) => el('th', {}, t))));
   for (const r of rows) {
     const inferredNow = r.fNow.inferred;
     const paint = () => {
@@ -311,30 +369,25 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
-      el('td', {}, photoabilityCell(r.s)),
+      el('td', {}, speciesFacetRow(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
-      el('td', {}, scorePill(r.shoot)),
     ]);
     table.append(tr);
   }
   root.append(el('div.table-wrap', {}, table));
   root.append(el('p.legend', {}, [
-    '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every score). * = inferred from the habitat/season model (hover for the rule). Shoot-it = frequency × photoability.',
-    spec.targetsMode ? el('span', {}, ' The score above ranks by how often your targets appear here.') : null,
-    spec.newMode ? el('span', {}, ' The score above counts only birds you haven’t got yet.') : null,
+    '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
+    spec.targetsMode ? el('span', {}, ' The count above uses only your target birds.') : null,
+    spec.newMode ? el('span', {}, ' The count above counts only birds you haven’t got yet.') : null,
+    spec.facetsMode ? el('span', {}, ' The count above uses only birds matching your icon filters.') : null,
   ]));
 }
 
-function photoabilityCell(s) {
-  return el('span.photoability', { title: s.note, style: `--p:${Math.round(s.photoability * 100)}` }, [
-    el('i'), el('span.pa-num', {}, s.photoability.toFixed(2)),
-  ]);
-}
-
-function scorePill(x) {
-  const v = Math.round(x * 100);
-  return el('span.pill', { style: `--v:${v}` }, String(v));
+// The four facet icons for one species, informational (title = label + blurb).
+function speciesFacetRow(s) {
+  return el('div.sp-facets', {}, speciesFacetIcons(s).map((fi) =>
+    el('span.sp-fi', { title: `${fi.facetLabel}: ${fi.label} — ${fi.blurb}`, html: facetSvg(fi.icon, 20) })));
 }
 
 // =============================================================================
@@ -398,16 +451,18 @@ function speciesPanel(s, state, nav) {
     starButton(s),
     seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
     el('h2', {}, s.name),
-    el('span.badge', { style: `--c:${s.photoability >= 0.7 ? '#2e7d32' : s.photoability >= 0.5 ? '#1565c0' : '#9e9e9e'}` }, `photoability ${s.photoability.toFixed(2)}`),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
     ebirdLink(s),
   ]);
   panel.append(head);
+  // Facet chips: type · size · nest · behaviour (icon + label).
+  panel.append(el('div.sp-facet-chips', {}, speciesFacetIcons(s).map((fi) =>
+    el('span.sp-facet-chip', { title: fi.blurb }, [el('span.sp-fi', { html: facetSvg(fi.icon, 18) }), fi.label]))));
   panel.append(el('p.sp-note', {}, s.note));
 
   const ranked = bestForSpecies(s, getHotspots());
   const best = ranked[0];
-  if (best && best.best.shootScore > 0) {
+  if (best && best.best.value > 0) {
     panel.append(el('p.sp-best', {}, [
       'Best bet: ', el('strong', {}, best.hotspot.name), ' in ', el('strong', {}, MONTHS[best.best.monthIdx]),
       ` (${pct(best.best.value)} freq${best.best.inferred ? '*' : ''}).`,
@@ -418,7 +473,7 @@ function speciesPanel(s, state, nav) {
   const table = el('table.species-table');
   table.append(el('tr', {}, ['Hotspot', 'Best month', 'Freq', '12-mo'].map((t) => el('th', {}, t))));
   for (const r of ranked) {
-    if (r.best.shootScore <= 0.001) continue;
+    if (r.best.value <= 0.001) continue;
     table.append(el('tr', { onclick: () => { state.monthIdx = r.best.monthIdx; nav.go(`#/hotspot/${r.hotspot.id}`); } }, [
       el('td', {}, r.hotspot.name),
       el('td', {}, MONTHS[r.best.monthIdx]),
@@ -507,7 +562,7 @@ export function renderSettings(root, state, nav) {
       el('span', {}, 'Rank hotspots by target presence'),
       checkbox(targetsRankOn(), (v) => setTargetsRank(v)),
     ]) : null,
-    tn ? el('p.dim', {}, 'Optional: sort the hotspots by how often your targets are reported there (frequency only — never photoability). Turn off to rank all birds again; your list is untouched.') : null,
+    tn ? el('p.dim', {}, 'Optional: sort the hotspots by how often your targets are reported there. Turn off to rank all birds again; your list is untouched.') : null,
   ]));
 
   // --- Birds I've seen (life list) ------------------------------------------

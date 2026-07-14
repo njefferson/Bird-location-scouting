@@ -7,6 +7,9 @@
 // =============================================================================
 
 export const ROADMAP = [
+  // v23 shipped "Facet icons" — the 0–100 score was replaced by per-site bird-
+  // group icons (bright/subdued/faint from real frequency) that double as a
+  // tri-state filter, plus size / nest / behaviour filters.
   // v22 shipped "Bird lists" — starring is informational (where & when) with an
   // optional presence-ranking toggle, plus a seen/life list and "New for me".
   // v21 shipped "Pick your own target birds" — a personal, on-device target

@@ -16,27 +16,32 @@ const ABOUT_HTML = `
   in your region — from the Sacramento foothills to the Humboldt coast, or any
   set of counties you save from the map.</p>
 
-  <h3>How the score works</h3>
-  <p class="about-formula">HotspotScore = Σ&nbsp;frequency × photoability</p>
-  <p>For each species, two things must both be true — so we
-  <strong>multiply</strong>, never add:</p>
-  <ul>
-    <li><strong>Frequency</strong> — how often it's actually reported here this
-    month (from eBird checklists).</li>
-    <li><strong>Photoability</strong> — how shootable it is: size,
-    approachability, whether it perches in the open.</li>
-  </ul>
-  <p>A common bird you can't get near and a stunning bird that's never here both
-  score low. The score rewards birds that are present <em>and</em> shootable.</p>
+  <h3>How the ranking works</h3>
+  <p class="about-formula">presence = Σ&nbsp;frequency (over the birds you care about)</p>
+  <p>Hotspots are ranked by <strong>presence</strong>: how much of what you're
+  looking for is actually there this month, added up from eBird checklist
+  frequencies. The headline number on each card is how many species clear 5% of
+  checklists — the birds you'd likely run into.</p>
+
+  <h3>The bird icons</h3>
+  <p>Each spot shows a row of <strong>bird-group icons</strong> — waders,
+  raptors, songbirds, waterfowl and so on. An icon is bright when that group is
+  really present this month, subdued when it's scarce, faint when it's absent. A
+  <span class="about-inferred">dashed</span> icon means the numbers are still the
+  habitat/season model, not real eBird data.</p>
+  <p>Tap an icon to <strong>filter</strong>: once to want that group, again to
+  exclude it, once more to clear. Filter by size (tiny songbird up to condor
+  scale), nest style, or behaviour too — all of them are honest facts about the
+  bird, a <em>likelihood</em> of a shot, never a promise.</p>
 
   <h3>What you can do</h3>
   <ul>
-    <li><strong>Ranking</strong> — this month's best hotspots, each with its top
-    photographable species and a live "seen recently" badge.</li>
+    <li><strong>Ranking</strong> — this month's best hotspots, each with its bird
+    icons, top species and a live "seen recently" badge.</li>
     <li><strong>Planner</strong> — a hotspot × month heatmap to plan the year.</li>
     <li><strong>Species</strong> — search a bird for its best hotspot and month.</li>
-    <li><strong>Filters</strong> — Shoot Now, Underrated, Be the Documenter,
-    Skip-Thin.</li>
+    <li><strong>Filters</strong> — the bird icons, plus Shoot Now, Underrated,
+    Be the Documenter, Skip-Thin.</li>
     <li>Installable to your home screen; works offline.</li>
   </ul>
 
