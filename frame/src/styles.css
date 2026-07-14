@@ -19,6 +19,9 @@
      lines or the orange region outline. Recompute per theme. */
   --water: #6f9fc0; --road: #b0523a; --park: #7aa863;
   --label-ink: #8a7b64; --label-halo: var(--card);
+  /* County boundaries: near-black and dashed — a man-made line should read as
+     one, distinct from red roads and blue rivers. */
+  --boundary: #2e2618;
   --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
@@ -38,6 +41,7 @@
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
+  --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
   --dock: #30281c;
 }
 * { box-sizing: border-box; }
@@ -232,13 +236,14 @@ table.species-table tr[onclick] { cursor: pointer; }
   border-radius: var(--r); overflow: hidden; background: var(--bg2);
   touch-action: none; -webkit-user-select: none; user-select: none; }
 .county-map { display: block; width: 100%; height: auto; }
-.county-map .county { fill: var(--card2); stroke: var(--line); stroke-width: 1;
+.county-map .county { fill: var(--card2); stroke: var(--boundary); stroke-width: 1;
+  stroke-opacity: .55; stroke-dasharray: 3 1.6; /* dashed = man-made boundary; roads are solid red, rivers solid blue */
   cursor: pointer; transition: fill .1s; vector-effect: non-scaling-stroke; }
 .county-map .county:hover { fill: var(--accent-wash); }
 .county-map .county.sel { fill: var(--accent); stroke: var(--accent2); }
 /* hotspot map view */
 .map-tall .county-map { max-height: 62vh; }
-.county-map .county.far { fill: var(--far); stroke: var(--line); cursor: default; }
+.county-map .county.far { fill: var(--far); cursor: default; }
 .county-map .county.far:hover { fill: var(--far); }
 /* Active-region counties visibly change colour (a warm accent wash), not just a
    border — the outline is re-stroked on top in .county-outline.region. */

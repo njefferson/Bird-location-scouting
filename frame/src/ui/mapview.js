@@ -134,7 +134,8 @@ export function renderMapView(root, state, nav) {
 
   wrap.append(svg);
   const pz = attachPanZoom(wrap, svg, {
-    W, H, home, maxZoom: 24,
+    W, H, home, maxZoom: 64, // deep enough to fill the screen with one lake
+
     // Hotspot names appear once you're zoomed past ~2× the opening view.
     onZoom: (z) => svg.classList.toggle('pin-names-on', z >= homeZoom * 2),
     onTap: (e) => {

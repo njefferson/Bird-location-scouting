@@ -71,7 +71,7 @@ function buildMap(selected, onToggle) {
   wrap.append(svg);
 
   const pz = attachPanZoom(wrap, svg, {
-    W, H,
+    W, H, maxZoom: 24,
     onZoom: (z) => svg.classList.toggle('lm-visible', z >= 2),
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-code]');
