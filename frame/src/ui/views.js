@@ -6,7 +6,7 @@ import { el, clear, pct, sparkline, scoreScale } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openScoreInfo } from './scoreinfo.js';
 import { SPECIES } from '../data/species.js';
-import { hotspotMapLink } from '../data/hotspots.js';
+import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
@@ -163,8 +163,10 @@ function card(r, state, nav) {
       ]))
     : el('span.dim', {}, 'Nothing notably photographable this month.'));
 
+  const links = hotspotMapLinks(h);
   const actions = el('div.card-actions', {}, [
-    el('a.btn', { href: hotspotMapLink(h), target: '_blank', rel: 'noopener' }, '🗺 Maps'),
+    el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Apple Maps` }, 'Apple Maps'),
+    el('a.btn', { href: links.google, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Google Maps` }, 'Google Maps'),
     el('button.btn', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, 'Species matrix'),
     el('button.btn.ghost', { onclick: () => toggleNotes(card, h) }, 'Access'),
   ]);
@@ -257,8 +259,12 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
+  const links = hotspotMapLinks(h);
   root.append(el('div.access-box', {}, [el('strong', {}, 'Access: '), h.access,
-    el('div', {}, el('a.btn', { href: hotspotMapLink(h), target: '_blank', rel: 'noopener' }, '🗺 Open in Maps'))]));
+    el('div.access-links', {}, [
+      el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener' }, 'Apple Maps'),
+      el('a.btn', { href: links.google, target: '_blank', rel: 'noopener' }, 'Google Maps'),
+    ])]));
 
   // Species table: name · photoability · this-month freq · sparkline · shoot subscore.
   const rows = SPECIES.map((s) => {

@@ -19,6 +19,7 @@
      lines or the orange region outline. Recompute per theme. */
   --water: #6f9fc0; --road: #b0523a; --park: #7aa863;
   --label-ink: #8a7b64; --label-halo: var(--card);
+  --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -37,6 +38,7 @@
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
+  --dock: #30281c;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -197,6 +199,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 .access-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 12px; font-size: 13px; }
 .access-box .btn { margin-top: 8px; }
+.access-links { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* species search */
 .search-wrap { margin-bottom: 12px; }
@@ -244,7 +247,42 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Offline orientation basemap — clipped to the state, always pointer-transparent
    so taps fall through to the counties. Strokes stay hairline at every zoom. */
-.basemap, .county-labels, .landmark-labels, .sel-outlines, .county-outline { pointer-events: none; }
+.basemap, .county-labels, .landmark-labels, .pin-names, .sel-outlines, .county-outline { pointer-events: none; }
+
+/* --- Zoom-stable sizing ------------------------------------------------------
+   panzoom writes `--zf` (zoom vs. the full map) on the svg every frame. Text
+   and markers grow with the map only up to a cap, then hold a constant
+   ON-SCREEN size — labels can't become billboards, pins can't become donuts.
+   --fk: cap for landmark/hotspot labels · --fc: for county names ·
+   --fp: for pins (capped at the map's own opening zoom, --pcap). */
+.county-map { --fk: calc(min(var(--zf, 1), 3.2) / var(--zf, 1));
+              --fc: calc(min(var(--zf, 1), 2.2) / var(--zf, 1));
+              --fp: calc(min(var(--zf, 1), var(--pcap, 4)) / var(--zf, 1)); }
+.county-map .county-label { font-size: calc(var(--fs, 8) * 1px * var(--fc)); }
+.county-map .lm-water, .county-map .lm-park, .county-map .lm-shield-t,
+.county-map .pin-name { font-size: calc(var(--fs, 5) * 1px * var(--fk)); }
+.lm-shield rect { width: calc(var(--w, 10) * 1px * var(--fk)); height: calc(var(--h, 7.5) * 1px * var(--fk));
+  x: calc(var(--cx, 0) * 1px - var(--w, 10) * .5px * var(--fk));
+  y: calc(var(--cy, 0) * 1px - var(--h, 7.5) * .5px * var(--fk));
+  rx: calc(var(--h, 7.5) * .5px * var(--fk)); }
+.lm-dot { r: calc(1.6px * var(--fk)); stroke-width: calc(.5px * var(--fk)); }
+.hotspot-map .pin { r: calc(var(--pr, 3) * 1px * var(--fp)); stroke-width: calc(.5px * var(--fp)); }
+.hotspot-map .you-dot { r: calc(var(--pr, 2.4) * 1px * var(--fp)); stroke-width: calc(1px * var(--fp)); }
+
+/* Hotspot names: hidden until zoomed past ~2× the opening view (mapview toggles
+   .pin-names-on), then every dot says which hotspot it is. */
+.hotspot-map .pin-names { display: none; }
+.hotspot-map.pin-names-on .pin-names { display: inline; }
+.pin-name { fill: var(--ink); fill-opacity: .85; text-anchor: middle; font-family: var(--sans);
+  font-weight: 600; paint-order: stroke; stroke: var(--label-halo); stroke-width: .3em;
+  stroke-opacity: .85; stroke-linejoin: round; }
+
+/* Rubber-band pulse when a pinch pushes past the zoom limit — feedback, not lag. */
+.county-map.pz-limit-in { animation: pzLimitIn .22s ease-out; }
+.county-map.pz-limit-out { animation: pzLimitOut .22s ease-out; }
+@keyframes pzLimitIn { 40% { transform: scale(1.025); } }
+@keyframes pzLimitOut { 40% { transform: scale(.978); } }
+.county-map { transform-origin: 50% 50%; }
 .bm-park { fill: var(--park); fill-opacity: .42; stroke: var(--park); stroke-width: .6; stroke-opacity: .7; vector-effect: non-scaling-stroke; }
 .bm-lake { fill: var(--water); fill-opacity: .62; stroke: var(--water); stroke-width: .5; vector-effect: non-scaling-stroke; }
 .bm-river { fill: none; stroke: var(--water); stroke-width: .9; stroke-opacity: .7; vector-effect: non-scaling-stroke; }
@@ -348,10 +386,10 @@ table.species-table tr[onclick] { cursor: pointer; }
    hairline — the bottom shares the column boundary like everything else. */
 .tabs { position: fixed; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; right: 0;
   margin-inline: auto; width: min(736px, calc(100% - 24px)); height: var(--tab-h);
-  background: color-mix(in srgb, var(--card) 92%, transparent);
+  background: color-mix(in srgb, var(--dock) 96%, transparent);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06), 0 12px 30px rgba(60,40,10,.12);
+  border: 1px solid color-mix(in srgb, var(--line) 60%, var(--dim)); border-radius: var(--r); overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10), 0 14px 34px rgba(60,40,10,.18);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
 .tab { background: none; border: 0; color: var(--dim); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }

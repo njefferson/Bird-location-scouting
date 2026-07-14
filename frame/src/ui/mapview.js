@@ -42,7 +42,7 @@ export function renderMapView(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Hotspot map'),
-      el('span.subtitle', {}, `${region.name} · pin brightness = ${MONTHS[state.monthIdx]} score · tap a pin`),
+      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} score · tap a pin`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
@@ -83,12 +83,20 @@ export function renderMapView(root, state, nav) {
     svg.append(o);
   }
 
-  // Pins, sized to the region zoom and colored by this month's score.
+  // Pins, sized to the region zoom and colored by this month's score. `--pr`
+  // (base radius) + the map's `--pcap` (the home-view zoom) let CSS hold each
+  // pin at a constant on-screen size once you zoom past the opening view —
+  // no more donut-sized blobs pinched all the way in.
   const ranked = rankHotspots(hotspots, state.monthIdx);
   const scoreById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.score]));
   const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
   const home = homeBox(bbox, W, H);
+  const homeZoom = W / home.w;
+  svg.style.setProperty('--pcap', homeZoom.toFixed(3));
   const r = Math.max(2.5, home.w * 0.012);
+  const pinNames = document.createElementNS(SVG_NS, 'g');
+  pinNames.setAttribute('class', 'pin-names');
+  pinNames.setAttribute('aria-hidden', 'true');
   for (const h of hotspots) {
     const [x, y] = latLngToMap(h.lat, h.lng);
     const score = scoreById[h.id] ?? 0;
@@ -98,21 +106,37 @@ export function renderMapView(root, state, nav) {
     pin.setAttribute('r', r.toFixed(1));
     pin.setAttribute('class', 'pin');
     pin.style.setProperty('--s', score);
+    pin.style.setProperty('--pr', r.toFixed(1));
     pin.dataset.id = h.id;
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} score ${score}`;
     pin.append(title);
     svg.append(pin);
+    // The pin's NAME — hidden until you zoom in past ~2× the opening view,
+    // then every dot says which hotspot it is (the "which point is Ice House?"
+    // problem). dy is in em so the gap tracks the capped label size.
+    const nm = document.createElementNS(SVG_NS, 'text');
+    nm.setAttribute('x', x.toFixed(1));
+    nm.setAttribute('y', y.toFixed(1));
+    nm.setAttribute('dy', '1.7em');
+    nm.setAttribute('class', 'pin-name');
+    nm.setAttribute('font-size', '4.5');
+    nm.style.setProperty('--fs', '4.5');
+    nm.textContent = h.name;
+    pinNames.append(nm);
   }
 
-  // Landmark names (roads, rivers, lakes, parks), then county names on top —
-  // both pointer-transparent, quiet statewide, readable as you pinch in.
+  // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
+  // county names — all pointer-transparent, all size-capped by --zf.
   appendLandmarkLabels(svg);
+  svg.append(pinNames);
   appendCountyLabels(svg);
 
   wrap.append(svg);
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, maxZoom: 24,
+    // Hotspot names appear once you're zoomed past ~2× the opening view.
+    onZoom: (z) => svg.classList.toggle('pin-names-on', z >= homeZoom * 2),
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
       if (hit) nav.go(`#/hotspot/${encodeURIComponent(hit.dataset.id)}`);
@@ -133,6 +157,7 @@ export function renderMapView(root, state, nav) {
       me.setAttribute('cx', x.toFixed(1));
       me.setAttribute('cy', y.toFixed(1));
       me.setAttribute('r', (r * 0.8).toFixed(1));
+      me.style.setProperty('--pr', (r * 0.8).toFixed(1));
       me.setAttribute('class', 'you-dot');
       svg.append(me);
     }, () => {}, { maximumAge: 300000, timeout: 5000 });

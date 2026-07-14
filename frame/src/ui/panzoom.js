@@ -18,20 +18,42 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
-  const setVB = () => {
+  // Writes are batched to one per animation frame: pinch/drag fires pointermove
+  // far faster than the screen paints, and re-writing the viewBox each event is
+  // what made big maps feel rough. `--zf` (zoom factor vs. the full map) drives
+  // the CSS that keeps labels/pins a constant on-screen size once zoomed in.
+  let raf = 0;
+  const applyVB = () => {
+    raf = 0;
     svg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
-    if (onZoom) onZoom(W / vw); // zoom factor relative to the full map width
+    const zf = W / vw;
+    svg.style.setProperty('--zf', zf.toFixed(3));
+    if (onZoom) onZoom(zf);
   };
+  const setVB = () => { if (!raf) raf = requestAnimationFrame(applyVB); };
   function clampPan() {
     vx = Math.min(Math.max(vx, 0), W - vw);
     vy = Math.min(Math.max(vy, 0), H - vh);
   }
+  // A quick rubber-band pulse when a zoom gesture pushes past the limit — the
+  // map answers "you're all the way in/out" instead of just ignoring the pinch.
+  let lastBounce = 0;
+  function bounce(cls) {
+    const now = performance.now();
+    if (now - lastBounce < 450) return;
+    lastBounce = now;
+    svg.classList.add(cls);
+    svg.addEventListener('animationend', () => svg.classList.remove(cls), { once: true });
+  }
   function zoomAt(clientX, clientY, factor) {
+    const minW = W / maxZoom;
+    if (factor > 1.02 && vw <= minW * 1.001) bounce('pz-limit-in');
+    else if (factor < 0.98 && vw >= W * 0.999) bounce('pz-limit-out');
     const rect = svg.getBoundingClientRect();
     const px = (clientX - rect.left) / rect.width;
     const py = (clientY - rect.top) / rect.height;
     const ax = vx + px * vw, ay = vy + py * vh; // svg point under the cursor
-    vw = Math.min(Math.max(vw / factor, W / maxZoom), W);
+    vw = Math.min(Math.max(vw / factor, minW), W);
     vh = vw * (H / W);
     vx = ax - px * vw;
     vy = ay - py * vh;

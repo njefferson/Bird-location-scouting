@@ -55,10 +55,15 @@ export function appendBasemap(svg, id = 'bm') {
 
 // A styled name label. Water/park names are plain text in their layer colour;
 // road numbers get a small shield so a bare "50" reads as a highway.
-function textLabel(l, cls, size) {
+// `--fs` is the base size in viewBox units; CSS combines it with the map's
+// `--zf` so labels grow with the zoom only up to a cap, then hold a constant
+// on-screen size — no more billboard text when pinched all the way in.
+function textLabel(l, cls, size, dy) {
   const t = document.createElementNS(SVG_NS, 'text');
   t.setAttribute('x', l.x); t.setAttribute('y', l.y);
+  if (dy) t.setAttribute('dy', dy); // em offset: tracks the (capped) font size
   t.setAttribute('class', cls); t.setAttribute('font-size', size);
+  t.style.setProperty('--fs', size);
   t.textContent = l.t;
   return t;
 }
@@ -88,15 +93,16 @@ export function appendLandmarkLabels(svg) {
   };
   for (const l of WATER_POINTS) {
     g.append(dot(l, 'lm-dot lm-dot-water'));
-    g.append(textLabel({ x: l.x, y: l.y + 4.5, t: l.t }, 'lm-water', 4.5));
+    g.append(textLabel(l, 'lm-water', 4.5, '1.5em'));
   }
   for (const l of REFUGE_POINTS) {
     g.append(dot(l, 'lm-dot lm-dot-park'));
-    g.append(textLabel({ x: l.x, y: l.y + 4.5, t: l.t }, 'lm-park', 4.5));
+    g.append(textLabel(l, 'lm-park', 4.5, '1.5em'));
   }
 
   // Road shields: a pill in the ROAD colour (so the number reads as part of the
-  // road it sits on), major routes only, de-collided at build time.
+  // road it sits on), major routes only, de-collided at build time. The rect's
+  // geometry is mirrored into CSS vars so the pill counter-scales with the text.
   for (const l of ROAD_LABELS) {
     const fs = 4.5, h = fs + 3, w = Math.max(h, l.t.length * fs * 0.62 + 3.6);
     const shield = document.createElementNS(SVG_NS, 'g');
@@ -105,6 +111,8 @@ export function appendLandmarkLabels(svg) {
     r.setAttribute('x', (l.x - w / 2).toFixed(1)); r.setAttribute('y', (l.y - h / 2).toFixed(1));
     r.setAttribute('width', w.toFixed(1)); r.setAttribute('height', h.toFixed(1));
     r.setAttribute('rx', (h / 2).toFixed(1));
+    r.style.setProperty('--cx', l.x); r.style.setProperty('--cy', l.y);
+    r.style.setProperty('--w', w.toFixed(1)); r.style.setProperty('--h', h.toFixed(1));
     const t = textLabel(l, 'lm-shield-t', fs);
     shield.append(r, t);
     g.append(shield);
@@ -136,6 +144,7 @@ export function appendCountyLabels(svg, codes = Object.keys(COUNTY_SHAPES)) {
     t.setAttribute('y', c.y.toFixed(1));
     t.setAttribute('class', 'county-label');
     t.setAttribute('font-size', size.toFixed(1));
+    t.style.setProperty('--fs', size.toFixed(1)); // counter-scaled by --zf in CSS
     t.textContent = name;
     g.append(t);
   }
