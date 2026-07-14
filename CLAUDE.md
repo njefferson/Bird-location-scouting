@@ -74,39 +74,51 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 - Labels stay honest; every failure explains itself and offers a way forward.
 - Product values: free, on-device, offline-first, no account, no install.
 
-## APPROVED next-release plan — "Bird lists" evolution (locked with Noah
-## 2026-07-14; he said "just capture the plan", so DO NOT BUILD until he says
-## "begin next release"). This is direction, not a taste-guess — build to it.
-- REWORK the v21 stars so they are INFORMATIONAL, not "judged". Noah's exact
-  words: "Starred species shouldn't be 'judged,' only info given." He chose
-  "Both, as two modes":
-  1. DEFAULT: starring a bird just gives INFO — surface its where/when (best
-     hotspots + months) on the user's list; it does NOT rerank hotspots and
-     photoability never enters.
-  2. OPTIONAL TOGGLE: also rank hotspots by PRESENCE (frequency) of the starred
-     birds — presence only, NEVER photoability. (This deliberately REVERSES the
-     v21 behavior, where targets are photoability-weighted. See the v21 note in
-     Project facts: v21 shipped judged; next release un-judges by default.)
-- NEW "lifer" / seen list: users record every bird they've already seen so they
-  can focus on new ones. Behavior = "DIM BUT KEEP VISIBLE" (Noah's pick over
-  "filter out of scoring"): seen birds stay in every list/matrix but greyed,
-  and are excluded ONLY from a dedicated "new birds" view — NOT removed from the
-  global photographer score. Think about bulk-importing a life list, and
-  per-region vs global scope, but confirm those interactions before committing.
-- "Possibly other things off of that" (Noah) — open-ended; confirm before adding.
+## Next-release plan: NONE approved right now. The "Bird lists" plan (locked
+## 2026-07-14) SHIPPED as v22 the same day — see Project facts. Noah left one
+## open thread from that plan: "Possibly other things off of that" — open-ended;
+## confirm with him before building anything on top of the lists.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
 - Month scrubbing by dragging across sparklines/matrix (direct manipulation).
 - Review the IRstudio repo for the user's UI patterns (see session-scope note).
 ## Shipped from this backlog (don't rebuild):
-- v21 (2026-07-14): "Pick your own target birds" — see Project facts. NOTE its
-  targets ARE photoability-judged; the approved next release reverses that.
+- v21 (2026-07-14): "Pick your own target birds" — see Project facts. Its
+  photoability-judged targeting was reversed by v22 the same day.
 - v18 (2026-07-13): auto-switch Undo; Undo for region delete and picker Clear;
   `.far` counties lifted off the map background; dead-end rescue for empty
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v22 shipped 2026-07-14: "Bird lists" — the approved plan, built to spec.
+  Stars are INFORMATIONAL by default: the target list (`#/targets`,
+  ui/targets.js) shows each starred bird's where/when (best hotspots + peak
+  months by PRESENCE via `bestForSpecies(..., { byPresence: true })`); starring
+  never re-ranks. Optional toggle `frame.targetsRank` (default OFF) ranks
+  hotspots by target presence — `rankHotspots(..., { presenceOnly })` sums
+  frequency WITHOUT photoability (this reversed v21; old key `frame.targetsOn`
+  is orphaned, harmless). NEW seen/life list (model/seen.js, ui/seen.js,
+  `#/seen`): localStorage `frame.seen` (GLOBAL scope — one life list) +
+  `frame.newBirdsOn` ("New for me" mode, default OFF). Seen birds are dimmed
+  (`.is-seen`) but stay in every list and in the global score; excluded only in
+  New-for-me mode. Bulk import on the seen screen matches pasted names/eBird
+  rows by longest-name match (verified: no curated name is contained in
+  another). model/lists.js `rankingSpec()` is the ONE resolver every ranked
+  view (cards, planner, map, hotspot detail) passes to rankHotspots — modes
+  compose there. Both modes have standing bars (★ .targetbar / ✦ .newbar) with
+  one-tap exits; an empty working set (all targets seen + modes on) renders an
+  honest "Nothing left to count" dead end, not silent zeros. Seen/new
+  affordances use the --slate token vs gold stars.
+  IMPORTANT: Noah merged v22 with an explicit "Push to main" WITHOUT the
+  on-device acceptance pass (his call, his gate). The NEEDS-HIS-HANDS items
+  from PR #22 were never checked on the iPad: pinch/scroll feel of the new
+  screens, the ✓-beside-★ tap target in the matrix's narrow mark cell, the
+  real eBird-export import path, and the slate-vs-gold taste read in both
+  themes. If he reports friction on any of these, that's expected follow-up,
+  not a regression hunt. Decisions he never explicitly confirmed (built to
+  recommended defaults, flagged in PR #22): global seen scope, bulk import
+  included, new-birds as a standing mode (not a filter chip).
 - Session repo access is FIXED at session creation. add_repo/list_repos hang
   on an approval that never surfaces on iPad, the GitHub MCP hard-denies
   unlisted repos, and the sandbox proxy intercepts even public github.com
@@ -123,10 +135,9 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Clear. Reusable `starButton()` also on species pages (`.sp-head`) and every
   hotspot species-matrix row (`.star-cell`). Standing `.targetbar` on the ranked
   views with a non-destructive "Show all birds" exit; Settings "Target birds"
-  section; `scoreinfo.js` shows a `.si-targeting` note when active. IMPORTANT:
-  v21 targets are photoability-WEIGHTED (an easy target ranks a spot higher) —
-  the APPROVED next release deliberately makes stars informational-by-default
-  instead (see the next-release plan above).
+  section; `scoreinfo.js` shows a `.si-targeting` note when active. NOTE:
+  v21's photoability-WEIGHTED targeting was REVERSED by v22 (stars are
+  informational now; the optional ranking is presence-only) — don't restore it.
 - v19 shipped 2026-07-13: "Field Notebook" reskin. All colors are :root tokens
   in styles.css with a `[data-theme="dark"]` Dawn Mode override — restyle by
   swapping tokens, never hex-in-place. Theme state lives in ui/theme.js
