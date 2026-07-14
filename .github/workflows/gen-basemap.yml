@@ -28,9 +28,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Fetch reservoir shorelines from OpenStreetMap
+      - name: Fetch reservoir shorelines from OpenStreetMap (Overpass)
+        id: overpass
         working-directory: frame
+        continue-on-error: true
         run: node scripts/gen-water-shapes.mjs
+      # Deterministic fallback: if Overpass is rate-limiting, download the
+      # Geofabrik CA+NV extracts (the bulk channel OSM provides precisely so
+      # nobody hammers Overpass), filter water polygons locally, and rerun the
+      # same matcher from the file. Cannot be rate-limited.
+      - name: Fallback — Geofabrik extract
+        if: steps.overpass.outcome == 'failure'
+        working-directory: frame
+        run: |
+          sudo apt-get update -q && sudo apt-get install -qy osmium-tool
+          curl -fsSLo /tmp/ca.osm.pbf https://download.geofabrik.de/north-america/us/california-latest.osm.pbf
+          curl -fsSLo /tmp/nv.osm.pbf https://download.geofabrik.de/north-america/us/nevada-latest.osm.pbf
+          osmium tags-filter /tmp/ca.osm.pbf nwr/natural=water -o /tmp/water-ca.osm.pbf
+          osmium tags-filter /tmp/nv.osm.pbf nwr/natural=water -o /tmp/water-nv.osm.pbf
+          osmium export /tmp/water-ca.osm.pbf -f geojsonseq -o /tmp/water.geojsonseq
+          osmium export /tmp/water-nv.osm.pbf -f geojsonseq -o /tmp/water-nv.geojsonseq
+          cat /tmp/water-nv.geojsonseq >> /tmp/water.geojsonseq
+          node scripts/gen-water-shapes.mjs --from /tmp/water.geojsonseq
       - name: Regenerate Natural Earth layers (only if asked)
         if: contains(github.event.head_commit.message, '[full]')
         working-directory: frame

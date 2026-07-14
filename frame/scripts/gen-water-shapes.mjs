@@ -129,28 +129,58 @@ function elementRings(el) {
 
 const norm = (s) => (s || '').toLowerCase().replace(/\b(reservoir|res\.?|lake|the)\b/g, '').replace(/[^a-z]/g, '');
 
-// ONE combined query for every reservoir (43 separate queries is what tripped
-// the rate limiter): union all the around-clauses, fetch once, match locally.
-const clauses = RESERVOIRS.map((r) =>
-  `  way["natural"="water"](around:8000,${r.lat},${r.lng});\n  relation["natural"="water"](around:8000,${r.lat},${r.lng});`).join('\n');
-const query = `[out:json][timeout:180];\n(\n${clauses}\n);\nout geom qt;`;
+// Two transports, one matcher:
+//   default      — ONE combined Overpass query (43 separate queries is what
+//                  tripped the rate limiter): union the around-clauses, fetch
+//                  once, match locally.
+//   --from FILE  — a GeoJSONSeq of natural=water features exported from a
+//                  Geofabrik extract (see gen-basemap.yml's fallback step).
+//                  Deterministic bulk download; cannot be rate-limited.
+const fromIdx = process.argv.indexOf('--from');
+const fromFile = fromIdx > -1 ? process.argv[fromIdx + 1] : null;
 
-console.log(`One combined Overpass query for ${RESERVOIRS.length} waters…`);
-const res = await overpass(query);
-console.log(`  ${res.elements?.length ?? 0} water elements returned`);
-
-// Pre-project every candidate ring once (elements are shared by all matchers).
 const candidates = [];
-const seenEl = new Set();
-for (const el of res.elements || []) {
-  const key = `${el.type}/${el.id}`;
-  if (seenEl.has(key)) continue;
-  seenEl.add(key);
-  for (const ringLL of elementRings(el)) {
-    const ring = ringLL.map(([lng, lat]) => proj(lng, lat));
-    const area = ringArea(ring);
-    if (area < 0.5) continue; // sub-pixel puddles
-    candidates.push({ ring, area, name: el.tags?.name || '' });
+function addCandidate(ringLL, name) {
+  const ring = ringLL.map(([lng, lat]) => proj(lng, lat));
+  const area = ringArea(ring);
+  if (area < 0.5) return; // sub-pixel puddles
+  candidates.push({ ring, area, name: name || '' });
+}
+
+if (fromFile) {
+  console.log(`Reading water features from ${fromFile} (Geofabrik extract)…`);
+  const { createReadStream } = await import('node:fs');
+  const readline = await import('node:readline');
+  // Only features near a curated point matter — cheap lat/lng prefilter.
+  const nearAny = (lng, lat) => RESERVOIRS.some((r) => Math.abs(r.lat - lat) < 0.12 && Math.abs(r.lng - lng) < 0.15);
+  const rl = readline.createInterface({ input: createReadStream(fromFile), crlfDelay: Infinity });
+  let seen = 0;
+  for await (const line of rl) {
+    const s = line.replace(/^\x1e/, '').trim(); // RS-delimited GeoJSONSeq
+    if (!s) continue;
+    let f; try { f = JSON.parse(s); } catch { continue; }
+    const g = f.geometry;
+    if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) continue;
+    const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+    const first = polys[0]?.[0]?.[0];
+    if (!first || !nearAny(first[0], first[1])) continue;
+    seen++;
+    for (const poly of polys) for (const ringLL of poly) addCandidate(ringLL, f.properties?.name);
+  }
+  console.log(`  ${seen} nearby water features kept`);
+} else {
+  const clauses = RESERVOIRS.map((r) =>
+    `  way["natural"="water"](around:8000,${r.lat},${r.lng});\n  relation["natural"="water"](around:8000,${r.lat},${r.lng});`).join('\n');
+  const query = `[out:json][timeout:180];\n(\n${clauses}\n);\nout geom qt;`;
+  console.log(`One combined Overpass query for ${RESERVOIRS.length} waters…`);
+  const res = await overpass(query);
+  console.log(`  ${res.elements?.length ?? 0} water elements returned`);
+  const seenEl = new Set();
+  for (const el of res.elements || []) {
+    const key = `${el.type}/${el.id}`;
+    if (seenEl.has(key)) continue;
+    seenEl.add(key);
+    for (const ringLL of elementRings(el)) addCandidate(ringLL, el.tags?.name);
   }
 }
 
