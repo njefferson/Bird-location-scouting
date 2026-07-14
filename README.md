@@ -15,7 +15,8 @@ shootable), not by lister rarity.
 ### Geographic coverage
 The 58 California counties plus 5 western-Nevada counties (Douglas, Lyon,
 Storey, Washoe, Carson City — the Tahoe/Reno area). Every county carries its
-top eBird hotspots from the quarterly data build; regions (sets of counties)
+top eBird hotspots from the quarterly data build (El Dorado, Placer,
+Sacramento and Humboldt keep every hotspot); regions (sets of counties)
 are user-defined on the county map, up to 3 saved on-device.
 
 ### The score

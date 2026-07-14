@@ -183,10 +183,11 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   root.append(actions);
 
   // Honest coverage note: statewide counties carry the build's default depth;
-  // featured home-turf counties go deeper (see counties.js `depth`).
+  // featured home-turf counties are configured to keep everything (the data
+  // itself catches up at each quarterly refresh — see counties.js `depth`).
   const featured = Object.entries(COUNTIES).filter(([, c]) => c.depth).map(([, c]) => c.name.replace(' (NV)', ''));
   root.append(el('p.legend', {},
-    `Each county carries its top ${DEFAULT_DEPTH} eBird hotspots from the quarterly build; ${featured.join(', ')} go deeper (40). Any region you save works instantly.`));
+    `Each county carries its top ${DEFAULT_DEPTH} eBird hotspots from the quarterly build; ${featured.join(', ')} keep every hotspot (the data catches up at each quarterly refresh). Any region you save works instantly.`));
 
   updateCount();
 
