@@ -1,17 +1,22 @@
 // =============================================================================
-// TARGET BIRDS — the picker screen (#/targets), the standing "mode" indicator,
-// and a reusable star toggle. Building the list is direct manipulation: tap a
-// star anywhere (here, a species page, a hotspot's matrix) and the ranking
-// re-weights to YOUR birds. The mode announces itself with a standing bar and
-// a non-destructive exit (Show all birds), per the product's taste rules.
+// TARGET BIRDS — the picker screen (#/targets), the standing presence-mode
+// indicator, and a reusable star toggle. Starring is INFORMATIONAL: tap a star
+// anywhere (here, a species page, a hotspot's matrix) and the bird joins your
+// list, where the app tells you WHERE and WHEN to find it. Photoability never
+// enters. One optional toggle — "rank by presence" — additionally sorts the
+// hotspots by how often your targets appear; it announces itself with a standing
+// bar and a non-destructive exit, per the product's taste rules.
 // =============================================================================
-import { el, clear } from './dom.js';
+import { el, clear, pct, sparkline } from './dom.js';
 import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
-import { STATUS_LABEL } from '../model/inference.js';
+import { MONTHS, STATUS_LABEL } from '../model/inference.js';
+import { bestForSpecies } from '../model/scoring.js';
+import { getHotspots, activeRegion } from '../model/regions.js';
+import { isSeen } from '../model/seen.js';
 import {
-  isTarget, toggleTarget, targetCount, clearTargets,
-  targetsEngaged, setEngaged, targetsActive,
+  isTarget, toggleTarget, getTargets, targetCount, clearTargets,
+  targetsRankOn, setTargetsRank, targetsRankActive,
 } from '../model/targets.js';
 
 // A species' dominant habitat, for grouping the picker into browsable sections.
@@ -56,34 +61,29 @@ export function starButton(s, onToggle) {
 }
 
 /**
- * The standing mode indicator, prepended to Ranking / Planner / Map. Returns
- * null when the user has no targets yet (nothing to announce). When they do:
- *   engaged   → "Ranking your N target birds"  · [Show all birds] · [Edit]
- *   disengaged→ "Showing all birds"            · [Rank my N targets] · [Edit]
- * Toggling engagement never deletes the list — the exit is reversible.
+ * The standing presence-mode indicator, prepended to Ranking / Planner / Map.
+ * Returns null unless "rank by presence" is actually steering the ranking — a
+ * mode only announces itself while it's on; starring is otherwise silent info.
+ * When on: "Ranking by presence of your N targets" · [Show all birds] · [Edit].
  */
 export function targetBar(state, nav, rerender) {
+  if (!targetsRankActive()) return null;
   const n = targetCount();
-  if (!n) return null;
-  const active = targetsActive();
-  const bar = el('div.targetbar', { class: active ? 'engaged' : '' });
-
-  const flip = () => { setEngaged(!targetsEngaged()); rerender(); };
-
+  const bar = el('div.targetbar.engaged');
   bar.append(el('span.tb-mark', { 'aria-hidden': 'true' }, '★'));
-  bar.append(el('span.tb-label', {}, active
-    ? [el('strong', {}, `Ranking your ${n} target bird${n === 1 ? '' : 's'}`), ' — only your birds count.']
-    : [el('strong', {}, 'Showing all birds'), ` · your ${n} target${n === 1 ? '' : 's'} set aside.`]));
-
+  bar.append(el('span.tb-label', {}, [
+    el('strong', {}, `Ranking by presence of your ${n} target bird${n === 1 ? '' : 's'}`),
+    ' — how often they’re here, not how shootable.',
+  ]));
   bar.append(el('div.tb-actions', {}, [
-    el('button.btn.small', { onclick: flip }, active ? 'Show all birds' : `Rank my ${n}`),
+    el('button.btn.small', { onclick: () => { setTargetsRank(false); rerender(); } }, 'Show all birds'),
     el('button.btn.ghost.small', { onclick: () => nav.go('#/targets') }, 'Edit'),
   ]));
   return bar;
 }
 
 // =============================================================================
-// PICKER (#/targets) — browse all curated species, star the ones you want.
+// PICKER (#/targets) — your list with where/when info, then browse & star.
 // =============================================================================
 export function renderTargets(root, state, nav) {
   clear(root);
@@ -91,32 +91,79 @@ export function renderTargets(root, state, nav) {
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
     el('div.title-row', {}, [
       el('h1', {}, 'Target birds'),
-      el('span.subtitle', {}, 'Pick the birds you actually want to photograph — your list, your ranking.'),
+      el('span.subtitle', {}, 'Star the birds you want — see where and when to find each one.'),
     ]),
   ]));
 
-  // Standing summary: live count + the engage toggle + Clear, so the picker
-  // itself shows whether your list is driving the ranking and lets you exit.
+  // Standing summary: live count + the presence toggle + Clear.
   const summary = el('div.tg-summary');
+  const yourList = el('div.tg-yourlist');
   const listWrap = el('div.tg-list');
 
   function repaintSummary() {
     clear(summary);
     const n = targetCount();
-    const engaged = targetsEngaged();
     summary.append(el('span.tg-count', {}, n
-      ? `${n} bird${n === 1 ? '' : 's'} chosen`
+      ? `${n} bird${n === 1 ? '' : 's'} starred`
       : 'No targets yet — tap a star to add one.'));
     if (n) {
       const toggle = el('label.tg-toggle', {}, [
-        el('span', {}, 'Rank by my targets'),
-        (() => { const c = el('input', { type: 'checkbox' }); c.checked = engaged; c.addEventListener('change', () => { setEngaged(c.checked); repaintSummary(); }); return c; })(),
+        el('span', {}, 'Rank hotspots by presence'),
+        (() => { const c = el('input', { type: 'checkbox' }); c.checked = targetsRankOn(); c.addEventListener('change', () => setTargetsRank(c.checked)); return c; })(),
       ]);
       summary.append(toggle);
       summary.append(el('button.btn.ghost.small', {
-        onclick: () => { clearTargets(); repaintList(); repaintSummary(); },
+        onclick: () => { clearTargets(); repaintYourList(); repaintList(); repaintSummary(); },
       }, 'Clear all'));
     }
+  }
+
+  // The informational payoff: for each starred bird, WHERE and WHEN in this
+  // region — best hotspots + peak months, by presence (frequency), no
+  // photoability. Seen birds stay visible but dimmed.
+  function repaintYourList() {
+    clear(yourList);
+    const names = getTargets();
+    if (!names.length) return;
+    const hotspots = getHotspots();
+    yourList.append(el('h2.tg-group', {}, `Your list — where & when in ${activeRegion().name}`));
+    if (!hotspots.length) {
+      yourList.append(el('p.dim', {}, 'This region has no hotspot data loaded, so there’s nowhere to place your birds yet. Switch regions from the pills, or build one from the county map.'));
+      return;
+    }
+    for (const name of names) {
+      const s = SPECIES.find((x) => x.name === name);
+      if (!s) continue;
+      yourList.append(infoCard(s, hotspots, nav));
+    }
+  }
+
+  function infoCard(s, hotspots, nav) {
+    const ranked = bestForSpecies(s, hotspots, { byPresence: true });
+    const withPresence = ranked.filter((r) => r.best.value > 0.01);
+    const node = el('div.tl-card', { class: isSeen(s.name) ? 'is-seen' : '' });
+    node.append(starButton(s, () => { repaintYourList(); repaintList(); repaintSummary(); }));
+
+    const main = el('div.tl-main');
+    main.append(el('a.tl-name', {
+      href: '#/species', title: `See ${s.name} in the planner`,
+      onclick: (ev) => { ev.preventDefault(); state.speciesQuery = s.name; nav.go('#/species'); },
+    }, s.name + (isSeen(s.name) ? ' · seen' : '')));
+
+    if (!withPresence.length) {
+      main.append(el('p.tl-where.dim', {}, 'Not expected at this region’s hotspots — try another region.'));
+    } else {
+      const top = withPresence[0];
+      main.append(el('p.tl-where', {}, [
+        'Best: ', el('strong', {}, top.hotspot.name), ' · peak ', el('strong', {}, MONTHS[top.best.monthIdx]),
+        ` (${pct(top.best.value)}${top.best.inferred ? '*' : ''})`,
+      ]));
+      const others = withPresence.slice(1, 3).map((r) => r.hotspot.name);
+      if (others.length) main.append(el('p.tl-more.dim', {}, `also ${others.join(', ')}`));
+      main.append(sparkline(top.months, { inferred: top.best.inferred, w: 150 }));
+    }
+    node.append(main);
+    return node;
   }
 
   const search = el('input.search', { type: 'search', placeholder: 'Filter species…', value: state.targetQuery || '' });
@@ -144,8 +191,8 @@ export function renderTargets(root, state, nav) {
   }
 
   function row(s) {
-    const node = el('div.tg-row', { class: isTarget(s.name) ? 'on' : '' }, [
-      starButton(s, () => { node.classList.toggle('on', isTarget(s.name)); repaintSummary(); }),
+    const node = el('div.tg-row', { class: [isTarget(s.name) ? 'on' : '', isSeen(s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
+      starButton(s, () => { node.classList.toggle('on', isTarget(s.name)); repaintYourList(); repaintSummary(); }),
       el('div.tg-row-main', {}, [
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
@@ -156,9 +203,11 @@ export function renderTargets(root, state, nav) {
   }
 
   repaintSummary();
+  repaintYourList();
   repaintList();
   root.append(summary);
+  root.append(yourList);
   root.append(el('div.search-wrap', {}, search));
-  root.append(el('p.dim.tg-hint', {}, 'Grouped by each bird’s main habitat, most-shootable first. Photoability is how easy the bird is to photograph at reach — it still weights your list, so an easy target ranks a spot higher than a hard one.'));
+  root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear (frequency only — photoability, how easy a bird is to shoot, is shown but never used here).'));
   root.append(listWrap);
 }

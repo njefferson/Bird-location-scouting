@@ -7,8 +7,10 @@
 // =============================================================================
 
 export const ROADMAP = [
+  // v22 shipped "Bird lists" — starring is informational (where & when) with an
+  // optional presence-ranking toggle, plus a seen/life list and "New for me".
   // v21 shipped "Pick your own target birds" — a personal, on-device target
-  // list that re-weights every score to the species you chose.
+  // list (now reworked by v22 to be informational-by-default).
   // v20 shipped the map landmarks (rivers, roads, lakes, parks, coastline),
   // county-name labels, the colour key and tap-to-explain scores. Still on the
   // list from that request: the fussier, messier land-use layers.

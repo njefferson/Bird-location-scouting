@@ -1,26 +1,30 @@
 // =============================================================================
 // TARGET BIRDS — a personal, on-device list of the species YOU want to shoot.
 // =============================================================================
-// Frame's photographer score is Σ frequency × photoability across ALL curated
-// species, with one fixed photoability rating for everyone. This layer lets a
-// user pick their own targets so the ranking reflects THEIR birds, not the
-// generic "most shootable" set: when targets are active, only the chosen
-// species contribute to every score (photoability still weights shootability
-// WITHIN your list — a target that's also easy to shoot is the better bet).
+// Starring a bird is INFORMATIONAL by default: it pins the species to your list
+// and the app tells you WHERE and WHEN to find it (best hotspots + peak months)
+// — it does NOT re-rank the hotspots and photoability never enters. Starred
+// species are surfaced, not "judged".
+//
+// One OPTIONAL toggle changes that: "rank by presence" ranks the hotspots by how
+// OFTEN your targets are reported there (frequency only — never photoability).
+// That's the whole knob. (This deliberately reverses the old v21 behaviour,
+// where targets were photoability-weighted; stars are informational now.)
 //
 // State (localStorage, on-device, no account — like theme + regions):
-//   frame.targets    JSON array of eBird COMMON NAMEs (the key SPECIES uses)
-//   frame.targetsOn  '1' | '0' — the standing "rank my targets" toggle. Lets a
-//                    user flip back to all-birds WITHOUT losing their list, so
-//                    the mode has an obvious, non-destructive exit.
-// A list of 0 species is never "active" — an empty target list can't rank
-// anything, so the app quietly behaves as All Birds until the first star.
+//   frame.targets      JSON array of eBird COMMON NAMEs (the key SPECIES uses)
+//   frame.targetsRank  '1' | '0' — the standing "rank by target presence" toggle.
+//                      DEFAULT OFF: stars inform, they don't re-rank. Flipping it
+//                      on/off never touches the list, so the mode has an obvious,
+//                      non-destructive exit.
+// A list of 0 species can't rank or inform anything, so an empty list is never
+// "active" — the app just behaves as All Birds until the first star.
 // =============================================================================
 
 import { SPECIES } from '../data/species.js';
 
 const KEY = 'frame.targets';
-const ON_KEY = 'frame.targetsOn';
+const RANK_KEY = 'frame.targetsRank';
 
 function read() {
   try {
@@ -52,25 +56,24 @@ export function toggleTarget(name) {
 export function setTargets(names) { write([...new Set(names)]); }
 export function clearTargets() { write([]); }
 
-// --- The standing "rank my targets" toggle (non-destructive exit) -----------
-/** Is targeting engaged? Defaults ON, so the first star immediately ranks. */
-export function targetsEngaged() {
-  try { return localStorage.getItem(ON_KEY) !== '0'; } catch { return true; }
+// --- The standing "rank by target presence" toggle (non-destructive) --------
+/** Is presence-ranking engaged? DEFAULT OFF — stars inform, they don't re-rank. */
+export function targetsRankOn() {
+  try { return localStorage.getItem(RANK_KEY) === '1'; } catch { return false; }
 }
-export function setEngaged(on) {
-  try { localStorage.setItem(ON_KEY, on ? '1' : '0'); } catch { /* private mode */ }
+export function setTargetsRank(on) {
+  try { localStorage.setItem(RANK_KEY, on ? '1' : '0'); } catch { /* private mode */ }
 }
 
-/** True when the ranking should actually use the target subset. */
-export function targetsActive() { return targetsEngaged() && read().length > 0; }
+/** True when the ranking should actually rank hotspots by target presence. */
+export function targetsRankActive() { return targetsRankOn() && read().length > 0; }
 
 /**
- * The species set every ranking should score against right now: the target
- * subset when targeting is active (in curated SPECIES order, so the matrix and
- * cards stay stable), else the full curated list.
+ * The chosen species as SPECIES objects, in curated SPECIES order (so the matrix
+ * and cards stay stable). Used both for the presence ranking and for the
+ * informational "where & when" cards on your list.
  */
-export function activeSpecies() {
-  if (!targetsActive()) return SPECIES;
+export function targetSubset() {
   const chosen = new Set(read());
   return SPECIES.filter((s) => chosen.has(s.name));
 }

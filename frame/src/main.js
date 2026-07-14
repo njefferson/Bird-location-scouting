@@ -6,6 +6,7 @@ import { renderCards, renderMatrix, renderHotspotDetail, renderSpecies, renderSe
 import { renderRegionPicker } from './ui/regionpicker.js';
 import { renderMapView } from './ui/mapview.js';
 import { renderTargets, targetBar } from './ui/targets.js';
+import { renderSeen, newBirdsBar } from './ui/seen.js';
 import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter, regionOverlayDist } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
@@ -122,16 +123,22 @@ function render() {
     });
   }
   if (h === '#/targets') return renderTargets(app, state, nav);
+  if (h === '#/seen') return renderSeen(app, state, nav);
   if (h.startsWith('#/hotspot/')) renderHotspotDetail(app, state, nav, decodeURIComponent(h.slice('#/hotspot/'.length)));
   else if (h === '#/matrix') renderMatrix(app, state, nav);
   else if (h === '#/map') renderMapView(app, state, nav);
   else if (h === '#/species') renderSpecies(app, state, nav);
   else if (h === '#/settings') renderSettings(app, state, nav);
   else renderCards(app, state, nav);
-  // Standing target-mode indicator on the ranked views (below the region pills,
-  // above the view header). Null when the user has no targets yet.
+  // Standing list-mode indicators on the ranked views (below the region pills,
+  // above the view header). Each is null unless its mode is actually steering
+  // the ranking — prepended target-then-new so the region pills stay on top and
+  // the mode bars read top-to-bottom: New for me, then target presence.
   const rankedView = h === '#/' || h === '#/matrix' || h === '#/map' || h.startsWith('#/hotspot/');
-  if (rankedView) { const tb = targetBar(state, nav, render); if (tb) app.prepend(tb); }
+  if (rankedView) {
+    const tb = targetBar(state, nav, render); if (tb) app.prepend(tb);
+    const nb = newBirdsBar(state, nav, render); if (nb) app.prepend(nb);
+  }
   app.prepend(renderRegionBar());
 }
 
