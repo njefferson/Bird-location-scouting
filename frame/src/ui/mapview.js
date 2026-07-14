@@ -137,7 +137,10 @@ export function renderMapView(root, state, nav) {
     W, H, home, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
     // Hotspot names appear once you're zoomed past ~2× the opening view.
-    onZoom: (z) => svg.classList.toggle('pin-names-on', z >= homeZoom * 2),
+    onZoom: (z) => {
+      svg.classList.toggle('pin-names-on', z >= homeZoom * 2);
+      svg.classList.toggle('map-deep', z >= 48); // one-lake scale: declutter
+    },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
       if (hit) nav.go(`#/hotspot/${encodeURIComponent(hit.dataset.id)}`);
