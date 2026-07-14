@@ -9,6 +9,26 @@
 
 export const CHANGELOG = [
   {
+    version: 'v20',
+    date: '2026-07-14',
+    changes: [
+      'The county map has grown up: rivers, lakes, major roads and parks now sit beneath the counties — and they’re named (river names, highway shields, park and lake names) so you can actually get your bearings, not just see anonymous lines. Every county is labelled too. On the statewide picker the landmark names stay hidden until you pinch in, so it never turns into a wall of labels. It all works offline — no connection needed in the field.',
+      'The reservoirs and the birding refuges are on the map too: Folsom Lake, Lake Natoma, Camanche and some forty more, plus Cosumnes River Preserve, Yolo Bypass, Gray Lodge and the wildlife refuges up and down the valley. Each one’s position is checked against its county before it ships, so a label can’t drift.',
+      'Roads draw in their own clay red — a colour nothing else on the map uses — so they can’t be mistaken for county lines, and their number sits in a matching red pill on the road itself. Only major routes get a number, and county names sit lighter so the landmarks come forward.',
+      'The Maps buttons were quietly broken — Google had stopped understanding the old link format and could drop you at a similarly-named road 40 km away. Fixed, verified, and there are now TWO buttons on every hotspot: Apple Maps and Google Maps, each opening a pin at the hotspot’s exact coordinates.',
+      'Zoomed all the way in, the map used to become a wall of giant text and blob-sized dots. Labels and pins now stop growing once you zoom past the opening view and hold a steady, readable size — and when you zoom in far enough, every hotspot dot shows its name, so you know which pin is which spot before you tap.',
+      'The map answers at its zoom limit with a little rubber-band bounce instead of silently ignoring the pinch, panning and zooming are smoother, and the bottom tab dock sits on its own brighter surface so it stands off the page.',
+      'You can finally SEE the lakes: real shorelines for the labelled reservoirs — Folsom, Ice House, Union Valley, Jenkinson and the rest — traced from OpenStreetMap and verified against their counties before shipping. (Shoreline data © OpenStreetMap contributors.)',
+      'County lines are now black and dashed — a man-made boundary should look like one, instantly distinct from the red roads and blue rivers. And you can zoom MUCH further in: deep enough that Ice House Reservoir alone fills the screen (10× the old limit), with shorelines re-traced finely enough to stay smooth there; the county picker zooms 3× deeper too.',
+      'The map now tracks your finger exactly (it used to move only about half as far as your drag — an invisible letterbox was throwing the math off), pinch zooms on the point between your fingers, and deep zoom stopped lagging: anything off-screen simply stops rendering. Past about 50× the labels step aside entirely and pins fade to rings, so a lake can just be a lake.',
+      'A new Aa button on every map cycles the map text between Small, Medium and Large, remembered on this device — and the default is bigger than it was, as are the landmark markers.',
+      'El Dorado, Placer, Sacramento and Humboldt counties are now set to carry EVERY eBird hotspot (184, 216, 359 and 585 instead of 40 each) — so field spots like Ice House Reservoir make the cut. The hotspots themselves arrive with the next quarterly data refresh.',
+      'Selecting a county now clearly recolours it and draws a full, unbroken outline on top, so your region reads as one solid block instead of a patchwork with gaps in the borders.',
+      'A colour key now sits under both the hotspot map and the year planner, and both read the same way at last: fuller colour = higher score. (The map used to say “brighter”, the planner “darker” — for the very same thing.)',
+      'Tap any score — on a ranking card or a hotspot page — to see exactly what it means and how it was worked out: the species behind it, each one’s frequency × photoability, and how thin eBird coverage was discounted.',
+    ],
+  },
+  {
     version: 'v19',
     date: '2026-07-13',
     changes: [

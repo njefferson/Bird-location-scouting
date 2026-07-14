@@ -27,8 +27,18 @@ export function boxCenter(box = BOX) {
 export function inBox(lat, lng, box = BOX) {
   return lat >= box.swLat && lat <= box.neLat && lng >= box.swLng && lng <= box.neLng;
 }
-function gmaps(lat, lng, q) {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}${q ? `(${encodeURIComponent(q)})` : ''}`;
+// Map handoff links — BOTH providers, never just one.
+// FIELD-FOUND BUG (v20, Ice House trip): the old `query=lat,lng(Label)` hybrid
+// is a dead syntax. Google silently DROPS the coordinates, text-searches the
+// label, and can land 40 km away ("Granite Springs Rd"). The official URL APIs
+// accept coordinates OR text, never both mixed:
+//   Google Maps URL API:  /maps/search/?api=1&query=<lat>%2C<lng>   (exact pin)
+//   Apple Maps:           /?ll=<lat>,<lng>&q=<name>  (q labels the ll pin)
+export function hotspotMapLinks(h) {
+  return {
+    apple: `https://maps.apple.com/?ll=${h.lat},${h.lng}&q=${encodeURIComponent(h.name)}`,
+    google: `https://www.google.com/maps/search/?api=1&query=${h.lat}%2C${h.lng}`,
+  };
 }
 
 const ARP = 'American River Parkway access. County regional park; paid parking at most lots; paved bike path + dirt river-edge trails. Dawn best.';
@@ -69,8 +79,5 @@ export const HOTSPOTS = [
   { id: 'payen-sac', name: 'Payen Rd. (Sacramento Co.)', locId: 'L479841', lat: 38.617, lng: -121.080, county: 'US-CA-067', habitats: ['grassland', 'oak'], access: FOOTHILL, freqByMonth: null, checklistsByMonth: null },
 ];
 
-export function hotspotMapLink(h) {
-  return gmaps(h.lat, h.lng, h.name);
-}
 
 export const HOTSPOTS_BY_ID = Object.fromEntries(HOTSPOTS.map((h) => [h.id, h]));

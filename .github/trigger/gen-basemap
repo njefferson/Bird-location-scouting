@@ -1,0 +1,5 @@
+run 1 — fetch OSM shorelines for curated reservoirs
+run 2 — retry after YAML fix
+run 3 — rebase-before-push fix
+run 4 — single query + Geofabrik fallback; fired manually, no more waiting
+run 5 — re-trace shorelines at eps 0.05 for 256x zoom

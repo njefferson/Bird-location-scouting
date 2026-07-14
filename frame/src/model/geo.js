@@ -51,6 +51,51 @@ export function pointInCounty(lat, lng, code) {
   return inRings(x, y, countyRings(code));
 }
 
+/**
+ * A label anchor for a county in viewBox coords → { x, y, w } (w = the county's
+ * viewBox width, so a caller can size/hide a label that wouldn't fit). Uses the
+ * area-weighted centroid of the county's largest ring, falling back to the
+ * bbox centre; nudged back inside if the centroid lands in a concavity.
+ */
+const _centroids = {};
+export function countyCentroid(code) {
+  if (_centroids[code]) return _centroids[code];
+  const rings = countyRings(code);
+  if (!rings.length) return (_centroids[code] = null);
+  // Largest ring by |area| carries the label.
+  let big = rings[0], bigA = 0;
+  for (const ring of rings) {
+    let a = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+    }
+    if (Math.abs(a) > Math.abs(bigA)) { bigA = a; big = ring; }
+  }
+  let cx = 0, cy = 0, A = 0, minX = Infinity, maxX = -Infinity;
+  for (let i = 0, j = big.length - 1; i < big.length; j = i++) {
+    const [xi, yi] = big[i], [xj, yj] = big[j];
+    const cross = xj * yi - xi * yj;
+    A += cross; cx += (xj + xi) * cross; cy += (yj + yi) * cross;
+    if (xi < minX) minX = xi; if (xi > maxX) maxX = xi;
+  }
+  A *= 0.5;
+  let x, y;
+  if (Math.abs(A) < 1e-6) { // degenerate — use bbox centre
+    let sy0 = Infinity, sy1 = -Infinity;
+    for (const [px, py] of big) { if (py < sy0) sy0 = py; if (py > sy1) sy1 = py; }
+    x = (minX + maxX) / 2; y = (sy0 + sy1) / 2;
+  } else {
+    x = cx / (6 * A); y = cy / (6 * A);
+  }
+  // If the centroid fell outside (concave county), snap to the bbox centre.
+  if (!inRings(x, y, rings)) {
+    let by0 = Infinity, by1 = -Infinity;
+    for (const [, py] of big) { if (py < by0) by0 = py; if (py > by1) by1 = py; }
+    x = (minX + maxX) / 2; y = (by0 + by1) / 2;
+  }
+  return (_centroids[code] = { x, y, w: maxX - minX });
+}
+
 /** ViewBox bounding box { x, y, w, h } of a set of counties (for initial zoom). */
 export function countiesBBox(codes) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

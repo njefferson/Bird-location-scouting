@@ -69,6 +69,23 @@ export function toast(msg, opts = {}) {
   return dismiss;
 }
 
+/**
+ * A colour-scale legend (0 → 100), so the score colours mean something. The
+ * gradient bar uses the SAME accent→card mix the pins and planner cells use, so
+ * what you see on the map matches the key exactly. One direction everywhere:
+ * more colour = higher score.
+ */
+export function scoreScale(caption) {
+  return el('div.score-scale', {}, [
+    el('div.scale-row', {}, [
+      el('span.scale-end', {}, '0'),
+      el('span.scale-bar', { 'aria-hidden': 'true' }),
+      el('span.scale-end', {}, '100'),
+    ]),
+    caption ? el('p.scale-cap', {}, caption) : null,
+  ]);
+}
+
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */
 export function sparkline(series, { w = 96, h = 22, inferred = false, months = true } = {}) {
   const max = Math.max(0.0001, ...series.map((s) => (typeof s === 'number' ? s : s.value)));

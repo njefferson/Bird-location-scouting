@@ -6,10 +6,11 @@
 // already granted location permission (e.g. for auto-switch), a "you are here"
 // dot is drawn too — asking for permission stays a Settings decision.
 // =============================================================================
-import { el, clear } from './dom.js';
+import { el, clear, scoreScale } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
+import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
@@ -41,7 +42,7 @@ export function renderMapView(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Hotspot map'),
-      el('span.subtitle', {}, `${region.name} · pin brightness = ${MONTHS[state.monthIdx]} score · tap a pin`),
+      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} score · tap a pin`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
@@ -57,7 +58,7 @@ export function renderMapView(root, state, nav) {
   svg.setAttribute('class', 'county-map hotspot-map');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  // Basemap: all counties dim, the active region's counties highlighted.
+  // County fills: the far counties dim, the active region's counties tinted.
   const inRegion = new Set(region.counties);
   for (const code of Object.keys(COUNTY_SHAPES)) {
     const path = document.createElementNS(SVG_NS, 'path');
@@ -69,12 +70,33 @@ export function renderMapView(root, state, nav) {
     svg.append(path);
   }
 
-  // Pins, sized to the region zoom and colored by this month's score.
+  // Orientation landmarks (rivers, roads, lakes, parks), clipped to the state.
+  appendBasemap(svg, 'bm-hotspot');
+
+  // Re-stroke the region's counties ON TOP of the basemap so their outline is
+  // always complete (neighbours drawn later can't paint over it) and the region
+  // reads as a distinct, fully-outlined block above the landmarks.
+  for (const code of region.counties) {
+    const o = document.createElementNS(SVG_NS, 'path');
+    o.setAttribute('d', COUNTY_SHAPES[code]);
+    o.setAttribute('class', 'county-outline region');
+    svg.append(o);
+  }
+
+  // Pins, sized to the region zoom and colored by this month's score. `--pr`
+  // (base radius) + the map's `--pcap` (the home-view zoom) let CSS hold each
+  // pin at a constant on-screen size once you zoom past the opening view —
+  // no more donut-sized blobs pinched all the way in.
   const ranked = rankHotspots(hotspots, state.monthIdx);
   const scoreById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.score]));
   const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
   const home = homeBox(bbox, W, H);
+  const homeZoom = W / home.w;
+  svg.style.setProperty('--pcap', homeZoom.toFixed(3));
   const r = Math.max(2.5, home.w * 0.012);
+  const pinNames = document.createElementNS(SVG_NS, 'g');
+  pinNames.setAttribute('class', 'pin-names');
+  pinNames.setAttribute('aria-hidden', 'true');
   for (const h of hotspots) {
     const [x, y] = latLngToMap(h.lat, h.lng);
     const score = scoreById[h.id] ?? 0;
@@ -84,16 +106,41 @@ export function renderMapView(root, state, nav) {
     pin.setAttribute('r', r.toFixed(1));
     pin.setAttribute('class', 'pin');
     pin.style.setProperty('--s', score);
+    pin.style.setProperty('--pr', r.toFixed(1));
     pin.dataset.id = h.id;
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} score ${score}`;
     pin.append(title);
     svg.append(pin);
+    // The pin's NAME — hidden until you zoom in past ~2× the opening view,
+    // then every dot says which hotspot it is (the "which point is Ice House?"
+    // problem). dy is in em so the gap tracks the capped label size.
+    const nm = document.createElementNS(SVG_NS, 'text');
+    nm.setAttribute('x', x.toFixed(1));
+    nm.setAttribute('y', y.toFixed(1));
+    nm.setAttribute('dy', '1.7em');
+    nm.setAttribute('class', 'pin-name');
+    nm.setAttribute('font-size', '4.5');
+    nm.style.setProperty('--fs', '4.5');
+    nm.textContent = h.name;
+    pinNames.append(nm);
   }
+
+  // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
+  // county names — all pointer-transparent, all size-capped by --zf.
+  appendLandmarkLabels(svg);
+  svg.append(pinNames);
+  appendCountyLabels(svg);
 
   wrap.append(svg);
   const pz = attachPanZoom(wrap, svg, {
-    W, H, home, maxZoom: 24,
+    W, H, home, maxZoom: 256, // deep enough that Ice House alone fills the screen
+
+    // Hotspot names appear once you're zoomed past ~2× the opening view.
+    onZoom: (z) => {
+      svg.classList.toggle('pin-names-on', z >= homeZoom * 2);
+      svg.classList.toggle('map-deep', z >= 48); // one-lake scale: declutter
+    },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
       if (hit) nav.go(`#/hotspot/${encodeURIComponent(hit.dataset.id)}`);
@@ -102,8 +149,7 @@ export function renderMapView(root, state, nav) {
   wrap.append(pz.controls());
   root.append(wrap);
 
-  root.append(el('p.legend', {},
-    'Brighter pin = higher photographer score this month. Pinch or scroll to zoom, drag to pan.'));
+  root.append(scoreScale(`Fuller colour = higher photographer score this ${MONTHS[state.monthIdx]}. Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {
@@ -115,6 +161,7 @@ export function renderMapView(root, state, nav) {
       me.setAttribute('cx', x.toFixed(1));
       me.setAttribute('cy', y.toFixed(1));
       me.setAttribute('r', (r * 0.8).toFixed(1));
+      me.style.setProperty('--pr', (r * 0.8).toFixed(1));
       me.setAttribute('class', 'you-dot');
       svg.append(me);
     }, () => {}, { maximumAge: 300000, timeout: 5000 });

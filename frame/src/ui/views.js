@@ -2,10 +2,11 @@
 // VIEWS — the four screens from §5: Cards, Matrix, Species search, Settings,
 // plus a per-hotspot species matrix detail.
 // =============================================================================
-import { el, clear, pct, sparkline } from './dom.js';
+import { el, clear, pct, sparkline, scoreScale } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
+import { openScoreInfo } from './scoreinfo.js';
 import { SPECIES } from '../data/species.js';
-import { hotspotMapLink } from '../data/hotspots.js';
+import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
@@ -127,9 +128,16 @@ function card(r, state, nav) {
     if (ds.length) live = liveBadge(Math.min(...ds));
   }
 
-  const scoreRing = el('div.score', { style: `--s:${r.score}` }, [
+  // Tap the score to see what it means and how it was worked out.
+  const scoreRing = el('button.score', {
+    style: `--s:${r.score}`,
+    title: 'What does this score mean?',
+    'aria-label': `Score ${r.score} — tap for what it means`,
+    onclick: () => openScoreInfo(r, MONTHS[state.monthIdx]),
+  }, [
     el('span.score-num', {}, String(r.score)),
     el('span.score-cap', {}, 'score'),
+    el('span.score-q', { 'aria-hidden': 'true' }, '?'),
   ]);
 
   const head = el('div.card-head', {}, [
@@ -155,8 +163,10 @@ function card(r, state, nav) {
       ]))
     : el('span.dim', {}, 'Nothing notably photographable this month.'));
 
+  const links = hotspotMapLinks(h);
   const actions = el('div.card-actions', {}, [
-    el('a.btn', { href: hotspotMapLink(h), target: '_blank', rel: 'noopener' }, '🗺 Maps'),
+    el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Apple Maps` }, 'Apple Maps'),
+    el('a.btn', { href: links.google, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Google Maps` }, 'Google Maps'),
     el('button.btn', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, 'Species matrix'),
     el('button.btn.ghost', { onclick: () => toggleNotes(card, h) }, 'Access'),
   ]);
@@ -224,7 +234,7 @@ export function renderMatrix(root, state, nav) {
     table.append(tr);
   }
   root.append(el('div.matrix-wrap', {}, table));
-  root.append(el('p.legend', {}, 'Darker = higher photographer score that month. Score is normalized within each month column.'));
+  root.append(scoreScale('Fuller colour = higher photographer score that month. Each month is scored on its own (normalized within its column). Tap a cell for that month’s detail — and the score there for what it means.'));
 }
 
 // =============================================================================
@@ -240,12 +250,21 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
     el('div.title-row', {}, [el('h1', {}, h.name),
-      el('span.subtitle', {}, `${MONTHS[state.monthIdx]} score ${ranked.score} · `), trustBadge(ranked.trust), nBadge(ranked.n)]),
+      el('button.score-inline', {
+        title: 'What does this score mean?',
+        'aria-label': `${MONTHS[state.monthIdx]} score ${ranked.score} — tap for what it means`,
+        onclick: () => openScoreInfo(ranked, MONTHS[state.monthIdx]),
+      }, [`${MONTHS[state.monthIdx]} score ${ranked.score}`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]),
+      trustBadge(ranked.trust), nBadge(ranked.n)]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
+  const links = hotspotMapLinks(h);
   root.append(el('div.access-box', {}, [el('strong', {}, 'Access: '), h.access,
-    el('div', {}, el('a.btn', { href: hotspotMapLink(h), target: '_blank', rel: 'noopener' }, '🗺 Open in Maps'))]));
+    el('div.access-links', {}, [
+      el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener' }, 'Apple Maps'),
+      el('a.btn', { href: links.google, target: '_blank', rel: 'noopener' }, 'Google Maps'),
+    ])]));
 
   // Species table: name · photoability · this-month freq · sparkline · shoot subscore.
   const rows = SPECIES.map((s) => {

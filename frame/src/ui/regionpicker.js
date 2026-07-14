@@ -12,6 +12,7 @@ import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES, DEFAULT_DEPTH } from '../data/counties.js';
 import { saveRegion, deleteRegion, savedRegions, loadActiveRegion, setActiveRegion } from '../model/regions.js';
 import { attachPanZoom } from './panzoom.js';
+import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -26,7 +27,9 @@ function buildMap(selected, onToggle) {
   const { w: W, h: H } = MAP_VIEWBOX;
   const wrap = el('div.map-wrap');
   const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('class', 'county-map');
+  // `gated`: landmark name labels stay hidden until you pinch in, so the
+  // statewide picker isn't a wall of road shields (see .gated CSS + onZoom).
+  svg.setAttribute('class', 'county-map gated');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
   const pathByCode = {};
@@ -41,10 +44,35 @@ function buildMap(selected, onToggle) {
     svg.append(path);
     pathByCode[code] = path;
   }
+
+  // Orientation landmarks under the labels; pointer-transparent so taps still
+  // reach the counties (elementFromPoint skips pointer-events:none layers).
+  appendBasemap(svg, 'bm-pick');
+
+  // Selection outlines, re-stroked on top of the basemap so a selected county's
+  // border is always complete and reads clearly above the landmarks. Rebuilt on
+  // every toggle from the current selection.
+  const selLayer = document.createElementNS(SVG_NS, 'g');
+  selLayer.setAttribute('class', 'sel-outlines');
+  svg.append(selLayer);
+  function redrawSelOutlines() {
+    while (selLayer.firstChild) selLayer.removeChild(selLayer.firstChild);
+    for (const code of selected) {
+      const o = document.createElementNS(SVG_NS, 'path');
+      o.setAttribute('d', COUNTY_SHAPES[code]);
+      o.setAttribute('class', 'county-outline sel');
+      selLayer.append(o);
+    }
+  }
+  redrawSelOutlines();
+
+  appendLandmarkLabels(svg);
+  appendCountyLabels(svg);
   wrap.append(svg);
 
   const pz = attachPanZoom(wrap, svg, {
-    W, H,
+    W, H, maxZoom: 24,
+    onZoom: (z) => svg.classList.toggle('lm-visible', z >= 2),
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-code]');
       if (hit && pathByCode[hit.dataset.code]) onToggle(hit.dataset.code);
@@ -54,7 +82,7 @@ function buildMap(selected, onToggle) {
 
   return {
     node: wrap,
-    refresh(code) { pathByCode[code].classList.toggle('sel', selected.has(code)); },
+    refresh(code) { pathByCode[code].classList.toggle('sel', selected.has(code)); redrawSelOutlines(); },
   };
 }
 
@@ -155,10 +183,11 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   root.append(actions);
 
   // Honest coverage note: statewide counties carry the build's default depth;
-  // featured home-turf counties go deeper (see counties.js `depth`).
+  // featured home-turf counties are configured to keep everything (the data
+  // itself catches up at each quarterly refresh — see counties.js `depth`).
   const featured = Object.entries(COUNTIES).filter(([, c]) => c.depth).map(([, c]) => c.name.replace(' (NV)', ''));
   root.append(el('p.legend', {},
-    `Each county carries its top ${DEFAULT_DEPTH} eBird hotspots from the quarterly build; ${featured.join(', ')} go deeper (40). Any region you save works instantly.`));
+    `Each county carries its top ${DEFAULT_DEPTH} eBird hotspots from the quarterly build; ${featured.join(', ')} keep every hotspot (the data catches up at each quarterly refresh). Any region you save works instantly.`));
 
   updateCount();
 

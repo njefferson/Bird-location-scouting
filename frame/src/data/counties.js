@@ -10,10 +10,15 @@
 //   - (v13) the county-picker map (tap a county → toggle its code)
 //
 // `depth` = how many top-coverage hotspots the build keeps for that county.
-// Featured counties (home turf + Humboldt) go deeper than the statewide default.
+// Featured counties (home turf + Humboldt) keep EVERY hotspot (depth Infinity —
+// slice(0, Infinity) keeps all): ~184/216/359/585 each per the July 2026 census,
+// so field spots like Ice House Reservoir make the cut. Statewide default stays
+// shallow to keep the data and eBird load small. The data itself lands with the
+// next "Refresh eBird data" run (needs a live EBIRD_COOKIE).
 // =============================================================================
 
 export const DEFAULT_DEPTH = 15;
+export const FULL_DEPTH = Infinity; // "all of them" — see note above
 
 export const COUNTIES = {
   // --- California --------------------------------------------------------
@@ -25,10 +30,10 @@ export const COUNTIES = {
   'US-CA-011': { name: 'Colusa' },
   'US-CA-013': { name: 'Contra Costa' },
   'US-CA-015': { name: 'Del Norte' },
-  'US-CA-017': { name: 'El Dorado', depth: 40 },
+  'US-CA-017': { name: 'El Dorado', depth: FULL_DEPTH },
   'US-CA-019': { name: 'Fresno' },
   'US-CA-021': { name: 'Glenn' },
-  'US-CA-023': { name: 'Humboldt', depth: 40 },
+  'US-CA-023': { name: 'Humboldt', depth: FULL_DEPTH },
   'US-CA-025': { name: 'Imperial' },
   'US-CA-027': { name: 'Inyo' },
   'US-CA-029': { name: 'Kern' },
@@ -47,10 +52,10 @@ export const COUNTIES = {
   'US-CA-055': { name: 'Napa' },
   'US-CA-057': { name: 'Nevada' },
   'US-CA-059': { name: 'Orange' },
-  'US-CA-061': { name: 'Placer', depth: 40 },
+  'US-CA-061': { name: 'Placer', depth: FULL_DEPTH },
   'US-CA-063': { name: 'Plumas' },
   'US-CA-065': { name: 'Riverside' },
-  'US-CA-067': { name: 'Sacramento', depth: 40 },
+  'US-CA-067': { name: 'Sacramento', depth: FULL_DEPTH },
   'US-CA-069': { name: 'San Benito' },
   'US-CA-071': { name: 'San Bernardino' },
   'US-CA-073': { name: 'San Diego' },
