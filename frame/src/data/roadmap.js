@@ -7,7 +7,9 @@
 // =============================================================================
 
 export const ROADMAP = [
-  'A clearer county map: full outlines and a real colour change when a county is selected, county names labelled right on the map in a soft, readable font, and orientation landmarks (rivers, roads).',
-  'A colour key on the map and planner, with one consistent direction — so the score colours have a documented meaning (today the map says “brighter = more” while the planner says “darker = more”).',
-  'Tap any score to see what it means and how it was worked out — the species behind it and the trust adjustment.',
+  // v20 shipped the map landmarks (rivers, roads, lakes, parks, coastline),
+  // county-name labels, the colour key and tap-to-explain scores. Still on the
+  // list from that request: the fussier, messier land-use layers.
+  { title: 'More map landmarks',
+    detail: 'closed / restricted areas and school campuses on the county map, where the data is clean enough to help rather than clutter — offline like the rest of the basemap.' },
 ];

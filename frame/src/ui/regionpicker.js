@@ -12,6 +12,7 @@ import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES, DEFAULT_DEPTH } from '../data/counties.js';
 import { saveRegion, deleteRegion, savedRegions, loadActiveRegion, setActiveRegion } from '../model/regions.js';
 import { attachPanZoom } from './panzoom.js';
+import { appendBasemap, appendCountyLabels } from './basemap.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -41,6 +42,29 @@ function buildMap(selected, onToggle) {
     svg.append(path);
     pathByCode[code] = path;
   }
+
+  // Orientation landmarks under the labels; pointer-transparent so taps still
+  // reach the counties (elementFromPoint skips pointer-events:none layers).
+  appendBasemap(svg, 'bm-pick');
+
+  // Selection outlines, re-stroked on top of the basemap so a selected county's
+  // border is always complete and reads clearly above the landmarks. Rebuilt on
+  // every toggle from the current selection.
+  const selLayer = document.createElementNS(SVG_NS, 'g');
+  selLayer.setAttribute('class', 'sel-outlines');
+  svg.append(selLayer);
+  function redrawSelOutlines() {
+    while (selLayer.firstChild) selLayer.removeChild(selLayer.firstChild);
+    for (const code of selected) {
+      const o = document.createElementNS(SVG_NS, 'path');
+      o.setAttribute('d', COUNTY_SHAPES[code]);
+      o.setAttribute('class', 'county-outline sel');
+      selLayer.append(o);
+    }
+  }
+  redrawSelOutlines();
+
+  appendCountyLabels(svg);
   wrap.append(svg);
 
   const pz = attachPanZoom(wrap, svg, {
@@ -54,7 +78,7 @@ function buildMap(selected, onToggle) {
 
   return {
     node: wrap,
-    refresh(code) { pathByCode[code].classList.toggle('sel', selected.has(code)); },
+    refresh(code) { pathByCode[code].classList.toggle('sel', selected.has(code)); redrawSelOutlines(); },
   };
 }
 

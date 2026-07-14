@@ -6,10 +6,11 @@
 // already granted location permission (e.g. for auto-switch), a "you are here"
 // dot is drawn too — asking for permission stays a Settings decision.
 // =============================================================================
-import { el, clear } from './dom.js';
+import { el, clear, scoreScale } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
+import { appendBasemap, appendCountyLabels } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
@@ -57,7 +58,7 @@ export function renderMapView(root, state, nav) {
   svg.setAttribute('class', 'county-map hotspot-map');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  // Basemap: all counties dim, the active region's counties highlighted.
+  // County fills: the far counties dim, the active region's counties tinted.
   const inRegion = new Set(region.counties);
   for (const code of Object.keys(COUNTY_SHAPES)) {
     const path = document.createElementNS(SVG_NS, 'path');
@@ -67,6 +68,19 @@ export function renderMapView(root, state, nav) {
     title.textContent = COUNTIES[code]?.name || code;
     path.append(title);
     svg.append(path);
+  }
+
+  // Orientation landmarks (rivers, roads, lakes, parks), clipped to the state.
+  appendBasemap(svg, 'bm-hotspot');
+
+  // Re-stroke the region's counties ON TOP of the basemap so their outline is
+  // always complete (neighbours drawn later can't paint over it) and the region
+  // reads as a distinct, fully-outlined block above the landmarks.
+  for (const code of region.counties) {
+    const o = document.createElementNS(SVG_NS, 'path');
+    o.setAttribute('d', COUNTY_SHAPES[code]);
+    o.setAttribute('class', 'county-outline region');
+    svg.append(o);
   }
 
   // Pins, sized to the region zoom and colored by this month's score.
@@ -91,6 +105,10 @@ export function renderMapView(root, state, nav) {
     svg.append(pin);
   }
 
+  // Soft county-name labels, on top of everything but pointer-transparent — quiet
+  // when the state is in view, readable as you pinch into your scouting area.
+  appendCountyLabels(svg);
+
   wrap.append(svg);
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, maxZoom: 24,
@@ -102,8 +120,7 @@ export function renderMapView(root, state, nav) {
   wrap.append(pz.controls());
   root.append(wrap);
 
-  root.append(el('p.legend', {},
-    'Brighter pin = higher photographer score this month. Pinch or scroll to zoom, drag to pan.'));
+  root.append(scoreScale(`Fuller colour = higher photographer score this ${MONTHS[state.monthIdx]}. Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {
