@@ -14,6 +14,7 @@ import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basem
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
+import { activeSpecies } from '../model/targets.js';
 import { MONTHS } from '../model/inference.js';
 import { monthSelector, regionDeadEnd } from './views.js';
 
@@ -87,7 +88,7 @@ export function renderMapView(root, state, nav) {
   // (base radius) + the map's `--pcap` (the home-view zoom) let CSS hold each
   // pin at a constant on-screen size once you zoom past the opening view —
   // no more donut-sized blobs pinched all the way in.
-  const ranked = rankHotspots(hotspots, state.monthIdx);
+  const ranked = rankHotspots(hotspots, state.monthIdx, { species: activeSpecies() });
   const scoreById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.score]));
   const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
   const home = homeBox(bbox, W, H);
