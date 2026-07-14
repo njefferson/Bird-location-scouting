@@ -567,3 +567,68 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-targeting { background: var(--accent-wash); border: 1px solid var(--accent);
   border-radius: 8px; padding: 9px 11px; font-size: 13px !important; color: var(--ink); }
 .si-targeting strong { color: var(--accent-ink); }
+
+/* ==========================================================================
+   BIRD LISTS (v22) — informational stars, the seen/life list & its modes.
+   Stars are gold (want); seen is slate (got) — two clearly different jobs.
+   ========================================================================== */
+
+/* Seen toggle — the slate sibling of the gold star. ＋ to add, ✓ when on. */
+.seen-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
+  background: none; cursor: pointer; font-size: 18px; line-height: 1; color: var(--dim);
+  display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
+.seen-btn:hover, .seen-btn:focus-visible { color: var(--slate); outline: none; }
+.seen-btn.on { color: var(--slate); }
+.seen-btn:active { transform: scale(.86); }
+
+/* "New for me" bar — same shape as the target bar, in slate so the two modes
+   never read as the same thing when both are engaged. */
+.newbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--slate); background: var(--slate-wash); }
+.newbar .tb-mark { color: var(--slate); }
+.newbar .tb-label strong { color: var(--slate); }
+
+/* Seen birds: dimmed but kept visible everywhere. Dim the TEXT, never the
+   toggle cell, so the ✓/★ stays crisp and tappable. */
+.tsp.is-seen { opacity: .5; }
+.species-table tr.is-seen td:not(.mark-cell) { opacity: .5; }
+.tg-row.is-seen .tg-row-main { opacity: .5; }
+.tl-card.is-seen .tl-main { opacity: .55; }
+
+/* Star + seen stacked in one narrow matrix cell. */
+.species-table td.mark-cell { padding: 0 2px; width: 34px; }
+.species-table td.mark-cell { display: table-cell; }
+.species-table td.mark-cell .star-btn,
+.species-table td.mark-cell .seen-btn { width: 30px; height: 28px; font-size: 16px; }
+
+/* Seen-list picker rows check off in slate (targets star on in gold). */
+.tg-row.seen-row.on { background: var(--slate-wash); }
+
+/* Seen-list entry card mark on the Species tab. */
+.tg-entry.seen-entry .tg-entry-mark { color: var(--slate); }
+
+/* Your-list "where & when" info cards on the target picker. */
+.tg-yourlist { margin: 0 0 6px; }
+.tl-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px;
+  border-bottom: 1px solid var(--line); }
+.tl-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tl-name { font-family: var(--serif); font-weight: 600; font-size: 15px; color: var(--ink);
+  text-decoration: none; }
+.tl-name:hover { color: var(--accent); }
+.tl-where { font-size: 13px; margin: 0; }
+.tl-where strong { font-weight: 700; }
+.tl-more { font-size: 12px; margin: 0; }
+.tl-card .spark { margin-top: 2px; }
+
+/* Bulk-import a life list. */
+.tg-import { margin: 0 0 12px; border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--card2); padding: 6px 12px; }
+.tg-import summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--slate);
+  padding: 6px 0; }
+.import-wrap { padding: 4px 0 10px; }
+.import-ta { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: 12px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--card);
+  color: var(--ink); resize: vertical; }
+.import-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.import-status { margin: 0; font-size: 12px; }

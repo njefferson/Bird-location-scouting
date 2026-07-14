@@ -7,11 +7,13 @@
 // =============================================================================
 import { el, pct } from './dom.js';
 import { trustBadge } from './badges.js';
-import { targetsActive, targetCount } from '../model/targets.js';
+import { targetCount, targetsRankActive } from '../model/targets.js';
+import { seenCount, newBirdsActive } from '../model/seen.js';
 
 // Open the explainer for a ranked row (from rankHotspots) in a given month.
 export function openScoreInfo(row, monthName) {
   const h = row.hotspot;
+  const presenceOnly = !!row.presenceOnly;
   const top = row.contributions.slice(0, 6);
   const maxContrib = Math.max(1e-9, ...row.contributions.map((c) => c.contrib));
   const shrinkPct = Math.round(row.shrink * 100);
@@ -19,7 +21,7 @@ export function openScoreInfo(row, monthName) {
   const contribRows = top.map((c) => el('div.si-row', {}, [
     el('span.si-sp', {}, c.species.name + (c.freq.inferred ? ' *' : '')),
     el('span.si-bar', {}, el('i', { style: `width:${Math.round((c.contrib / maxContrib) * 100)}%` })),
-    el('span.si-vals', {}, `${pct(c.freq.value)} × ${c.photoability.toFixed(2)}`),
+    el('span.si-vals', {}, presenceOnly ? pct(c.freq.value) : `${pct(c.freq.value)} × ${c.photoability.toFixed(2)}`),
   ]));
 
   const body = el('div.si-body', {}, [
@@ -27,20 +29,30 @@ export function openScoreInfo(row, monthName) {
       'A photographer’s score from ', el('strong', {}, '0–100'), ' for ', el('strong', {}, monthName),
       '. ', el('strong', {}, '100'), ' is the best hotspot in your region this month; every other score is scaled against it.',
     ]),
-    targetsActive() ? el('p.si-targeting', {}, [
-      el('strong', {}, `★ Ranking your ${targetCount()} target bird${targetCount() === 1 ? '' : 's'}.`),
-      ' Only the species on your list count toward this score — turn it off from the ★ bar to rank all birds again.',
+    targetsRankActive() ? el('p.si-targeting', {}, [
+      el('strong', {}, `★ Ranking by presence of your ${targetCount()} target bird${targetCount() === 1 ? '' : 's'}.`),
+      ' Only how often your birds are reported here counts — photoability is set aside. Turn it off from the ★ bar to rank all birds again.',
     ]) : null,
-    el('p.si-formula', {}, 'score  ∝  Σ  frequency × photoability'),
-    el('p.si-note', {}, [
-      'For each bird, two things must both be true — so we ', el('strong', {}, 'multiply'),
-      ', never add: how often it’s reported here this month (', el('em', {}, 'frequency'),
-      '), and how shootable it is (', el('em', {}, 'photoability'), '). A common bird you can’t get near and a stunning bird that’s never here both add little.',
-    ]),
+    newBirdsActive() ? el('p.si-targeting', {}, [
+      el('strong', {}, `✦ New for me.`),
+      ` The ${seenCount()} bird${seenCount() === 1 ? '' : 's'} on your life list are set aside — this score counts only the birds you haven’t got yet. Turn it off from the ✦ bar to rank all birds again.`,
+    ]) : null,
+    el('p.si-formula', {}, presenceOnly ? 'score  ∝  Σ  frequency' : 'score  ∝  Σ  frequency × photoability'),
+    presenceOnly
+      ? el('p.si-note', {}, [
+          'In presence mode we add up how often each of your targets is reported here this month (',
+          el('em', {}, 'frequency'), ') — the more of your birds turn up, and the more often, the higher the score. How shootable they are (',
+          el('em', {}, 'photoability'), ') doesn’t enter here.',
+        ])
+      : el('p.si-note', {}, [
+          'For each bird, two things must both be true — so we ', el('strong', {}, 'multiply'),
+          ', never add: how often it’s reported here this month (', el('em', {}, 'frequency'),
+          '), and how shootable it is (', el('em', {}, 'photoability'), '). A common bird you can’t get near and a stunning bird that’s never here both add little.',
+        ]),
 
     top.length ? el('h3.si-h', {}, `Top of this ${monthName} score`) : null,
     top.length ? el('div.si-contribs', {}, contribRows) : null,
-    top.length ? el('p.si-legend', {}, 'frequency × photoability · longer bar = more of the score. * = a value still on the habitat/season model.') : null,
+    top.length ? el('p.si-legend', {}, `${presenceOnly ? 'frequency' : 'frequency × photoability'} · longer bar = more of the score. * = a value still on the habitat/season model.`) : null,
 
     el('h3.si-h', {}, 'Coverage & trust'),
     el('p.si-trust', {}, [trustBadge(row.trust), ' ', row.trust.blurb]),

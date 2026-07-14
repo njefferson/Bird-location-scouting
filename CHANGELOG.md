@@ -5,6 +5,12 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v22 — 2026-07-14
+- Starring a bird is just information now. Star the birds you want and Frame tells you WHERE and WHEN to find each one — the best hotspots and its peak months in your region — right on your target list. Starring no longer quietly re-ranks your hotspots: your list is a set of tips, not a verdict.
+- Still want your list to steer the ranking? One optional toggle — “Rank hotspots by presence” — sorts the hotspots by how often your target birds actually turn up (frequency only; how easy a bird is to shoot no longer enters when you’re ranking by your list). A standing ★ bar tells you when it’s on, with a one-tap “Show all birds”.
+- New — Birds I’ve seen: keep a life list of the birds you’ve already got. Mark a bird from its species page, any hotspot’s species table, or the new list screen — or paste/import a whole list at once to seed it fast. Seen birds stay visible everywhere, just dimmed, and still count toward every hotspot’s photographer score.
+- New — “New for me” mode: flip it on and the ranking counts only the birds you haven’t photographed yet, so the map points you at lifers. It never changes the normal photographer score — a standing ✦ bar shows when it’s on, with the same one-tap exit. Both your lists live on this device and work offline, like the rest of the app.
+
 ## v21 — 2026-07-14
 - Pick your own target birds: choose the species you actually want to photograph and the whole ranking re-weights to YOUR list. Star a bird from its species page, the Species tab, or any hotspot’s species table — and the hotspot ranking, the year planner and the map all start scoring only your birds.
 - A new Target birds picker (from the Species tab or Settings) lets you browse every curated bird grouped by habitat, filter by name, and star the ones you want. Your list lives on this device — no account, and it works offline like the rest of the app.

@@ -10,8 +10,11 @@ import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
-import { activeSpecies, isTarget, targetsActive, targetCount, targetsEngaged, setEngaged } from '../model/targets.js';
+import { rankingSpec } from '../model/lists.js';
+import { isTarget, targetCount, targetsRankOn, setTargetsRank, targetsRankActive } from '../model/targets.js';
+import { isSeen, seenCount, newBirdsOn, setNewBirds, newBirdsActive } from '../model/seen.js';
 import { starButton } from './targets.js';
+import { seenButton } from './seen.js';
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
@@ -107,7 +110,8 @@ export function renderCards(root, state, nav) {
     return;
   }
 
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: activeSpecies() });
+  const spec = rankingSpec();
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly });
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
@@ -158,7 +162,7 @@ function card(r, state, nav) {
   const habs = el('div.habs', {}, (h.habitats || []).map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
 
   const species = el('div.top-species', {}, top.length
-    ? top.map((c) => el('div.tsp', {}, [
+    ? top.map((c) => el('div.tsp', { class: isSeen(c.species.name) ? 'is-seen' : '' }, [
         speciesLink('tsp-name', c.species, state, nav),
         el('span.tsp-freq', { title: c.freq.rule }, pct(c.freq.value) + (c.freq.inferred ? '*' : '')),
         el('span.tsp-bar', {}, el('i', { style: `width:${Math.round(c.freq.value * 100)}%` })),
@@ -207,9 +211,9 @@ export function renderMatrix(root, state, nav) {
   ]));
 
   // Pre-rank each month so cell color is comparable within a month column.
-  const species = activeSpecies();
+  const spec = rankingSpec();
   const byMonth = MONTHS.map((_, m) => {
-    const ranked = rankHotspots(getHotspots(), m, { species });
+    const ranked = rankHotspots(getHotspots(), m, { species: spec.species, presenceOnly: spec.presenceOnly });
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
   });
 
@@ -248,7 +252,8 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   const h = getHotspots().find((x) => x.id === hotspotId);
   if (!h) { root.append(el('p.empty', {}, 'Unknown hotspot.')); return; }
 
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: activeSpecies() }).find((r) => r.hotspot.id === h.id);
+  const spec = rankingSpec();
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly }).find((r) => r.hotspot.id === h.id);
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
@@ -281,8 +286,12 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   table.append(el('tr', {}, ['', 'Species', 'Photoability', `${MONTHS[state.monthIdx]} freq`, '12-mo', 'Shoot-it'].map((t) => el('th', {}, t))));
   for (const r of rows) {
     const inferredNow = r.fNow.inferred;
-    const tr = el('tr', { class: isTarget(r.s.name) ? 'is-target' : '' }, [
-      el('td.star-cell', {}, starButton(r.s, () => tr.classList.toggle('is-target', isTarget(r.s.name)))),
+    const paint = () => {
+      tr.classList.toggle('is-target', isTarget(r.s.name));
+      tr.classList.toggle('is-seen', isSeen(r.s.name));
+    };
+    const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
+      el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, photoabilityCell(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
@@ -293,8 +302,9 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   }
   root.append(el('div.table-wrap', {}, table));
   root.append(el('p.legend', {}, [
-    '★ = add to your target birds. * = inferred from the habitat/season model (hover for the rule). Shoot-it = frequency × photoability.',
-    targetsActive() ? el('span', {}, ' The score above ranks only your targets.') : null,
+    '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every score). * = inferred from the habitat/season model (hover for the rule). Shoot-it = frequency × photoability.',
+    spec.targetsMode ? el('span', {}, ' The score above ranks by how often your targets appear here.') : null,
+    spec.newMode ? el('span', {}, ' The score above counts only birds you haven’t got yet.') : null,
   ]));
 }
 
@@ -319,15 +329,28 @@ export function renderSpecies(root, state, nav) {
     el('span.subtitle', {}, 'Where in your region, and which month, to photograph one bird.'),
   ]));
 
-  // Target-birds entry: build the list that re-weights the whole ranking.
+  // Target-birds entry: star birds to see where & when to find them.
   const n = targetCount();
   root.append(el('button.tg-entry', { onclick: () => nav.go('#/targets') }, [
     el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '★'),
     el('span.tg-entry-main', {}, [
       el('strong', {}, n ? `Your ${n} target bird${n === 1 ? '' : 's'}` : 'Pick your target birds'),
       el('span.dim', {}, n
-        ? (targetsActive() ? 'ranking your birds now — tap to edit' : 'saved but not ranking — tap to edit')
-        : 'choose the birds you want to shoot; the ranking follows your list'),
+        ? (targetsRankActive() ? 'ranking spots by their presence — tap to edit' : 'tap to see where & when, or edit')
+        : 'star the birds you want — see where and when to find each one'),
+    ]),
+    el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
+  ]));
+
+  // Seen / life-list entry: track what you've got, focus on what's new.
+  const sn = seenCount();
+  root.append(el('button.tg-entry.seen-entry', { onclick: () => nav.go('#/seen') }, [
+    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '✦'),
+    el('span.tg-entry-main', {}, [
+      el('strong', {}, sn ? `${sn} bird${sn === 1 ? '' : 's'} on your life list` : 'Birds I’ve seen'),
+      el('span.dim', {}, sn
+        ? (newBirdsActive() ? '“New for me” on — tap to edit' : 'tap to edit, or turn on “New for me”')
+        : 'track what you’ve photographed and focus on the birds you still need'),
     ]),
     el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
@@ -352,14 +375,16 @@ export function renderSpecies(root, state, nav) {
 }
 
 function speciesPanel(s, state, nav) {
-  const panel = el('div.sp-panel');
-  panel.append(el('div.sp-head', {}, [
+  const panel = el('div.sp-panel', { class: isSeen(s.name) ? 'is-seen' : '' });
+  const head = el('div.sp-head', {}, [
     starButton(s),
+    seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
     el('h2', {}, s.name),
     el('span.badge', { style: `--c:${s.photoability >= 0.7 ? '#2e7d32' : s.photoability >= 0.5 ? '#1565c0' : '#9e9e9e'}` }, `photoability ${s.photoability.toFixed(2)}`),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
     ebirdLink(s),
-  ]));
+  ]);
+  panel.append(head);
   panel.append(el('p.sp-note', {}, s.note));
 
   const ranked = bestForSpecies(s, getHotspots());
@@ -458,13 +483,25 @@ export function renderSettings(root, state, nav) {
   // --- Target birds ---------------------------------------------------------
   const tn = targetCount();
   form.append(section('Target birds', [
-    el('p.dim', {}, 'Choose the birds you actually want to photograph and the whole ranking re-weights to your list — only your birds count toward each hotspot’s score. Photoability still applies within your list, so an easy target ranks a spot higher than a hard one.'),
+    el('p.dim', {}, 'Star the birds you want to photograph and the app shows you where and when to find each one. Starring is just information — it never changes the hotspot ranking on its own.'),
     el('button.btn.primary', { onclick: () => nav.go('#/targets') }, tn ? `Edit target birds (${tn})` : 'Choose target birds'),
     tn ? el('label.row', {}, [
-      el('span', {}, 'Rank by my targets'),
-      checkbox(targetsEngaged(), (v) => setEngaged(v)),
+      el('span', {}, 'Rank hotspots by target presence'),
+      checkbox(targetsRankOn(), (v) => setTargetsRank(v)),
     ]) : null,
-    tn ? el('p.dim', {}, 'Turn off to see all birds again without losing your list.') : null,
+    tn ? el('p.dim', {}, 'Optional: sort the hotspots by how often your targets are reported there (frequency only — never photoability). Turn off to rank all birds again; your list is untouched.') : null,
+  ]));
+
+  // --- Birds I've seen (life list) ------------------------------------------
+  const sn = seenCount();
+  form.append(section('Birds I’ve seen', [
+    el('p.dim', {}, 'Keep a life list of the birds you’ve already got. Seen birds stay visible everywhere (just dimmed) and still count toward every hotspot’s score — they’re set aside only in “New for me” mode.'),
+    el('button.btn.primary', { onclick: () => nav.go('#/seen') }, sn ? `Edit life list (${sn})` : 'Track birds I’ve seen'),
+    sn ? el('label.row', {}, [
+      el('span', {}, '“New for me” mode'),
+      checkbox(newBirdsOn(), (v) => setNewBirds(v)),
+    ]) : null,
+    sn ? el('p.dim', {}, 'Optional: re-rank the hotspots counting only the birds you haven’t got yet. Turn off any time; your list is untouched.') : null,
   ]));
 
   const themeToggle = checkbox(currentTheme() === 'dark', (v) => setTheme(v));

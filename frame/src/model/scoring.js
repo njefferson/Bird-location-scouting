@@ -36,17 +36,23 @@ export function checklistN(hotspot, monthIdx) {
 /**
  * Raw (un-normalized) photographer score for a hotspot in a month, plus the
  * per-species contributions used by the detail matrix.
+ *
+ * opts.presenceOnly — score by PRESENCE alone (Σ frequency), leaving photoability
+ * out entirely. This is the "rank by target presence" mode: it asks only how
+ * often your birds show up here, never how shootable they are.
  */
-export function rawHotspotScore(hotspot, monthIdx, species = SPECIES) {
+export function rawHotspotScore(hotspot, monthIdx, species = SPECIES, opts = {}) {
+  const presenceOnly = !!opts.presenceOnly;
   let raw = 0;
   let anyInferred = false;
   const contributions = [];
   for (const s of species) {
     const f = frequency(s, hotspot, monthIdx);
     if (f.inferred) anyInferred = true;
-    const contrib = f.value * s.photoability;
+    const weight = presenceOnly ? 1 : s.photoability;
+    const contrib = f.value * weight;
     if (contrib > 0) {
-      contributions.push({ species: s, freq: f, photoability: s.photoability, contrib });
+      contributions.push({ species: s, freq: f, photoability: s.photoability, contrib, presenceOnly });
     }
     raw += contrib;
   }
@@ -72,11 +78,12 @@ export function shrinkFactor(n) {
  */
 export function rankHotspots(hotspots, monthIdx, opts = {}) {
   const species = opts.species || SPECIES;
+  const presenceOnly = !!opts.presenceOnly;
   const rows = hotspots.map((h) => {
-    const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species);
+    const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species, { presenceOnly });
     const n = checklistN(h, monthIdx);
     const shrink = shrinkFactor(n);
-    return { hotspot: h, raw, shrunk: raw * shrink, contributions, anyInferred, inferredCount, n, shrink };
+    return { hotspot: h, raw, shrunk: raw * shrink, contributions, anyInferred, inferredCount, n, shrink, presenceOnly };
   });
 
   const maxShrunk = Math.max(1e-9, ...rows.map((r) => r.shrunk));
@@ -144,17 +151,24 @@ function medianRaw(rows) {
 }
 
 // --- Species-centric query (§5 "search a species") -------------------------
-/** Best places & months to photograph one species across the region. */
-export function bestForSpecies(species, hotspots) {
+/**
+ * Best places & months to photograph one species across the region.
+ * opts.byPresence — rank the hotspots and pick each one's best month by raw
+ * FREQUENCY (where/when the bird actually is), leaving photoability out. This
+ * powers the informational "where & when" on a starred bird — stars inform, they
+ * aren't judged, so the default ordering must not sneak photoability back in.
+ */
+export function bestForSpecies(species, hotspots, opts = {}) {
+  const key = opts.byPresence ? 'value' : 'shootScore';
   const perHotspot = hotspots.map((h) => {
     const months = Array.from({ length: 12 }, (_, m) => {
       const f = frequency(species, h, m);
       return { monthIdx: m, ...f, shootScore: f.value * species.photoability };
     });
-    const best = months.reduce((a, b) => (b.shootScore > a.shootScore ? b : a), months[0]);
+    const best = months.reduce((a, b) => (b[key] > a[key] ? b : a), months[0]);
     return { hotspot: h, months, best };
   });
-  perHotspot.sort((a, b) => b.best.shootScore - a.best.shootScore);
+  perHotspot.sort((a, b) => b.best[key] - a.best[key]);
   return perHotspot;
 }
 

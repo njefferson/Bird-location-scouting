@@ -9,6 +9,16 @@
 
 export const CHANGELOG = [
   {
+    version: 'v22',
+    date: '2026-07-14',
+    changes: [
+      'Starring a bird is just information now. Star the birds you want and Frame tells you WHERE and WHEN to find each one — the best hotspots and its peak months in your region — right on your target list. Starring no longer quietly re-ranks your hotspots: your list is a set of tips, not a verdict.',
+      'Still want your list to steer the ranking? One optional toggle — “Rank hotspots by presence” — sorts the hotspots by how often your target birds actually turn up (frequency only; how easy a bird is to shoot no longer enters when you’re ranking by your list). A standing ★ bar tells you when it’s on, with a one-tap “Show all birds”.',
+      'New — Birds I’ve seen: keep a life list of the birds you’ve already got. Mark a bird from its species page, any hotspot’s species table, or the new list screen — or paste/import a whole list at once to seed it fast. Seen birds stay visible everywhere, just dimmed, and still count toward every hotspot’s photographer score.',
+      'New — “New for me” mode: flip it on and the ranking counts only the birds you haven’t photographed yet, so the map points you at lifers. It never changes the normal photographer score — a standing ✦ bar shows when it’s on, with the same one-tap exit. Both your lists live on this device and work offline, like the rest of the app.',
+    ],
+  },
+  {
     version: 'v21',
     date: '2026-07-14',
     changes: [
