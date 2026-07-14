@@ -72,6 +72,20 @@ function filterBar(state, onChange) {
   return bar;
 }
 
+// "New for me" can empty the working species set (every target — or every
+// curated bird — is already on the seen list). Zero species would render every
+// hotspot as a silent 0; say what happened instead. The mode bars above keep
+// their one-tap exits, so the way forward is already on screen.
+function emptyModeNote(spec) {
+  if (spec.species.length) return null;
+  return el('div.dead-end', {}, [
+    el('h2', {}, 'Nothing left to count'),
+    el('p.dim', {}, spec.targetsMode
+      ? 'Every one of your target birds is already on your seen list, so “New for me” leaves nothing to rank. Show all birds, turn off “New for me”, or star a bird you still need.'
+      : 'Every curated bird is on your seen list — congratulations! Turn off “New for me” to rank all birds again.'),
+  ]);
+}
+
 // A region with no loaded hotspots is a dead end unless we point somewhere.
 // Built-in regions can't be edited, so we send those to the picker; a saved
 // region offers to edit its counties. Either way, an honest label + a button.
@@ -111,6 +125,8 @@ export function renderCards(root, state, nav) {
   }
 
   const spec = rankingSpec();
+  const modeNote = emptyModeNote(spec);
+  if (modeNote) { root.append(modeNote); return; }
   const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, presenceOnly: spec.presenceOnly });
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
@@ -212,6 +228,8 @@ export function renderMatrix(root, state, nav) {
 
   // Pre-rank each month so cell color is comparable within a month column.
   const spec = rankingSpec();
+  const modeNote = emptyModeNote(spec);
+  if (modeNote) { root.append(modeNote); return; }
   const byMonth = MONTHS.map((_, m) => {
     const ranked = rankHotspots(getHotspots(), m, { species: spec.species, presenceOnly: spec.presenceOnly });
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
