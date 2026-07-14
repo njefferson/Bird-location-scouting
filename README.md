@@ -35,7 +35,7 @@ A fully **offline** SVG basemap — no tiles, no connection needed in the field:
 | Rivers, lakes, coastline | Natural Earth 10m (public domain), incl. the finer North-America rivers layer | named on the map |
 | Major roads | Natural Earth 10m roads | clay-red lines; numbered pill shields on major routes only |
 | Parks / protected lands | Natural Earth 10m (NPS-scale units) | green fills, named |
-| Reservoirs & lakes Natural Earth misses (Folsom, Natoma, Camanche…) | **curated list** in `frame/scripts/gen-basemap.mjs` | point labels; every coordinate is point-in-polygon **verified against its county at build time** — a wrong position fails the build |
+| Reservoirs & lakes Natural Earth misses (Folsom, Natoma, Camanche…) | **curated list** in `frame/scripts/curated-landmarks.mjs`; shorelines © OpenStreetMap contributors (ODbL), fetched by `gen-basemap.yml` on a runner | real water polygons + labels; every position is point-in-polygon **verified against its county at build time** — a wrong position fails the build |
 | Wildlife refuges & preserves (Cosumnes, Yolo Bypass, Gray Lodge, the NWRs…) | curated, same verification | the landmarks that matter most in a bird app |
 
 Deliberately **not** included: minor roads and street detail (the per-hotspot

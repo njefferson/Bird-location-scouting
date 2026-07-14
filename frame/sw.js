@@ -5,7 +5,7 @@ const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
   './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js', './src/ui/theme.js', './src/ui/whatsnew.js', './src/ui/regionpicker.js', './src/ui/mapview.js', './src/ui/panzoom.js', './src/ui/basemap.js', './src/ui/scoreinfo.js',
-  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js', './src/data/county-shapes.js', './src/data/basemap.js',
+  './src/data/species.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js', './src/data/county-shapes.js', './src/data/basemap.js', './src/data/water-shapes.js',
   './src/model/inference.js', './src/model/scoring.js', './src/model/ebird.js', './src/model/regions.js', './src/model/geo.js',
   './data/taxonomy.json',
   './data/counties/US-CA-067.json', './data/counties/US-CA-017.json', './data/counties/US-CA-061.json',

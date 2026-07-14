@@ -49,8 +49,9 @@ const ABOUT_HTML = `
 
   <p class="about-foot">Built for a Nikon Z50 II + 50–250mm shooter near
   Sacramento, CA · Frequency data: eBird (refresh quarterly) · Map landmarks:
-  Natural Earth (public domain) plus curated reservoir &amp; refuge labels, each
-  position verified against its county — orientation, not navigation.</p>
+  Natural Earth (public domain); lake shorelines © OpenStreetMap contributors
+  (ODbL); curated reservoir &amp; refuge labels, each position verified against
+  its county — orientation, not navigation.</p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move

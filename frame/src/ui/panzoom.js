@@ -14,6 +14,19 @@
 // =============================================================================
 import { el } from './dom.js';
 
+// Map text size — the "Aa" button. One preference for every map on this
+// device (localStorage), applied as the --tx multiplier the label CSS uses.
+const TEXT_KEY = 'frame.maptext';
+const TEXT_TIERS = [
+  { k: 1,   label: 'Small' },
+  { k: 1.3, label: 'Medium' },
+  { k: 1.6, label: 'Large' },
+];
+function textTier() {
+  try { const i = parseInt(localStorage.getItem(TEXT_KEY), 10); return Number.isInteger(i) && TEXT_TIERS[i] ? i : 1; }
+  catch { return 1; }
+}
+
 export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
@@ -107,14 +120,30 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
   function centerX() { const r = svg.getBoundingClientRect(); return r.left + r.width / 2; }
   function centerY() { const r = svg.getBoundingClientRect(); return r.top + r.height / 2; }
 
+  // Apply the remembered text size on attach (default Medium).
+  let tier = textTier();
+  svg.style.setProperty('--tx', TEXT_TIERS[tier].k);
+
   const ctl = {
     reset() { vx = HOME.x; vy = HOME.y; vw = HOME.w; vh = HOME.h; setVB(); },
     zoomAtCenter(f) { zoomAt(centerX(), centerY(), f); },
     controls() {
+      const textBtn = el('button.map-zbtn.map-textbtn', {
+        title: `Map text: ${TEXT_TIERS[tier].label} — tap to change`,
+        'aria-label': `Map text size: ${TEXT_TIERS[tier].label}`,
+        onclick: () => {
+          tier = (tier + 1) % TEXT_TIERS.length;
+          svg.style.setProperty('--tx', TEXT_TIERS[tier].k);
+          try { localStorage.setItem(TEXT_KEY, String(tier)); } catch {}
+          textBtn.title = `Map text: ${TEXT_TIERS[tier].label} — tap to change`;
+          textBtn.setAttribute('aria-label', `Map text size: ${TEXT_TIERS[tier].label}`);
+        },
+      }, 'Aa');
       return el('div.map-zoom', {}, [
         el('button.map-zbtn', { title: 'Zoom in', onclick: () => ctl.zoomAtCenter(1.4) }, '+'),
         el('button.map-zbtn', { title: 'Zoom out', onclick: () => ctl.zoomAtCenter(1 / 1.4) }, '−'),
         el('button.map-zbtn', { title: 'Reset view', onclick: () => ctl.reset() }, '⤢'),
+        textBtn,
       ]);
     },
   };

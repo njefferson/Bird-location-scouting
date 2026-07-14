@@ -13,6 +13,11 @@
 import { COUNTY_SHAPES } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
 import { COASTLINE, RIVERS, LAKES, ROADS, PARKS, RIVER_LABELS, LAKE_LABELS, ROAD_LABELS, PARK_LABELS, WATER_POINTS, REFUGE_POINTS } from '../data/basemap.js';
+import { WATER_SHAPES } from '../data/water-shapes.js';
+
+// Curated waters that have a real OSM shoreline — those render as actual lakes,
+// so they get no marker dot (the shape IS the marker; the name still labels it).
+const SHAPED = new Set(WATER_SHAPES.map((s) => s.t));
 import { countyCentroid } from '../model/geo.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -43,9 +48,11 @@ export function appendBasemap(svg, id = 'bm') {
   g.setAttribute('class', 'basemap');
   g.setAttribute('clip-path', `url(#${id})`);
   g.setAttribute('aria-hidden', 'true');
-  // Fills first (parks, lakes), then lines over them (rivers, coast, roads).
+  // Fills first (parks, lakes — including the OSM reservoir shorelines), then
+  // lines over them (rivers, coast, roads).
   for (const d of PARKS) g.append(path(d, 'bm-park'));
   for (const d of LAKES) g.append(path(d, 'bm-lake'));
+  for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
   for (const d of RIVERS) g.append(path(d, 'bm-river'));
   for (const d of COASTLINE) g.append(path(d, 'bm-coast'));
   for (const d of ROADS) g.append(path(d, 'bm-road'));
@@ -92,8 +99,8 @@ export function appendLandmarkLabels(svg) {
     return c;
   };
   for (const l of WATER_POINTS) {
-    g.append(dot(l, 'lm-dot lm-dot-water'));
-    g.append(textLabel(l, 'lm-water', 4.5, '1.5em'));
+    if (!SHAPED.has(l.t)) g.append(dot(l, 'lm-dot lm-dot-water'));
+    g.append(textLabel(l, 'lm-water', 4.5, SHAPED.has(l.t) ? '0.35em' : '1.5em'));
   }
   for (const l of REFUGE_POINTS) {
     g.append(dot(l, 'lm-dot lm-dot-park'));
