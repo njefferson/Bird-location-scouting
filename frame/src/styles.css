@@ -14,9 +14,11 @@
      dominates — shadows alive, not crushed. Recomputes per theme. */
   --far: color-mix(in srgb, var(--card2) 55%, var(--bg2));
   /* Offline basemap landmarks (data/basemap.js) — quiet, so they orient
-     without fighting the counties or the score colours. Recompute per theme. */
-  --water: #6f9fc0; --road: #c1854e; --park: #7aa863;
-  --label-ink: #4a3d2a; --label-halo: var(--card);
+     without fighting the counties or the score colours. Roads are a clay red
+     no other layer uses, so they can NEVER be mistaken for the tan county
+     lines or the orange region outline. Recompute per theme. */
+  --water: #6f9fc0; --road: #b0523a; --park: #7aa863;
+  --label-ink: #8a7b64; --label-halo: var(--card);
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -33,8 +35,8 @@
   --slate: #7fb0da; --slate-wash: #1e2c38; --warn: #e0a94e; --live: #e8795a;
   --trust-documented: #5fae79; --trust-opportunity: #7fb0da; --trust-exploratory: #b492d8;
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
-  --water: #5f8bb0; --road: #b3794a; --park: #5f8a55;
-  --label-ink: #d8c8ab; --label-halo: var(--card);
+  --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
+  --label-ink: #a3957c; --label-halo: var(--card);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -247,14 +249,15 @@ table.species-table tr[onclick] { cursor: pointer; }
 .bm-lake { fill: var(--water); fill-opacity: .62; stroke: var(--water); stroke-width: .5; vector-effect: non-scaling-stroke; }
 .bm-river { fill: none; stroke: var(--water); stroke-width: .9; stroke-opacity: .7; vector-effect: non-scaling-stroke; }
 .bm-coast { fill: none; stroke: var(--water); stroke-width: 1.1; stroke-opacity: .8; vector-effect: non-scaling-stroke; }
-.bm-road { fill: none; stroke: var(--road); stroke-width: .8; stroke-opacity: .6; vector-effect: non-scaling-stroke; }
+.bm-road { fill: none; stroke: var(--road); stroke-width: 1; stroke-opacity: .55; vector-effect: non-scaling-stroke; }
 
-/* Soft county-name labels — translucent with a paper-coloured halo so they read
-   over both counties and landmarks. Font-size is set per-label in viewBox units
-   (data-driven), so names are quiet statewide and resolve as you pinch in. */
-.county-label { fill: var(--label-ink); fill-opacity: .72; text-anchor: middle; dominant-baseline: central;
-  font-family: var(--sans); font-weight: 600; paint-order: stroke;
-  stroke: var(--label-halo); stroke-width: 2.6; stroke-opacity: .85; stroke-linejoin: round;
+/* Soft county-name labels — deliberately LIGHT (dim ink, half opacity) so they
+   whisper behind the landmarks instead of dominating them. Font-size is set
+   per-label in viewBox units (data-driven), so names are quiet statewide and
+   resolve as you pinch in. */
+.county-label { fill: var(--label-ink); fill-opacity: .5; text-anchor: middle; dominant-baseline: central;
+  font-family: var(--sans); font-weight: 500; paint-order: stroke;
+  stroke: var(--label-halo); stroke-width: 2; stroke-opacity: .6; stroke-linejoin: round;
   vector-effect: non-scaling-stroke; }
 
 /* Landmark name labels — identify the lines and blobs. Scaled in viewBox units
@@ -266,10 +269,15 @@ table.species-table tr[onclick] { cursor: pointer; }
 .lm-water { fill: var(--water); }
 .lm-river { font-style: italic; }
 .lm-park { fill: var(--park); }
-/* Road-number shield: a small plate + the number, so a bare "50" reads as a road. */
-.lm-shield rect { fill: var(--road); rx: 1.6; }
+/* Curated reservoir / refuge points: a small dot at the true spot + its name. */
+.lm-dot { stroke: var(--card); stroke-width: .5; }
+.lm-dot-water { fill: var(--water); }
+.lm-dot-park { fill: var(--park); }
+/* Road-number shield: a pill in the SAME clay red as the road lines (that
+   shared colour is what ties the number to its road), cream text, soft edge. */
+.lm-shield rect { fill: var(--road); fill-opacity: .92; stroke: var(--card); stroke-width: .6; }
 .lm-shield-t { text-anchor: middle; dominant-baseline: central; font-family: var(--mono);
-  font-weight: 700; fill: #fff; }
+  font-weight: 700; fill: var(--card); }
 /* On the statewide picker (.gated), keep landmark names hidden until pinched in
    so it isn't a wall of shields; the hotspot map shows them always. */
 .county-map.gated:not(.lm-visible) .landmark-labels { display: none; }

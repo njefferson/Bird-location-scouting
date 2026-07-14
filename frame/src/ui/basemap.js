@@ -12,7 +12,7 @@
 // =============================================================================
 import { COUNTY_SHAPES } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
-import { COASTLINE, RIVERS, LAKES, ROADS, PARKS, RIVER_LABELS, LAKE_LABELS, ROAD_LABELS, PARK_LABELS } from '../data/basemap.js';
+import { COASTLINE, RIVERS, LAKES, ROADS, PARKS, RIVER_LABELS, LAKE_LABELS, ROAD_LABELS, PARK_LABELS, WATER_POINTS, REFUGE_POINTS } from '../data/basemap.js';
 import { countyCentroid } from '../model/geo.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -78,15 +78,33 @@ export function appendLandmarkLabels(svg) {
   for (const l of LAKE_LABELS) g.append(textLabel(l, 'lm-water', 5.5));
   for (const l of RIVER_LABELS) g.append(textLabel(l, 'lm-water lm-river', 5));
 
-  // Road shields: a rounded plate sized to the number, then the number on top.
+  // Curated points (reservoirs, refuges — county-verified at build time):
+  // a small dot at the true position, the name just beneath it.
+  const dot = (l, cls) => {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', l.x); c.setAttribute('cy', l.y); c.setAttribute('r', '1.4');
+    c.setAttribute('class', cls);
+    return c;
+  };
+  for (const l of WATER_POINTS) {
+    g.append(dot(l, 'lm-dot lm-dot-water'));
+    g.append(textLabel({ x: l.x, y: l.y + 4.5, t: l.t }, 'lm-water', 4.5));
+  }
+  for (const l of REFUGE_POINTS) {
+    g.append(dot(l, 'lm-dot lm-dot-park'));
+    g.append(textLabel({ x: l.x, y: l.y + 4.5, t: l.t }, 'lm-park', 4.5));
+  }
+
+  // Road shields: a pill in the ROAD colour (so the number reads as part of the
+  // road it sits on), major routes only, de-collided at build time.
   for (const l of ROAD_LABELS) {
-    const fs = 5, w = Math.max(6, l.t.length * fs * 0.62 + 4), h = fs + 3.5;
+    const fs = 4.5, h = fs + 3, w = Math.max(h, l.t.length * fs * 0.62 + 3.6);
     const shield = document.createElementNS(SVG_NS, 'g');
     shield.setAttribute('class', 'lm-shield');
     const r = document.createElementNS(SVG_NS, 'rect');
     r.setAttribute('x', (l.x - w / 2).toFixed(1)); r.setAttribute('y', (l.y - h / 2).toFixed(1));
     r.setAttribute('width', w.toFixed(1)); r.setAttribute('height', h.toFixed(1));
-    r.setAttribute('rx', '1.6');
+    r.setAttribute('rx', (h / 2).toFixed(1));
     const t = textLabel(l, 'lm-shield-t', fs);
     shield.append(r, t);
     g.append(shield);

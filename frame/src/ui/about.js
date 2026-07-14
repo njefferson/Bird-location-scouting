@@ -48,7 +48,9 @@ const ABOUT_HTML = `
   Nothing here is a fabricated number.</p>
 
   <p class="about-foot">Built for a Nikon Z50 II + 50–250mm shooter near
-  Sacramento, CA · Frequency data: eBird (refresh quarterly).</p>
+  Sacramento, CA · Frequency data: eBird (refresh quarterly) · Map landmarks:
+  Natural Earth (public domain) plus curated reservoir &amp; refuge labels, each
+  position verified against its county — orientation, not navigation.</p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move

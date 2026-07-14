@@ -5,8 +5,9 @@ go, in which month, to photograph which birds** — ranked by *photographic*
 opportunity (not by lister rarity). Built for a Nikon Z50 II + 50–250mm DX
 (~375mm equiv) shooter based in Shingle Springs, CA.
 
-> Lives in `frame/` alongside the separate Infrared Photography Studio app at the
-> repo root. The two share nothing but git history.
+> The app is the whole repo now (the old Infrared Photography Studio app is
+> long gone — only git history remembers it). Repo-level scope, map data
+> sources, and the release process live in the [root README](../README.md).
 
 ## The idea (one line)
 `HotspotScore(h, m) = Σ_species frequency(s,h,m) × photoability(s)`, normalized
