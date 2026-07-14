@@ -74,11 +74,34 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 - Labels stay honest; every failure explains itself and offers a way forward.
 - Product values: free, on-device, offline-first, no account, no install.
 
+## APPROVED next-release plan — "Bird lists" evolution (locked with Noah
+## 2026-07-14; he said "just capture the plan", so DO NOT BUILD until he says
+## "begin next release"). This is direction, not a taste-guess — build to it.
+- REWORK the v21 stars so they are INFORMATIONAL, not "judged". Noah's exact
+  words: "Starred species shouldn't be 'judged,' only info given." He chose
+  "Both, as two modes":
+  1. DEFAULT: starring a bird just gives INFO — surface its where/when (best
+     hotspots + months) on the user's list; it does NOT rerank hotspots and
+     photoability never enters.
+  2. OPTIONAL TOGGLE: also rank hotspots by PRESENCE (frequency) of the starred
+     birds — presence only, NEVER photoability. (This deliberately REVERSES the
+     v21 behavior, where targets are photoability-weighted. See the v21 note in
+     Project facts: v21 shipped judged; next release un-judges by default.)
+- NEW "lifer" / seen list: users record every bird they've already seen so they
+  can focus on new ones. Behavior = "DIM BUT KEEP VISIBLE" (Noah's pick over
+  "filter out of scoring"): seen birds stay in every list/matrix but greyed,
+  and are excluded ONLY from a dedicated "new birds" view — NOT removed from the
+  global photographer score. Think about bulk-importing a life list, and
+  per-region vs global scope, but confirm those interactions before committing.
+- "Possibly other things off of that" (Noah) — open-ended; confirm before adding.
+
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
 - Month scrubbing by dragging across sparklines/matrix (direct manipulation).
 - Review the IRstudio repo for the user's UI patterns (see session-scope note).
 ## Shipped from this backlog (don't rebuild):
+- v21 (2026-07-14): "Pick your own target birds" — see Project facts. NOTE its
+  targets ARE photoability-judged; the approved next release reverses that.
 - v18 (2026-07-13): auto-switch Undo; Undo for region delete and picker Clear;
   `.far` counties lifted off the map background; dead-end rescue for empty
   regions and broken import links.
@@ -91,6 +114,19 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   in the source picker WHEN CREATING the session. Verified 2026-07-05.
 - App: `frame/` PWA, no build step; deploys to bird-location-scouting.pages.dev
   via `.github/workflows/deploy.yml` on push to main (previews: staging).
+- v21 shipped 2026-07-14: "Pick your own target birds". On-device target list
+  (localStorage `frame.targets` = species common names, `frame.targetsOn` = the
+  standing engage toggle); `model/targets.js` exposes `activeSpecies()` which
+  EVERY rank call site now passes as `rankHotspots(..., { species })` (cards,
+  matrix, mapview, hotspot detail). Picker at `#/targets` (`ui/targets.js`):
+  all species grouped by dominant habitat, name filter, star toggles, count +
+  Clear. Reusable `starButton()` also on species pages (`.sp-head`) and every
+  hotspot species-matrix row (`.star-cell`). Standing `.targetbar` on the ranked
+  views with a non-destructive "Show all birds" exit; Settings "Target birds"
+  section; `scoreinfo.js` shows a `.si-targeting` note when active. IMPORTANT:
+  v21 targets are photoability-WEIGHTED (an easy target ranks a spot higher) —
+  the APPROVED next release deliberately makes stars informational-by-default
+  instead (see the next-release plan above).
 - v19 shipped 2026-07-13: "Field Notebook" reskin. All colors are :root tokens
   in styles.css with a `[data-theme="dark"]` Dawn Mode override — restyle by
   swapping tokens, never hex-in-place. Theme state lives in ui/theme.js
