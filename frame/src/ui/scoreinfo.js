@@ -7,6 +7,7 @@
 // =============================================================================
 import { el, pct } from './dom.js';
 import { trustBadge } from './badges.js';
+import { targetsActive, targetCount } from '../model/targets.js';
 
 // Open the explainer for a ranked row (from rankHotspots) in a given month.
 export function openScoreInfo(row, monthName) {
@@ -26,6 +27,10 @@ export function openScoreInfo(row, monthName) {
       'A photographer’s score from ', el('strong', {}, '0–100'), ' for ', el('strong', {}, monthName),
       '. ', el('strong', {}, '100'), ' is the best hotspot in your region this month; every other score is scaled against it.',
     ]),
+    targetsActive() ? el('p.si-targeting', {}, [
+      el('strong', {}, `★ Ranking your ${targetCount()} target bird${targetCount() === 1 ? '' : 's'}.`),
+      ' Only the species on your list count toward this score — turn it off from the ★ bar to rank all birds again.',
+    ]) : null,
     el('p.si-formula', {}, 'score  ∝  Σ  frequency × photoability'),
     el('p.si-note', {}, [
       'For each bird, two things must both be true — so we ', el('strong', {}, 'multiply'),

@@ -9,6 +9,16 @@
 
 export const CHANGELOG = [
   {
+    version: 'v21',
+    date: '2026-07-14',
+    changes: [
+      'Pick your own target birds: choose the species you actually want to photograph and the whole ranking re-weights to YOUR list. Star a bird from its species page, the Species tab, or any hotspot’s species table — and the hotspot ranking, the year planner and the map all start scoring only your birds.',
+      'A new Target birds picker (from the Species tab or Settings) lets you browse every curated bird grouped by habitat, filter by name, and star the ones you want. Your list lives on this device — no account, and it works offline like the rest of the app.',
+      'Your list, your ranking — and honest about it: with targets on, a standing ★ bar on the Ranking, Planner and Map says so, and tapping any score shows “Ranking your N target birds”, with only your chosen species counting. Photoability still weights your list, so an easy target ranks a spot above a hard one.',
+      'A one-tap exit that never loses your picks: “Show all birds” on the ★ bar (or the toggle in Settings) flips back to the full ranking and keeps your list intact for next time.',
+    ],
+  },
+  {
     version: 'v20',
     date: '2026-07-14',
     changes: [

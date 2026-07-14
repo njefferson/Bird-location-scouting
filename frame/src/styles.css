@@ -501,3 +501,69 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; }
 .si-bar i { display: block; height: 100%; background: var(--accent); }
 .si-vals { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); font-size: 12px; }
+
+/* =============================================================================
+   TARGET BIRDS (v21) — a personal species list that re-weights the ranking.
+   All colours are :root tokens, so Dawn Mode needs no extra overrides.
+   ========================================================================== */
+
+/* Star toggle — reused on species pages, the hotspot matrix and the picker.
+   Big enough to tap; gold and filled when the bird is on your list. */
+.star-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
+  background: none; cursor: pointer; font-size: 20px; line-height: 1; color: var(--dim);
+  display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
+.star-btn:hover, .star-btn:focus-visible { color: var(--accent); outline: none; }
+.star-btn.on { color: var(--accent); }
+.star-btn:active { transform: scale(.86); }
+
+/* Standing mode indicator on the ranked views. Engaged = accent-washed so the
+   "your birds are driving this" state is unmistakable; disengaged = quiet. */
+.targetbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--card2); }
+.targetbar.engaged { border-color: var(--accent); background: var(--accent-wash); }
+.tb-mark { flex: 0 0 auto; font-size: 16px; color: var(--dim); }
+.targetbar.engaged .tb-mark { color: var(--accent); }
+.tb-label { flex: 1 1 180px; font-size: 13px; color: var(--ink); }
+.tb-label strong { font-weight: 700; }
+.tb-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+
+/* Species-tab entry card into the picker. */
+.tg-entry { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+.tg-entry:active { transform: translateY(1px); }
+.tg-entry-mark { flex: 0 0 auto; font-size: 20px; color: var(--accent); }
+.tg-entry-main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tg-entry-main strong { font-family: var(--serif); font-weight: 600; font-size: 15px; }
+.tg-entry-main .dim { font-size: 12px; }
+.tg-entry-go { flex: 0 0 auto; color: var(--dim); font-size: 22px; }
+
+/* Picker screen. */
+.tg-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 10px 12px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--card2); }
+.tg-count { font-weight: 700; font-size: 14px; }
+.tg-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; color: var(--dim); }
+.tg-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.tg-hint { font-size: 12px; margin: 0 0 12px; }
+.tg-group { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--accent); margin: 16px 0 6px; }
+.tg-list { display: flex; flex-direction: column; }
+.tg-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px;
+  border-bottom: 1px solid var(--line); }
+.tg-row.on { background: var(--accent-wash); border-radius: 8px; border-bottom-color: transparent; }
+.tg-row-main { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tg-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+
+/* Star column in the hotspot species matrix + a target row highlight. */
+.species-table td.star-cell { padding: 0 2px; width: 34px; }
+.species-table tr.is-target { background: var(--accent-wash); }
+
+/* Species-page header star sits before the name. */
+.sp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Targeting note in the score explainer. */
+.si-targeting { background: var(--accent-wash); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 9px 11px; font-size: 13px !important; color: var(--ink); }
+.si-targeting strong { color: var(--accent-ink); }

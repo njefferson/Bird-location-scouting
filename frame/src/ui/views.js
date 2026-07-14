@@ -10,6 +10,8 @@ import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
+import { activeSpecies, isTarget, targetsActive, targetCount, targetsEngaged, setEngaged } from '../model/targets.js';
+import { starButton } from './targets.js';
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
@@ -105,7 +107,7 @@ export function renderCards(root, state, nav) {
     return;
   }
 
-  const ranked = rankHotspots(getHotspots(), state.monthIdx);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: activeSpecies() });
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
@@ -205,8 +207,9 @@ export function renderMatrix(root, state, nav) {
   ]));
 
   // Pre-rank each month so cell color is comparable within a month column.
+  const species = activeSpecies();
   const byMonth = MONTHS.map((_, m) => {
-    const ranked = rankHotspots(getHotspots(), m);
+    const ranked = rankHotspots(getHotspots(), m, { species });
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
   });
 
@@ -245,7 +248,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   const h = getHotspots().find((x) => x.id === hotspotId);
   if (!h) { root.append(el('p.empty', {}, 'Unknown hotspot.')); return; }
 
-  const ranked = rankHotspots(getHotspots(), state.monthIdx).find((r) => r.hotspot.id === h.id);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: activeSpecies() }).find((r) => r.hotspot.id === h.id);
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
@@ -275,19 +278,24 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     .sort((a, b) => b.shoot - a.shoot);
 
   const table = el('table.species-table');
-  table.append(el('tr', {}, ['Species', 'Photoability', `${MONTHS[state.monthIdx]} freq`, '12-mo', 'Shoot-it'].map((t) => el('th', {}, t))));
+  table.append(el('tr', {}, ['', 'Species', 'Photoability', `${MONTHS[state.monthIdx]} freq`, '12-mo', 'Shoot-it'].map((t) => el('th', {}, t))));
   for (const r of rows) {
     const inferredNow = r.fNow.inferred;
-    table.append(el('tr', {}, [
+    const tr = el('tr', { class: isTarget(r.s.name) ? 'is-target' : '' }, [
+      el('td.star-cell', {}, starButton(r.s, () => tr.classList.toggle('is-target', isTarget(r.s.name)))),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, photoabilityCell(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
       el('td', {}, scorePill(r.shoot)),
-    ]));
+    ]);
+    table.append(tr);
   }
   root.append(el('div.table-wrap', {}, table));
-  root.append(el('p.legend', {}, '* = inferred from the habitat/season model (hover for the rule). Shoot-it = frequency × photoability.'));
+  root.append(el('p.legend', {}, [
+    '★ = add to your target birds. * = inferred from the habitat/season model (hover for the rule). Shoot-it = frequency × photoability.',
+    targetsActive() ? el('span', {}, ' The score above ranks only your targets.') : null,
+  ]));
 }
 
 function photoabilityCell(s) {
@@ -309,6 +317,19 @@ export function renderSpecies(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Find a species'),
     el('span.subtitle', {}, 'Where in your region, and which month, to photograph one bird.'),
+  ]));
+
+  // Target-birds entry: build the list that re-weights the whole ranking.
+  const n = targetCount();
+  root.append(el('button.tg-entry', { onclick: () => nav.go('#/targets') }, [
+    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '★'),
+    el('span.tg-entry-main', {}, [
+      el('strong', {}, n ? `Your ${n} target bird${n === 1 ? '' : 's'}` : 'Pick your target birds'),
+      el('span.dim', {}, n
+        ? (targetsActive() ? 'ranking your birds now — tap to edit' : 'saved but not ranking — tap to edit')
+        : 'choose the birds you want to shoot; the ranking follows your list'),
+    ]),
+    el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
 
   const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
@@ -333,6 +354,7 @@ export function renderSpecies(root, state, nav) {
 function speciesPanel(s, state, nav) {
   const panel = el('div.sp-panel');
   panel.append(el('div.sp-head', {}, [
+    starButton(s),
     el('h2', {}, s.name),
     el('span.badge', { style: `--c:${s.photoability >= 0.7 ? '#2e7d32' : s.photoability >= 0.5 ? '#1565c0' : '#9e9e9e'}` }, `photoability ${s.photoability.toFixed(2)}`),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
@@ -431,6 +453,18 @@ export function renderSettings(root, state, nav) {
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
       : 'No region data loaded — running on the inference model.'),
+  ]));
+
+  // --- Target birds ---------------------------------------------------------
+  const tn = targetCount();
+  form.append(section('Target birds', [
+    el('p.dim', {}, 'Choose the birds you actually want to photograph and the whole ranking re-weights to your list — only your birds count toward each hotspot’s score. Photoability still applies within your list, so an easy target ranks a spot higher than a hard one.'),
+    el('button.btn.primary', { onclick: () => nav.go('#/targets') }, tn ? `Edit target birds (${tn})` : 'Choose target birds'),
+    tn ? el('label.row', {}, [
+      el('span', {}, 'Rank by my targets'),
+      checkbox(targetsEngaged(), (v) => setEngaged(v)),
+    ]) : null,
+    tn ? el('p.dim', {}, 'Turn off to see all birds again without losing your list.') : null,
   ]));
 
   const themeToggle = checkbox(currentTheme() === 'dark', (v) => setTheme(v));
