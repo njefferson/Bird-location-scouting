@@ -14,11 +14,14 @@
 // =============================================================================
 import { el } from './dom.js';
 
-export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap = null } = {}) {
+export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
-  const setVB = () => svg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
+  const setVB = () => {
+    svg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
+    if (onZoom) onZoom(W / vw); // zoom factor relative to the full map width
+  };
   function clampPan() {
     vx = Math.min(Math.max(vx, 0), W - vw);
     vy = Math.min(Math.max(vy, 0), H - vh);

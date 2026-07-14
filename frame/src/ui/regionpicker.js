@@ -12,7 +12,7 @@ import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES, DEFAULT_DEPTH } from '../data/counties.js';
 import { saveRegion, deleteRegion, savedRegions, loadActiveRegion, setActiveRegion } from '../model/regions.js';
 import { attachPanZoom } from './panzoom.js';
-import { appendBasemap, appendCountyLabels } from './basemap.js';
+import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -27,7 +27,9 @@ function buildMap(selected, onToggle) {
   const { w: W, h: H } = MAP_VIEWBOX;
   const wrap = el('div.map-wrap');
   const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('class', 'county-map');
+  // `gated`: landmark name labels stay hidden until you pinch in, so the
+  // statewide picker isn't a wall of road shields (see .gated CSS + onZoom).
+  svg.setAttribute('class', 'county-map gated');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
   const pathByCode = {};
@@ -64,11 +66,13 @@ function buildMap(selected, onToggle) {
   }
   redrawSelOutlines();
 
+  appendLandmarkLabels(svg);
   appendCountyLabels(svg);
   wrap.append(svg);
 
   const pz = attachPanZoom(wrap, svg, {
     W, H,
+    onZoom: (z) => svg.classList.toggle('lm-visible', z >= 2),
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-code]');
       if (hit && pathByCode[hit.dataset.code]) onToggle(hit.dataset.code);

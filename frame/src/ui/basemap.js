@@ -12,7 +12,7 @@
 // =============================================================================
 import { COUNTY_SHAPES } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
-import { COASTLINE, RIVERS, LAKES, ROADS, PARKS } from '../data/basemap.js';
+import { COASTLINE, RIVERS, LAKES, ROADS, PARKS, RIVER_LABELS, LAKE_LABELS, ROAD_LABELS, PARK_LABELS } from '../data/basemap.js';
 import { countyCentroid } from '../model/geo.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -49,6 +49,48 @@ export function appendBasemap(svg, id = 'bm') {
   for (const d of RIVERS) g.append(path(d, 'bm-river'));
   for (const d of COASTLINE) g.append(path(d, 'bm-coast'));
   for (const d of ROADS) g.append(path(d, 'bm-road'));
+  svg.append(g);
+  return g;
+}
+
+// A styled name label. Water/park names are plain text in their layer colour;
+// road numbers get a small shield so a bare "50" reads as a highway.
+function textLabel(l, cls, size) {
+  const t = document.createElementNS(SVG_NS, 'text');
+  t.setAttribute('x', l.x); t.setAttribute('y', l.y);
+  t.setAttribute('class', cls); t.setAttribute('font-size', size);
+  t.textContent = l.t;
+  return t;
+}
+
+/**
+ * Append landmark NAME labels (rivers, lakes, parks) and road-number shields, so
+ * the lines and blobs are identifiable rather than anonymous. Pointer-transparent
+ * and scaled in viewBox units, like the county labels — quiet statewide, readable
+ * as you pinch in. Draw this UNDER the county labels (county names win).
+ */
+export function appendLandmarkLabels(svg) {
+  const g = document.createElementNS(SVG_NS, 'g');
+  g.setAttribute('class', 'landmark-labels');
+  g.setAttribute('aria-hidden', 'true');
+
+  for (const l of PARK_LABELS) g.append(textLabel(l, 'lm-park', 5.5));
+  for (const l of LAKE_LABELS) g.append(textLabel(l, 'lm-water', 5.5));
+  for (const l of RIVER_LABELS) g.append(textLabel(l, 'lm-water lm-river', 5));
+
+  // Road shields: a rounded plate sized to the number, then the number on top.
+  for (const l of ROAD_LABELS) {
+    const fs = 5, w = Math.max(6, l.t.length * fs * 0.62 + 4), h = fs + 3.5;
+    const shield = document.createElementNS(SVG_NS, 'g');
+    shield.setAttribute('class', 'lm-shield');
+    const r = document.createElementNS(SVG_NS, 'rect');
+    r.setAttribute('x', (l.x - w / 2).toFixed(1)); r.setAttribute('y', (l.y - h / 2).toFixed(1));
+    r.setAttribute('width', w.toFixed(1)); r.setAttribute('height', h.toFixed(1));
+    r.setAttribute('rx', '1.6');
+    const t = textLabel(l, 'lm-shield-t', fs);
+    shield.append(r, t);
+    g.append(shield);
+  }
   svg.append(g);
   return g;
 }

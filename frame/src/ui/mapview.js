@@ -10,7 +10,7 @@ import { el, clear, scoreScale } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
-import { appendBasemap, appendCountyLabels } from './basemap.js';
+import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
@@ -105,8 +105,9 @@ export function renderMapView(root, state, nav) {
     svg.append(pin);
   }
 
-  // Soft county-name labels, on top of everything but pointer-transparent — quiet
-  // when the state is in view, readable as you pinch into your scouting area.
+  // Landmark names (roads, rivers, lakes, parks), then county names on top —
+  // both pointer-transparent, quiet statewide, readable as you pinch in.
+  appendLandmarkLabels(svg);
   appendCountyLabels(svg);
 
   wrap.append(svg);

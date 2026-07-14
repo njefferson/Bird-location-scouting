@@ -6,7 +6,7 @@ tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
 ## v20 — 2026-07-14
-- The county map has grown up: rivers, lakes, major roads and parks now sit quietly beneath the counties so you can get your bearings, and every county is labelled by name right on the map in a soft font that stays readable as you pinch in. It all works offline — no connection needed in the field.
+- The county map has grown up: rivers, lakes, major roads and parks now sit beneath the counties — and they're named (river names, highway shields, park and lake names) so you can actually get your bearings, not just see anonymous lines. Every county is labelled too. On the statewide picker the landmark names stay hidden until you pinch in, so it never turns into a wall of labels. It all works offline — no connection needed in the field.
 - Selecting a county now clearly recolours it and draws a full, unbroken outline on top, so your region reads as one solid block instead of a patchwork with gaps in the borders.
 - A colour key now sits under both the hotspot map and the year planner, and both read the same way at last: fuller colour = higher score. (The map used to say "brighter", the planner "darker" — for the very same thing.)
 - Tap any score — on a ranking card or a hotspot page — to see exactly what it means and how it was worked out: the species behind it, each one's frequency × photoability, and how thin eBird coverage was discounted.
