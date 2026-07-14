@@ -212,7 +212,9 @@ for (const r of RESERVOIRS) {
   cx /= best.ring.length; cy /= best.ring.length;
   const okCounty = r.in.some((code) => ringsByCode[code] && (inRings(px, py, ringsByCode[code]) || inRings(cx, cy, ringsByCode[code])));
   if (!okCounty) { misses.push(`${r.t}: polygon landed outside ${r.in.join('/')}`); continue; }
-  const simp = rdp(best.ring, 0.35);
+  // eps 0.05 viewBox units ~= 45 m: smooth at the 256x zoom where one lake
+  // fills the screen (0.35 was visibly angular there).
+  const simp = rdp(best.ring, 0.05);
   if (simp.length < 4) { misses.push(`${r.t}: degenerate after simplify`); continue; }
   const d = simp.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('') + 'Z';
   shapes.push({ t: r.t, d, pts: simp.length, osm: best.name || '(unnamed)' });

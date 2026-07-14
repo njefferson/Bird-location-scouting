@@ -38,7 +38,7 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
   let raf = 0;
   const applyVB = () => {
     raf = 0;
-    svg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);
+    svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
     const zf = W / vw;
     svg.style.setProperty('--zf', zf.toFixed(3));
     if (onZoom) onZoom(zf);

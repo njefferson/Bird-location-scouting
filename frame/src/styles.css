@@ -237,7 +237,8 @@ table.species-table tr[onclick] { cursor: pointer; }
   touch-action: none; -webkit-user-select: none; user-select: none; }
 .county-map { display: block; width: 100%; height: auto; }
 .county-map .county { fill: var(--card2); stroke: var(--boundary); stroke-width: 1;
-  stroke-opacity: .55; stroke-dasharray: 3 1.6; /* dashed = man-made boundary; roads are solid red, rivers solid blue */
+  stroke-opacity: .55; /* dashed = man-made boundary; roads solid red, rivers solid blue; dash counter-scales so 256x zoom doesn't make monsters */
+  stroke-dasharray: calc(3px * var(--fb, 1)) calc(1.6px * var(--fb, 1));
   cursor: pointer; transition: fill .1s; vector-effect: non-scaling-stroke; }
 .county-map .county:hover { fill: var(--accent-wash); }
 .county-map .county.sel { fill: var(--accent); stroke: var(--accent2); }
@@ -263,7 +264,8 @@ table.species-table tr[onclick] { cursor: pointer; }
    --tx is the user's map text size (the Aa button: 1 / 1.3 / 1.6). */
 .county-map { --fk: calc(min(var(--zf, 1), 4.2) / var(--zf, 1) * var(--tx, 1.3));
               --fc: calc(min(var(--zf, 1), 2.6) / var(--zf, 1) * var(--tx, 1.3));
-              --fp: calc(min(var(--zf, 1), var(--pcap, 4)) / var(--zf, 1)); }
+              --fp: calc(min(var(--zf, 1), var(--pcap, 4)) / var(--zf, 1));
+              --fb: calc(min(var(--zf, 1), 4) / var(--zf, 1)); /* boundary dashes: no --tx */ }
 .county-map .county-label { font-size: calc(var(--fs, 8) * 1px * var(--fc)); }
 .county-map .lm-water, .county-map .lm-park, .county-map .lm-shield-t,
 .county-map .pin-name { font-size: calc(var(--fs, 5) * 1px * var(--fk)); }
