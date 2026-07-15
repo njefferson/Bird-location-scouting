@@ -74,21 +74,28 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 - Labels stay honest; every failure explains itself and offers a way forward.
 - Product values: free, on-device, offline-first, no account, no install.
 
-## Next-release plan: v24 "photo-first" BUILT 2026-07-15 (Noah's ask that day:
-## "bringing the app in line with a photographer tool primarily… a new major
-## version" — the documented identity in README: ranked by photographic
-## opportunity, present AND shootable). Noah's GO same day, WITHOUT the
-## on-device pass ("It's all fine for now… push this to Main" once the data
-## run lands — his call, his gate, v22 precedent). The PR #25 NEEDS-HIS-HANDS
-## items (default-flip feel, weight taste, chip crowding, dialog legibility)
-## are therefore UNCHECKED — friction reports on them are expected follow-up,
-## not regressions. He will run HIS OWN ultracode review pass after the merge.
-## ROADMAP AFTER v24 (Noah, 2026-07-15, now in frame/src/data/roadmap.js):
-## (1) icons do things everywhere — tap-to-filter wherever facet icons appear
-## and it makes sense; (2) collapsible species sections in the target-bird
-## picker. He said "other things" beyond these — open-ended; confirm before
-## inventing. Older v22 thread ("possibly other things off of that") stays
-## open too.
+## STANDING PRACTICE (Noah, 2026-07-15, "yes always"): the MOMENT a release
+## merges to main, record it in Project facts below (what shipped + the
+## implementation facts a later session needs) and prune the roadmap. This repo
+## has a history of a later session rebuilding an already-shipped version
+## (the v18 near-clobber); a current Project-facts entry is the guard. Do it
+## every release, unprompted.
+
+## Both v24 and v25 have SHIPPED to main (see Project facts). v24 "photo-first"
+## and v25 "review-fixes" both merged on Noah's explicit go (his call, his gate,
+## v22 precedent) — v25 with an on-device pass (he caught the floating tab-bar
+## blend live). NEEDS-HIS-HANDS items from PR #25/#26 (photo default-flip feel,
+## weight taste, chip crowding, dialog legibility; v25 planner-cell ink split
+## point, badge hue nudges, two-finger pan feel) are UNCHECKED taste follow-up,
+## not regressions.
+## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): (0) a bottom tab
+## bar that never disappears — the floating menu blends into the cards behind it
+## in bright light and seems to vanish; needs a firmer surface/shadow or blur,
+## both themes (his NEW ask, on-device, now the top roadmap item); (1) icons do
+## things everywhere — tap-to-filter wherever facet icons appear and it makes
+## sense; (2) collapsible species sections in the target-bird picker. He said
+## "other things" beyond these — open-ended; confirm before inventing. Older
+## v22 thread ("possibly other things off of that") stays open too.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -102,6 +109,54 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v25 shipped 2026-07-15 (PR #26): "Review fixes" — a from-a-full-review
+  correctness/polish pass. Key facts so a later session doesn't regress them:
+  * TRUST DECOUPLED FROM LISTS (was the big bug): trustTag() reads
+    row.coverageDiversity, the keeper count over the FULL SPECIES set, NOT the
+    narrowed working set. rankHotspots computes it only when opts.species is a
+    subset (narrowed); equal to r.diversity in the default ranking. Do NOT make
+    trust key off the working-set diversity again — starring one target used to
+    flip every Documented spot to Thin and Skip/Thin recommended the best spots.
+  * Dawn Mode: planner cells use --cell-ink / --cell-ink-lo tokens; views.js
+    adds class 'lo' when r.vis < 55 (light ink on the dark low cells). Badges
+    use --badge-ink (dark on the lightened dark tokens); .btn.danger uses
+    --danger/--danger-dim; light-theme --trust-thin/inferred/exploratory were
+    darkened so white text passes AA. All token swaps — never hex-in-place.
+  * panzoom.js: two-finger drag now pans (midpoint-delta before zoomAt);
+    syncPinch() re-derives lastDist/lastMid on every pointer-set change (no
+    stale-distance zoom jump); a 'multi' flag suppresses onTap after any
+    2-finger gesture; ctl.invalidateCull() (called from mapview onZoom when pin
+    names toggle) rebuilds the deep-zoom cull so labels get culled.
+  * sw.js CACHE='frame-v25': install precaches per-asset (allSettled, not the
+    atomic addAll that could wipe offline); activate CARRIES FORWARD runtime
+    county/font cache across version bumps (PRECACHED set guards app code);
+    opaque Google-Fonts responses are cached. Humboldt (US-CA-023, 6 MB) is
+    DELIBERATELY not precached (would ~double the cellular install) — offline
+    users get an honest "not downloaded yet" dead end + it caches on first visit.
+  * Honest-failure UX: auto-switch prompts on the Settings toggle tap and
+    reports blocked/denied (views.js requestAutoSwitchPermission); Clear-all on
+    targets & seen is undoable (toast+Undo via setTargets/setSeen); live overlay
+    re-renders only ranked views and keeps scroll (main.js render({scroll})).
+    seen.js bulk import normalizes curly apostrophes + prefers CSV cell matches.
+    saveRegion enforces MAX_SAVED (share-link import can't make a 4th).
+  * CI: all three push-to-trigger workflows now require the push HEAD commit to
+    touch the trigger file (github.event.head_commit.modified/added) — a history
+    rewrite carrying an old trigger commit no longer re-fires (it did, 07-15,
+    firing a docs-only push into a would-be statewide rebuild). refresh-data
+    pushes to main with pull --rebase + 5× retry. deploy.yml has a per-branch
+    concurrency group. release.yml heading regex tolerates en/em-dash/hyphen.
+    checkout/setup-node bumped to v5.
+  * eBird proxy (functions/api/ebird/[[path]].js) LOCKED DOWN: endpoint
+    allowlist (only obs/geo/recent + nearest/geo/recent/<code>), path-traversal
+    normalized away, cross-site Origin/Referer refused (permissive when absent),
+    errors not cached. Noah's EBIRD_API_TOKEN repo secret IS set (his choice) so
+    the overlay is live. He declined a Cloudflare rate-limit rule (needs a
+    custom domain he won't maintain) and the KV limiter (not worth it — key is
+    free, eBird self-throttles, worst case is the badges pause). The in-app
+    Settings "Proxy base URL" box is a leftover dev control (should stay
+    /api/ebird); the app never had an API-key field. Don't re-explain the
+    data-refresh pipeline vs the overlay to him — he knows; the overlay is the
+    live "seen recently" badges only.
 - v24 built 2026-07-15: "Photo-first ranking" — Frame is a photographer's tool
   first again. model/photo.js: shootability(s) = SHOOT_BEHAVIOR[behavior] ×
   SHOOT_SIZE[size] (open 1 / mixed .6 / skulker .25; xs .5 / s .7 / m .85 /
