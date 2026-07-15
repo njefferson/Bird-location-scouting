@@ -74,10 +74,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 - Labels stay honest; every failure explains itself and offers a way forward.
 - Product values: free, on-device, offline-first, no account, no install.
 
-## Next-release plan: NONE approved right now. The "Bird lists" plan (locked
-## 2026-07-14) SHIPPED as v22 the same day — see Project facts. Noah left one
-## open thread from that plan: "Possibly other things off of that" — open-ended;
-## confirm with him before building anything on top of the lists.
+## Next-release plan: v24 "photo-first" BUILT 2026-07-15 (Noah's ask that day:
+## "bringing the app in line with a photographer tool primarily… a new major
+## version" — the documented identity in README: ranked by photographic
+## opportunity, present AND shootable). Candidate staged, awaiting his
+## on-device go. Older open thread from v22 ("Possibly other things off of
+## that") remains open-ended; confirm before building on the lists.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -91,6 +93,34 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v24 built 2026-07-15: "Photo-first ranking" — Frame is a photographer's tool
+  first again. model/photo.js: shootability(s) = SHOOT_BEHAVIOR[behavior] ×
+  SHOOT_SIZE[size] (open 1 / mixed .6 / skulker .25; xs .5 / s .7 / m .85 /
+  l 1 / xl 1) — a GLOBAL, VISIBLE formula over the published facets, never a
+  hidden per-species number (that was v23's point; don't regress it).
+  rankHotspots gained opts.weigh; rankingSpec() resolves it: photo-first is
+  DEFAULT ON (localStorage frame.photoFirst, '0' = off) and STANDS ASIDE while
+  frame.targetsRank is on (v22 promised frequency-only there). diversity
+  ("N birds likely") counts freq.value, never weighted. UI: always-present
+  camera chip on Ranking (ui/photo.js, .photo-entry) → explainer dialog with
+  the full weight tables + toggle; Settings section; scoreinfo note; species
+  pages show their one-line weight. Verified headless 21/21 (fail-first) +
+  13/13 model checks incl. order-vs-model equality on real data both modes.
+- eBird cookie GOTCHA (cost a probe, 2026-07-15): Noah's updated EBIRD_COOKIE
+  secret was pasted ONE PAIR PER LINE (16 lines) — newlines are invalid in an
+  HTTP header, so every fetch threw Headers.append. And that error does NOT
+  match the "HTML page" dead-cookie abort, so a --force build would have
+  ground through writing near-EMPTY county files over good data. Fix is
+  permanent in TWO places: build-counties.mjs joins multi-line cookies at
+  read, and refresh-data.yml/probe-ebird.yml join in shell (belt for older
+  checkouts). ALWAYS probe (~15 s, .github/trigger/probe-ebird) before a
+  multi-hour build; the joined cookie was probe-verified live (verdict DATA).
+- Data refresh 2026-07-15: full-depth statewide rebuild fired with the fresh
+  cookie (the v20 featured-county data finally landing). build-counties.mjs
+  now builds FULL_DEPTH counties FIRST (El Dorado, Humboldt, Placer,
+  Sacramento) so a mid-run cookie death can't cost them; the workflow commits
+  whatever finished to main at run end (~4.5 h). Do NOT push to main while a
+  refresh run is in progress — its final push would fail and lose the run.
 - v22 shipped 2026-07-14: "Bird lists" — the approved plan, built to spec.
   Stars are INFORMATIONAL by default: the target list (`#/targets`,
   ui/targets.js) shows each starred bird's where/when (best hotspots + peak
