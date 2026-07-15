@@ -109,8 +109,15 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
-- v26 built 2026-07-15: "Honest aging" — the app's graceful-degradation posture
-  for the day the quarterly refresh stops (Noah's ask: he worried that if he
+- v26 SHIPPED 2026-07-15 (PR #28): "Honest aging" — the app's graceful-degradation
+  posture for the day the quarterly refresh stops. Merged to main on Noah's
+  explicit "Promote to main" WITHOUT the staging on-device pass (his gate, his
+  call — v22/v24/v25 precedent); the NEEDS-HIS-HANDS items below are therefore
+  unverified-on-device follow-ups, not regressions. v26 also shipped the two
+  Photo-first explainer fixes Noah caught live (stray "null" + edge-to-edge body)
+  and added a roadmap item (access notes: populate or drop the field — there
+  will never be a manual curation pass). Original build notes follow.
+  (Noah's ask: he worried that if he
   ever can't/won't keep pasting the eBird cookie, the data goes stale silently
   and the machinery churns "for no reason"). SETTLED FIRST: full login
   automation stays impossible (eBird ToS — same wall as the cookie dance; do
