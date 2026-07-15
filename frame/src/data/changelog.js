@@ -9,6 +9,15 @@
 
 export const CHANGELOG = [
   {
+    version: 'v26',
+    date: '2026-07-15',
+    changes: [
+      'Frame now tells you how old its data is — and stays useful as it ages. The app runs on eBird histograms that refresh every quarter, but those describe which birds turn up in which months: seasonal patterns that stay reliable for years. So if a refresh is ever missed for a long stretch, Frame doesn’t pretend to be current. Once the data passes about a year and a half old, a calm notice appears at the top of the screen telling you the month it was last updated and reassuring you the seasonal patterns still hold; past three years it honestly calls itself an archive. You can dismiss the notice, and the exact build date always lives in Settings.',
+      'If the quarterly refresh ever stops for good, the app winds down gracefully instead of churning forever for no reason. The background heartbeat that keeps the data pipeline awake now steps aside once the data is clearly no longer being maintained — so nothing runs in the background pointlessly, while the app keeps working offline with the last good data it has.',
+      'Fixed the Photo-first explainer panel: it used to print a stray “null” line just above the on/off switch, and its weight tables ran hard against the edges of the panel. The stray line is gone and the whole panel now has proper margins.',
+    ],
+  },
+  {
     version: 'v25',
     date: '2026-07-15',
     changes: [

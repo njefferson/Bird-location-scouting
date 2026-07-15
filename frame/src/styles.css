@@ -550,6 +550,23 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tb-label strong { font-weight: 700; }
 .tb-actions { display: flex; gap: 6px; flex: 0 0 auto; }
 
+/* Data-freshness notice — calm honesty when the eBird data has aged. Slate for
+   "older", a warmer --warn for the archive state; never loud. */
+.freshbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--slate); background: var(--slate-wash); }
+.freshbar.archived { border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, var(--card)); }
+.fresh-ico { flex: 0 0 auto; color: var(--slate); display: inline-grid; place-content: center; }
+.freshbar.archived .fresh-ico { color: var(--warn); }
+.fresh-ico svg { display: block; }
+.fresh-msg { flex: 1 1 180px; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.fresh-msg strong { font-weight: 700; }
+.fresh-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
+.fresh-x { background: none; border: 0; color: var(--dim); font-size: 20px; line-height: 1;
+  padding: 2px 6px; cursor: pointer; border-radius: 6px; }
+.fresh-x:hover, .fresh-x:focus-visible { color: var(--ink); outline: none; }
+
 /* Species-tab entry card into the picker. */
 .tg-entry { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r);

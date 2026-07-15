@@ -5,6 +5,17 @@
 # margin to spare. The GITHUB_TOKEN push deliberately triggers no other
 # workflows (GitHub suppresses workflow triggers from GITHUB_TOKEN pushes), so
 # this costs one tiny commit a month and nothing else.
+#
+# GRACEFUL WIND-DOWN (v26): the heartbeat exists only to keep the DATA refresh
+# alive. If the data itself has been abandoned — the newest county `builtAt` is
+# older than 13 months, i.e. well past any normal quarterly gap and clearly no
+# longer being maintained — there is nothing left worth keeping awake. So the
+# heartbeat stops, and GitHub's own 60-day inactivity rule then quietly pauses
+# every schedule in the repo (this workflow included). The app, meanwhile, has
+# already flipped to its honest "archive" banner. Nothing churns for no reason.
+# To revive: refresh the eBird cookie and run the data refresh; if GitHub has
+# since marked the schedules disabled, re-enable them once (Actions tab →
+# "Enable workflow", or `gh workflow enable`) and the heartbeat resumes.
 name: Keepalive (prevent schedule pause)
 
 on:
@@ -26,8 +37,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Commit heartbeat
+      - name: Heartbeat (unless the data has been abandoned)
         run: |
+          # Newest build date across the committed county data — the freshness
+          # signal a successful refresh updates. If we can't read one, default to
+          # beating (preserve status quo; never disable infra on a parse miss).
+          newest=$(grep -ho '"builtAt"[[:space:]]*:[[:space:]]*"[0-9-]*"' frame/data/counties/*.json \
+            | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort | tail -1)
+          cutoff=$(date -u -d '13 months ago' +%Y-%m-%d)
+          if [ -n "$newest" ] && [[ "$newest" < "$cutoff" ]]; then
+            echo "Newest data is $newest, older than the 13-month cutoff ($cutoff)."
+            echo "Treating Frame as abandoned: stopping the heartbeat so GitHub's"
+            echo "60-day inactivity rule can wind the schedules down. To revive,"
+            echo "refresh the eBird cookie, run the data refresh, and re-enable the"
+            echo "workflows if GitHub has marked them disabled."
+            exit 0
+          fi
+          echo "Newest data is ${newest:-unknown}; within cadence — beating."
           date -u +%Y-%m-%dT%H:%M:%SZ > .github/keepalive
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

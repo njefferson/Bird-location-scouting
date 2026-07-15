@@ -8,6 +8,7 @@ import { renderMapView } from './ui/mapview.js';
 import { renderTargets, targetBar } from './ui/targets.js';
 import { renderSeen, newBirdsBar } from './ui/seen.js';
 import { facetBar } from './ui/facetbar.js';
+import { freshnessBanner } from './ui/freshness.js';
 import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter, regionOverlayDist } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
@@ -157,6 +158,10 @@ function render(opts = {}) {
     const nb = newBirdsBar(state, nav, render); if (nb) app.prepend(nb);
     const fb = facetBar(state, nav, render); if (fb) app.prepend(fb);
   }
+  // Honest-aging notice — a truth about the whole dataset, so it rides every
+  // main view (just under the region pills), not only the ranked ones. Null
+  // while the data is fresh or the user has dismissed this build date.
+  const fresh = freshnessBanner(nav); if (fresh) app.prepend(fresh);
   app.prepend(renderRegionBar());
 }
 
