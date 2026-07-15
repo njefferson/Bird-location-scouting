@@ -17,11 +17,15 @@ const ABOUT_HTML = `
   set of counties you save from the map.</p>
 
   <h3>How the ranking works</h3>
-  <p class="about-formula">presence = Σ&nbsp;frequency (over the birds you care about)</p>
-  <p>Hotspots are ranked by <strong>presence</strong>: how much of what you're
-  looking for is actually there this month, added up from eBird checklist
-  frequencies. The headline number on each card is how many species clear 5% of
-  checklists — the birds you'd likely run into.</p>
+  <p class="about-formula">opportunity = Σ&nbsp;(frequency × how shootable the bird is)</p>
+  <p>By default Frame ranks hotspots by <strong>photographic opportunity</strong>:
+  how much of what you're after is actually there this month (from eBird checklist
+  frequencies), weighted by how shootable each kind of bird is — a bird in the open
+  counts more than a skulker, a larger bird more than a tiny one. Those weights come
+  only from each bird's published facet icons; tap the camera chip on the Ranking
+  screen for the full tables, or switch photo-first off to rank by plain presence.
+  The headline number on each card is how many species clear 5% of checklists — the
+  birds you'd likely run into — and that count is a plain fact, never weighted.</p>
 
   <h3>The bird icons</h3>
   <p>Each spot shows a row of <strong>bird-group icons</strong> — waders,

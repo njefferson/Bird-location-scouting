@@ -2,7 +2,7 @@
 // VIEWS — the four screens from §5: Cards, Matrix, Species search, Settings,
 // plus a per-hotspot species matrix detail.
 // =============================================================================
-import { el, clear, pct, sparkline, scoreScale } from './dom.js';
+import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
 import { facetEntryChip } from './facetbar.js';
@@ -81,7 +81,7 @@ function filterBar(state, onChange) {
 // curated bird — is already on the seen list). Zero species would render every
 // hotspot as a silent 0; say what happened instead. The mode bars above keep
 // their one-tap exits, so the way forward is already on screen.
-function emptyModeNote(spec) {
+export function emptyModeNote(spec) {
   if (spec.species.length) return null;
   let msg;
   if (spec.facetsMode) {
@@ -103,11 +103,17 @@ function emptyModeNote(spec) {
 export function regionDeadEnd(nav, title) {
   const region = activeRegion();
   const editable = savedRegions().some((r) => r.id === region.id);
+  // If we're offline and the region has counties that simply aren't cached yet,
+  // say THAT — don't blame the region for "no data" when the real cause is no
+  // network and no prior visit to cache it.
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false && region.counties.length > 0;
   return el('div.dead-end', {}, [
-    el('h2', {}, title),
-    el('p.dim', {}, editable
-      ? `“${region.name}” has no built hotspot data. Edit its counties, or switch regions with the pills above.`
-      : `“${region.name}” has no hotspots loaded. Switch regions with the pills above, or build your own from the county map.`),
+    el('h2', {}, offline ? 'This region isn’t downloaded yet' : title),
+    el('p.dim', {}, offline
+      ? `You’re offline and “${region.name}” hasn’t been cached on this device. Reconnect once to download it, then it works offline too. You can still switch to an already-loaded region with the pills above.`
+      : editable
+        ? `“${region.name}” has no built hotspot data. Edit its counties, or switch regions with the pills above.`
+        : `“${region.name}” has no hotspots loaded. Switch regions with the pills above, or build your own from the county map.`),
     editable
       ? el('button.btn.primary', { onclick: () => nav.go(`#/regions/${encodeURIComponent(region.id)}`) }, 'Edit counties')
       : el('button.btn.primary', { onclick: () => nav.go('#/regions') }, 'Build a region'),
@@ -308,7 +314,9 @@ export function renderMatrix(root, state, nav) {
     MONTHS.forEach((_, m) => {
       const r = byMonth[m][h.id];
       const cell = el('td.cell', {
-        class: m === state.monthIdx ? 'col-active' : '',
+        // 'lo' below ~55% intensity: the cell background is still close to
+        // --card, which is near-black in Dawn Mode, so switch to light ink.
+        class: [m === state.monthIdx ? 'col-active' : '', r.vis < 55 ? 'lo' : ''].filter(Boolean).join(' '),
         style: `--s:${r.vis}`,
         title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
@@ -552,10 +560,13 @@ export function renderSettings(root, state, nav) {
     canAddRegion()
       ? el('button.btn.primary', { onclick: () => nav.go('#/regions') }, '+ New region from map')
       : el('p.dim', {}, 'You’ve saved the maximum of 3 regions — edit or delete one to add another.'),
-    el('label.row', {}, [
-      el('span', {}, 'Auto-switch region by location'),
-      checkbox(autoSwitchEnabled(), (v) => setAutoSwitch(v)),
-    ]),
+    (() => {
+      const autoCb = checkbox(autoSwitchEnabled(), (v) => { setAutoSwitch(v); if (v) requestAutoSwitchPermission(autoCb); });
+      return el('label.row', {}, [
+        el('span', {}, 'Auto-switch region by location'),
+        autoCb,
+      ]);
+    })(),
     el('p.dim', {}, 'When on, the app checks which of your regions you’re standing in each time it opens and switches to it (asks the browser for location permission once). Share sends a region as a link — opening it on another device imports the counties.'),
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
@@ -614,6 +625,32 @@ export function renderSettings(root, state, nav) {
   ]));
 
   root.append(form);
+}
+
+// Turning auto-switch ON asks the browser for location NOW, on this tap (the
+// documented "once" prompt), and says what happened — instead of silently
+// deferring the prompt to the next app open and then failing mute if it's
+// denied. A blocked permission flips the toggle back off so it never claims to
+// work when it can't (labels stay honest; every failure explains itself).
+function requestAutoSwitchPermission(cb) {
+  if (!navigator.geolocation) {
+    setAutoSwitch(false); if (cb) cb.checked = false;
+    toast('This device can’t provide location, so auto-switch can’t run.');
+    return;
+  }
+  toast('Checking your location…');
+  navigator.geolocation.getCurrentPosition(
+    () => toast('Location on — Frame will hop to the region you’re standing in when you open it.'),
+    (err) => {
+      if (err && err.code === err.PERMISSION_DENIED) {
+        setAutoSwitch(false); if (cb) cb.checked = false;
+        toast('Location is blocked, so auto-switch can’t run. Allow location for this site in your browser, then turn it on again.');
+      } else {
+        toast('Couldn’t read your location just now — Frame will try again next time it opens.');
+      }
+    },
+    { maximumAge: 600000, timeout: 8000 },
+  );
 }
 
 function section(title, kids) { return el('section.card.setting', {}, [el('h2', {}, title), ...kids]); }

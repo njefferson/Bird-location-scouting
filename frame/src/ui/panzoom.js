@@ -130,12 +130,26 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
   }
 
   const pts = new Map(); // pointerId → {x,y}
-  let moved = false, downX = 0, downY = 0, lastDist = null;
+  let moved = false, downX = 0, downY = 0, lastDist = null, lastMid = null, multi = false;
+  // Re-derive the pinch anchor (distance + midpoint) from the CURRENT first two
+  // pointers whenever the pointer set changes. Without this, lifting one finger
+  // of the pinching pair while a third rests down left lastDist holding the old
+  // pair's distance, so the next 1px move snapped the zoom.
+  function syncPinch() {
+    if (pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      lastDist = Math.hypot(a.x - b.x, a.y - b.y);
+      lastMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    } else {
+      lastDist = null; lastMid = null;
+    }
+  }
   svg.addEventListener('pointerdown', (e) => {
     svg.setPointerCapture(e.pointerId);
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1) { moved = false; downX = e.clientX; downY = e.clientY; }
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; lastDist = Math.hypot(a.x - b.x, a.y - b.y); }
+    if (pts.size >= 2) multi = true;
+    syncPinch();
   });
   svg.addEventListener('pointermove', (e) => {
     if (!pts.has(e.pointerId)) return;
@@ -149,17 +163,28 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
     } else if (arr.length >= 2) {
       const [a, b] = arr;
       const nd = Math.hypot(a.x - b.x, a.y - b.y);
-      if (lastDist) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, nd / lastDist);
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      // Follow the fingers: pan by the midpoint's travel, THEN zoom about it.
+      if (lastMid) panBy(mx - lastMid.x, my - lastMid.y);
+      if (lastDist) zoomAt(mx, my, nd / lastDist);
       lastDist = nd;
+      lastMid = { x: mx, y: my };
     }
   });
   svg.addEventListener('pointerup', (e) => {
-    const wasTap = pts.size === 1 && !moved;
+    // A tap is one finger, unmoved, and no second finger ever joined this gesture
+    // (else the second finger's lift would register as a tap).
+    const wasTap = pts.size === 1 && !moved && !multi;
     pts.delete(e.pointerId);
-    if (pts.size < 2) lastDist = null;
+    syncPinch();
+    if (pts.size === 0) multi = false;
     if (wasTap && onTap) onTap(e);
   });
-  svg.addEventListener('pointercancel', (e) => { pts.delete(e.pointerId); if (pts.size < 2) lastDist = null; });
+  svg.addEventListener('pointercancel', (e) => {
+    pts.delete(e.pointerId);
+    syncPinch();
+    if (pts.size === 0) multi = false;
+  });
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
     zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
@@ -175,6 +200,11 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
   const ctl = {
     reset() { vx = HOME.x; vy = HOME.y; vw = HOME.w; vh = HOME.h; setVB(); },
     zoomAtCenter(f) { zoomAt(centerX(), centerY(), f); },
+    // Force the viewport-cull list to rebuild on the next frame. Labels that
+    // were display:none when the list was first built (e.g. pin names, hidden
+    // until you zoom in) get a zero bbox and are skipped forever otherwise —
+    // so the caller invalidates when it toggles their visibility.
+    invalidateCull() { cullItems = null; setVB(); },
     controls() {
       const textBtn = el('button.map-zbtn.map-textbtn', {
         title: `Map text: ${TEXT_TIERS[tier].label} — tap to change`,

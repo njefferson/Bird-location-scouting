@@ -5,9 +5,18 @@
   --ink: #2c2318; --dim: #8a7b64; --line: #e2d6bf; --track: #e6dcc7;
   --accent: #cf7f22; --accent-ink: #7a4a10; --accent-wash: #f4e6cd; --accent2: #b56a15;
   --slate: #3f77a4; --slate-wash: #dbe7f0; --warn: #a9781f; --live: #c0563a;
-  /* Trust badge palette — mirrors the labels in model/scoring.js. */
-  --trust-documented: #3f7d54; --trust-opportunity: #3f77a4; --trust-exploratory: #8a6bab;
-  --trust-thin: #9a8f7c; --trust-inferred: #a9781f;
+  /* Trust badge palette — mirrors the labels in model/scoring.js. Light-theme
+     thin/inferred/exploratory are darkened from the reference hexes so the white
+     badge text clears WCAG AA on 11px bold. */
+  --trust-documented: #3f7d54; --trust-opportunity: #3f77a4; --trust-exploratory: #7f5fa2;
+  --trust-thin: #7d7260; --trust-inferred: #8a6219;
+  --badge-ink: #fff; /* badge text: dark on the lightened Dawn-Mode tokens (below) */
+  /* Destructive-action colour (Delete region): themed so the label clears
+     contrast in BOTH modes — the pale-pink reference hex was invisible on cream. */
+  --danger: #9c3320; --danger-dim: #7a2e2e;
+  /* Planner cell ink: dark by default; low-intensity cells get a theme ink so
+     near-empty months stay legible on the dark Dawn-Mode cell background. */
+  --cell-ink: #06160f; --cell-ink-lo: #06160f;
   /* Distant (out-of-region) counties on the hotspot map: a lifted floor so
      they read as present-but-quiet instead of dissolving into the --bg2 map
      background. Kept below the active region's --card2 so the region still
@@ -48,6 +57,9 @@
   --slate: #7fb0da; --slate-wash: #1e2c38; --warn: #e0a94e; --live: #e8795a;
   --trust-documented: #5fae79; --trust-opportunity: #7fb0da; --trust-exploratory: #b492d8;
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
+  --badge-ink: var(--bg); /* dark ink on the lightened dark-theme badge tokens */
+  --danger: #e58b8b; --danger-dim: #7a2e2e;
+  --cell-ink-lo: var(--ink); /* light ink for low-intensity cells over dark --card */
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
@@ -124,7 +136,7 @@ a { color: var(--accent); }
   font-family: var(--mono); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
 .score-inline:active { transform: translateY(1px); }
 
-.badge { --c: #555; font-size: 11px; font-weight: 700; color: #fff; background: var(--c);
+.badge { --c: #555; font-size: 11px; font-weight: 700; color: var(--badge-ink); background: var(--c);
   padding: 2px 8px; border-radius: 6px; }
 .badge.live { --c: var(--live); }
 /* Trust badges pull from theme tokens so Dawn Mode reskins them too. */
@@ -166,9 +178,11 @@ table.matrix th, table.matrix td { padding: 6px 4px; text-align: center; }
 table.matrix .rowhead { text-align: left; white-space: nowrap; color: var(--ink); cursor: pointer;
   position: sticky; left: 0; background: var(--bg); padding-right: 8px; }
 table.matrix .corner { text-align: left; }
-.cell { --s: 0; color: #06160f; font-weight: 700; cursor: pointer; border: 1px solid var(--bg);
+.cell { --s: 0; color: var(--cell-ink); font-weight: 700; cursor: pointer; border: 1px solid var(--bg);
   background: color-mix(in srgb, var(--accent) calc(var(--s) * 1%), var(--card)); }
-.cell:not([style*="--s:0;"]) { color: #06160f; }
+/* Low-intensity cells: near-empty months whose background stays close to --card.
+   In Dawn Mode --card is near-black, so these need light ink to be readable. */
+.cell.lo { color: var(--cell-ink-lo); }
 .col-active { outline: 2px solid var(--accent); }
 .legend { color: var(--dim); font-size: 12px; margin-top: 10px; }
 
@@ -374,7 +388,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   border-radius: 8px; padding: 10px; font-size: 16px; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #06160f; font-weight: 700; }
 .btn.primary:disabled { opacity: .4; cursor: not-allowed; }
-.btn.danger { background: none; border-color: #7a2e2e; color: #e58b8b; }
+.btn.danger { background: none; border-color: var(--danger-dim); color: var(--danger); }
 
 /* settings → region rows */
 .region-rows { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 10px; }
