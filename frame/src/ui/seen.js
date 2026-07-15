@@ -11,7 +11,7 @@ import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
 import { STATUS_LABEL } from '../model/inference.js';
 import {
-  isSeen, toggleSeen, addSeen, seenCount, getSeen, clearSeen,
+  isSeen, toggleSeen, addSeen, seenCount, getSeen, clearSeen, setSeen,
   newBirdsOn, setNewBirds, newBirdsActive,
 } from '../model/seen.js';
 
@@ -99,7 +99,15 @@ export function renderSeen(root, state, nav) {
       ]);
       summary.append(toggle);
       summary.append(el('button.btn.ghost.small', {
-        onclick: () => { clearSeen(); repaintList(); repaintSummary(); },
+        // Destructive, so it's undoable — no wiping a life list without a way back.
+        onclick: () => {
+          const wiped = getSeen();
+          if (!wiped.length) return;
+          clearSeen(); repaintList(); repaintSummary();
+          toast(`Cleared ${wiped.length} bird${wiped.length === 1 ? '' : 's'} from your life list.`, {
+            action: { label: 'Undo', onClick: () => { setSeen(wiped); repaintList(); repaintSummary(); } },
+          });
+        },
       }, 'Clear all'));
     }
   }

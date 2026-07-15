@@ -57,7 +57,7 @@ export function toggleSeen(name) {
  * (even if already seen); `added` counts the newly-marked ones.
  */
 export function addSeen(names) {
-  const known = new Map(SPECIES.map((s) => [s.name.toLowerCase(), s.name]));
+  const known = new Map(SPECIES.map((s) => [norm(s.name), s.name]));
   const list = read();
   const have = new Set(list);
   const seenThisCall = new Set();
@@ -75,14 +75,38 @@ export function addSeen(names) {
   return { added, matched, unmatched };
 }
 
-// Resolve one pasted line to a curated species name. Handles a bare name and a
-// CSV/row that merely CONTAINS the name (e.g. an eBird life-list export row),
-// matching the longest species name found so "Snow Goose" wins over nothing and
-// a row never silently maps to a shorter, unrelated name.
+// Normalize a pasted string for matching: unify curly apostrophes/quotes and
+// dashes to their ASCII forms, collapse whitespace, lowercase. iPad "smart
+// punctuation" turns the apostrophe in "Anna's Hummingbird" into U+2019, which
+// would otherwise never match the curated straight-apostrophe name.
+function norm(s) {
+  return String(s)
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+// Resolve one pasted line to a curated species name. Handles a bare name, an
+// eBird CSV/TSV row (species in its own column), and a free-text row that merely
+// CONTAINS the name. Cell-exact matches are tried BEFORE a whole-line substring
+// scan, so a Location column that happens to contain a bird's name can't hijack
+// the row; among candidates the longest name wins ("Snow Goose" over nothing).
 function matchSpecies(raw, known) {
-  const line = String(raw).trim().toLowerCase();
+  const line = norm(raw);
   if (!line) return null;
   if (known.has(line)) return known.get(line);
+  // Split a delimited row into cells and prefer an exact species cell.
+  let cellBest = null;
+  for (const c of line.split(/[,\t;|]+/)) {
+    const cell = c.trim();
+    if (known.has(cell) && (!cellBest || cell.length > cellBest.length)) {
+      cellBest = { length: cell.length, canonical: known.get(cell) };
+    }
+  }
+  if (cellBest) return cellBest.canonical;
+  // Fallback: longest curated name appearing anywhere in the line.
   let best = null;
   for (const [lc, canonical] of known) {
     if (line.includes(lc) && (!best || lc.length > best.length)) best = { length: lc.length, canonical };

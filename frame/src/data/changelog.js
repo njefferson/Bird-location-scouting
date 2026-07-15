@@ -9,6 +9,17 @@
 
 export const CHANGELOG = [
   {
+    version: 'v25',
+    date: '2026-07-15',
+    changes: [
+      'Trust badges tell the truth again when you’re filtering. Starring a target bird or turning on an icon filter no longer flips a hotspot’s “Documented / Thin” badge — a well-covered spot stays Documented even when you’re only counting a couple of birds, and the “Skip / Thin” filter no longer points you away from the best places in your area. A hotspot’s coverage is a fact about the hotspot, not about your list.',
+      'Dawn Mode is readable everywhere now. The Year planner’s numbers were nearly invisible on the dark cell backgrounds — they now switch to light ink where the cell is dark. Trust badges, the “Delete region” button, and the live badges all had hard-coded colours that failed in one theme or the other; every one is now legible in both.',
+      'The maps feel right in the hand. A two-finger drag now pans (it used to be ignored, so the map slid out from under your fingers mid-pinch); a resting palm no longer makes the zoom jump; and a two-finger tap no longer accidentally opens a hotspot. Deep-zoomed maps stay smooth again.',
+      'Honest labels and safer edits. “Auto-switch region by location” now asks for permission the moment you turn it on and tells you if it’s blocked, instead of silently doing nothing. Clearing your target list or life list can be undone. The hotspot map says “shootable presence” when photo-first is on, matching the ranking. And importing a life list now handles curly apostrophes (Anna’s Hummingbird) and won’t mistake a place name for a bird.',
+      'Offline is sturdier. A flaky network during install can’t wipe your offline copy any more, a version update no longer forces already-downloaded regions to re-download, and the fonts (every number in the app) are cached so nothing falls back to a system font offline.',
+    ],
+  },
+  {
     version: 'v24',
     date: '2026-07-15',
     changes: [

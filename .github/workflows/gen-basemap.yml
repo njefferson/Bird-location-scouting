@@ -23,9 +23,15 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # Push triggers must come from the trigger bump itself (see refresh-data.yml)
+    # so a rewritten-history push carrying an old trigger commit can't re-fire.
+    if: >-
+      github.event_name != 'push' ||
+      contains(toJSON(github.event.head_commit.modified), '.github/trigger/gen-basemap') ||
+      contains(toJSON(github.event.head_commit.added), '.github/trigger/gen-basemap')
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Fetch reservoir shorelines from OpenStreetMap (Overpass)

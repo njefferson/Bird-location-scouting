@@ -53,7 +53,13 @@ export function toggleTarget(name) {
   list.push(name); write(list); return true;
 }
 
-export function setTargets(names) { write([...new Set(names)]); }
+export function setTargets(names) {
+  // Keep only names that match a curated species (like setSeen does), so a stale
+  // or hand-edited list can't leave phantom targets that engage the mode with an
+  // empty working set.
+  const known = new Set(SPECIES.map((s) => s.name));
+  write([...new Set(names.filter((n) => known.has(n)))]);
+}
 export function clearTargets() { write([]); }
 
 // --- The standing "rank by target presence" toggle (non-destructive) --------
@@ -65,8 +71,13 @@ export function setTargetsRank(on) {
   try { localStorage.setItem(RANK_KEY, on ? '1' : '0'); } catch { /* private mode */ }
 }
 
-/** True when the ranking should actually rank hotspots by target presence. */
-export function targetsRankActive() { return targetsRankOn() && read().length > 0; }
+/**
+ * True when the ranking should actually rank hotspots by target presence.
+ * Measured on the MATCHED subset (targetSubset), not the raw stored list: a list
+ * of names no longer in the curated taxonomy (after a data update) would
+ * otherwise engage the mode with zero species and trigger the wrong dead-end.
+ */
+export function targetsRankActive() { return targetsRankOn() && targetSubset().length > 0; }
 
 /**
  * The chosen species as SPECIES objects, in curated SPECIES order (so the matrix

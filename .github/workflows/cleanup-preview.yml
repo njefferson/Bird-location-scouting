@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Preview branch whose Cloudflare deployments to delete
+        description: Preview branch whose Cloudflare deployments to delete (e.g. a merged claude/* feature branch)
         required: true
-        default: next-version
+        default: example-preview-branch
       confirm:
         description: Type DELETE to actually delete; anything else is a dry run
         required: true

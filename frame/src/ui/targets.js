@@ -7,7 +7,7 @@
 // appear; it announces itself with a standing bar and a non-destructive exit,
 // per the product's taste rules.
 // =============================================================================
-import { el, clear, pct, sparkline } from './dom.js';
+import { el, clear, pct, sparkline, toast } from './dom.js';
 import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
 import { BEHAVIORS, SIZES, facetSvg } from '../data/facets.js';
@@ -16,7 +16,7 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import {
-  isTarget, toggleTarget, getTargets, targetCount, clearTargets,
+  isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
 } from '../model/targets.js';
 
@@ -116,7 +116,15 @@ export function renderTargets(root, state, nav) {
       ]);
       summary.append(toggle);
       summary.append(el('button.btn.ghost.small', {
-        onclick: () => { clearTargets(); repaintYourList(); repaintList(); repaintSummary(); },
+        // Undoable — clearing a starred list should never be a one-way trip.
+        onclick: () => {
+          const wiped = getTargets();
+          if (!wiped.length) return;
+          clearTargets(); repaintYourList(); repaintList(); repaintSummary();
+          toast(`Cleared ${wiped.length} target${wiped.length === 1 ? '' : 's'}.`, {
+            action: { label: 'Undo', onClick: () => { setTargets(wiped); repaintYourList(); repaintList(); repaintSummary(); } },
+          });
+        },
       }, 'Clear all'));
     }
   }

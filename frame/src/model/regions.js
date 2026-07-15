@@ -62,7 +62,8 @@ function uniqueId(name, saved) {
 /**
  * Create or update a saved region. Pass an existing saved `id` to update it;
  * omit it (or pass a built-in id) to mint a new one. County codes are validated
- * against the vocabulary and de-duplicated. Returns the region id.
+ * against the vocabulary and de-duplicated. Returns the region id, or null when
+ * a brand-new region would exceed MAX_SAVED (the caller reports it honestly).
  */
 export function saveRegion({ id, name, counties }) {
   const saved = loadSaved();
@@ -71,8 +72,11 @@ export function saveRegion({ id, name, counties }) {
   if (id && !isDefaultRegion(id)) {
     const i = saved.findIndex((r) => r.id === id);
     if (i >= 0) saved[i] = { id, name, counties };
-    else saved.push({ id, name, counties });
+    else saved.push({ id, name, counties }); // restoring a deleted region by id
   } else {
+    // Minting a brand-new region: enforce the cap the UI advertises. Without
+    // this, the #/import share-link flow could create a 4th saved region.
+    if (saved.length >= MAX_SAVED) return null;
     id = uniqueId(name, saved);
     saved.push({ id, name, counties });
   }

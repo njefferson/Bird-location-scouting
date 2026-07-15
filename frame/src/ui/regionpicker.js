@@ -194,6 +194,10 @@ export function renderRegionPicker(root, state, nav, editId, prefill = null) {
   async function onSave() {
     if (!selected.size) return;
     const id = saveRegion({ id: editId, name: nameInput.value, counties: [...selected] });
+    if (!id) {
+      toast('You’ve saved the maximum of 3 regions — delete one first, then save this.');
+      return;
+    }
     setActiveRegion(id);
     state.recent = null;            // box overlay is region-specific; recompute on next boot/switch
     await loadActiveRegion();

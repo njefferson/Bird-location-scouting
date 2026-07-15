@@ -16,7 +16,7 @@ import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots } from '../model/scoring.js';
 import { rankingSpec } from '../model/lists.js';
 import { MONTHS } from '../model/inference.js';
-import { monthSelector, regionDeadEnd } from './views.js';
+import { monthSelector, regionDeadEnd, emptyModeNote } from './views.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -39,11 +39,12 @@ export function renderMapView(root, state, nav) {
   clear(root);
   const region = activeRegion();
   const hotspots = getHotspots();
+  const spec = rankingSpec();
 
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Hotspot map'),
-      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} bird presence · tap a pin`),
+      el('span.subtitle', {}, `${region.name} · pin colour = ${MONTHS[state.monthIdx]} ${spec.weigh ? 'shootable bird presence' : 'bird presence'} · tap a pin`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
@@ -52,6 +53,10 @@ export function renderMapView(root, state, nav) {
     root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
     return;
   }
+  // Same empty-working-set guard the Cards and Planner use — never render a map
+  // of silent-zero pins when a list/facet mode leaves nothing to count.
+  const modeNote = emptyModeNote(spec);
+  if (modeNote) { root.append(modeNote); return; }
 
   const { w: W, h: H } = MAP_VIEWBOX;
   const wrap = el('div.map-wrap.map-tall');
@@ -88,7 +93,6 @@ export function renderMapView(root, state, nav) {
   // (base radius) + the map's `--pcap` (the home-view zoom) let CSS hold each
   // pin at a constant on-screen size once you zoom past the opening view —
   // no more donut-sized blobs pinched all the way in.
-  const spec = rankingSpec();
   const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species, weigh: spec.weigh });
   const visById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.vis]));
   const divById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.diversity]));
@@ -142,7 +146,13 @@ export function renderMapView(root, state, nav) {
 
     // Hotspot names appear once you're zoomed past ~2× the opening view.
     onZoom: (z) => {
-      svg.classList.toggle('pin-names-on', z >= homeZoom * 2);
+      const on = z >= homeZoom * 2;
+      if (on !== svg.classList.contains('pin-names-on')) {
+        svg.classList.toggle('pin-names-on', on);
+        // The names just (dis)appeared — remeasure so the deep-zoom cull covers
+        // them instead of painting every label each frame.
+        pz.invalidateCull();
+      }
       svg.classList.toggle('map-deep', z >= 48); // one-lake scale: declutter
     },
     onTap: (e) => {
@@ -153,7 +163,9 @@ export function renderMapView(root, state, nav) {
   wrap.append(pz.controls());
   root.append(wrap);
 
-  root.append(scoreScale(`Fuller colour = more bird presence this ${MONTHS[state.monthIdx]} (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
+  root.append(scoreScale(spec.weigh
+    ? `Fuller colour = more shootable bird presence this ${MONTHS[state.monthIdx]} (Σ frequency × photo weight, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`
+    : `Fuller colour = more bird presence this ${MONTHS[state.monthIdx]} (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {

@@ -94,6 +94,9 @@ export function shrinkFactor(n) {
 export function rankHotspots(hotspots, monthIdx, opts = {}) {
   const species = opts.species || SPECIES;
   const weigh = opts.weigh || null;
+  // Is the working set narrowed by a list/facet mode? Trust is a COVERAGE fact
+  // about the hotspot and must NOT vary with it (see coverageDiversity below).
+  const narrowed = species !== SPECIES;
   const rows = hotspots.map((h) => {
     const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species, weigh);
     const n = checklistN(h, monthIdx);
@@ -107,10 +110,26 @@ export function rankHotspots(hotspots, monthIdx, opts = {}) {
     // "N species likely": how many species clear the keeper bar this month —
     // on their real frequency, so the count never moves with ranking weights.
     r.diversity = r.contributions.filter((c) => c.freq.value >= KEEPER_FREQ).length;
+    // Trust (Documented vs Thin) is a fact about the HOTSPOT's coverage, not
+    // about the user's lists, so it's decided by the keeper count over the FULL
+    // curated species set — identical to r.diversity in the default ranking,
+    // but unaffected when a target/facet/new-for-me mode narrows the working
+    // set. Without this, starring one target flips every well-covered spot to
+    // "Thin" and Skip/Thin recommends skipping the county's best hotspots.
+    r.coverageDiversity = narrowed ? coverageDiversity(r.hotspot, monthIdx) : r.diversity;
     r.trust = trustTag(r);
   }
   rows.sort((a, b) => b.shrunk - a.shrunk);
   return rows;
+}
+
+/** Keeper-species count over the FULL curated set (coverage, for trust). */
+function coverageDiversity(hotspot, monthIdx) {
+  let k = 0;
+  for (const s of SPECIES) {
+    if (frequency(s, hotspot, monthIdx).value >= KEEPER_FREQ) k++;
+  }
+  return k;
 }
 
 function trustTag(row) {
@@ -119,8 +138,9 @@ function trustTag(row) {
   if (row.n == null) return TRUST.exploratory;
   if (row.n >= DOCUMENTED_N) {
     // Well-covered but few species clear the keeper bar ⇒ Thin ("people looked,
-    // it's barren"). Diversity, not a score, decides it now.
-    return row.diversity < THIN_DIVERSITY ? TRUST.thin : TRUST.documented;
+    // it's barren"). Coverage diversity (full species set), not the possibly
+    // narrowed working-set count, decides it.
+    return row.coverageDiversity < THIN_DIVERSITY ? TRUST.thin : TRUST.documented;
   }
   // Low N: Opportunity if a same-habitat neighbour exists, else Exploratory.
   // (Neighbour inheritance is a build-script enrichment; default to Exploratory.)

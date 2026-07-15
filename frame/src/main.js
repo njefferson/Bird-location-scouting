@@ -86,9 +86,19 @@ async function refreshOverlay() {
   // Radius sized to the region's spread (25–50 km) so sprawling multi-county
   // regions aren't under-served by one small circle.
   const recent = await recentInBox({ back: 14, dist: regionOverlayDist(), ...(regionCenter() || {}) });
-  // Don't re-render over the county picker mid-selection — the overlay only
-  // affects the ranking/hotspot views anyway.
-  if (recent) { state.recent = recent; if (!location.hash.startsWith('#/regions') && !location.hash.startsWith('#/import')) render(); }
+  // The overlay only affects the ranked views, so only they need re-rendering
+  // when it arrives — never re-render over the picker, the seen/targets pickers,
+  // or Settings (that would wipe an in-progress import textarea and steal focus).
+  // And keep the scroll position: the overlay can land seconds after boot, so a
+  // scroll-to-top here would yank the list out from under the reader.
+  if (recent) {
+    state.recent = recent;
+    if (isRankedView()) render({ scroll: false });
+  }
+}
+
+function isRankedView(h = location.hash || '#/') {
+  return h === '#/' || h === '#/matrix' || h === '#/map' || h.startsWith('#/hotspot/');
 }
 
 // Location auto-switch (opt-in, Settings): find which region's counties the
@@ -96,6 +106,9 @@ async function refreshOverlay() {
 function maybeAutoSwitch() {
   if (!autoSwitchEnabled() || !navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition((pos) => {
+    // The prompt/resolve can land seconds later — never switch out from under a
+    // county selection in progress (it would wipe the picker's draft).
+    if (location.hash.startsWith('#/regions') || location.hash.startsWith('#/import')) return;
     const { latitude: lat, longitude: lng } = pos.coords;
     const active = activeRegion();
     if (active.counties.some((c) => pointInCounty(lat, lng, c))) return; // already right
@@ -108,10 +121,12 @@ function maybeAutoSwitch() {
   }, () => {}, { maximumAge: 600000, timeout: 8000 });
 }
 
-function render() {
+function render(opts = {}) {
   const h = location.hash || '#/';
   renderTabs();
-  window.scrollTo(0, 0);
+  // Navigation scrolls to the top; an in-place re-render (e.g. the live overlay
+  // arriving) passes { scroll: false } to hold the reader's place.
+  if (opts.scroll !== false) window.scrollTo(0, 0);
   if (h.startsWith('#/regions')) {
     const id = h.startsWith('#/regions/') ? decodeURIComponent(h.slice('#/regions/'.length)) : null;
     return renderRegionPicker(app, state, nav, id);

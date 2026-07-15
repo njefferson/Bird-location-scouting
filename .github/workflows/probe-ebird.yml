@@ -15,9 +15,16 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    # Push triggers must come from the trigger bump itself (see the matching
+    # guard in refresh-data.yml — pushes of rewritten history containing an old
+    # trigger commit would otherwise re-fire this).
+    if: >-
+      github.event_name != 'push' ||
+      contains(toJSON(github.event.head_commit.modified), '.github/trigger/probe-ebird') ||
+      contains(toJSON(github.event.head_commit.added), '.github/trigger/probe-ebird')
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Probe bar-chart endpoint

@@ -1,8 +1,12 @@
 # Frame v23 — Design review brief (icons + interface)
 
-> **Paste this whole file into a fresh Claude session to run the review.** It is
-> self-contained: you can critique and redesign from what's here alone. If you
-> also want to edit the real files and push, see **Repo access** at the bottom.
+> **⚠ HISTORICAL — do NOT action.** This is the design brief that produced v23
+> (July 2026); the app is well past it (v25+). Its instructions below (freezing
+> production, "paste into a fresh session to run the review", repo-access steps)
+> are stale and must not be followed — treat this file as an archived record of
+> the v23 redesign, not a live task. Current standing rules live in `/CLAUDE.md`.
+
+> _(Original brief follows, unchanged for the record.)_
 
 ---
 

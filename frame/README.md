@@ -37,28 +37,23 @@ by real frequency); displayed numbers are never weighted — only the order.
 - The eBird API **cannot** serve frequency; we never pretend it does. It only
   powers the live badges.
 
-## Deploy (rolled into the IR project, for now)
-`.github/workflows/deploy-frame.yml` builds the IR app and serves Frame
-**alongside it** in the existing `infrared-photography-studio` Pages project:
+## Deploy (standalone Cloudflare Pages)
+`.github/workflows/deploy.yml` publishes `frame/` as its own Cloudflare Pages
+project on every push to `main`:
 
-- IR app → `https://infrared-photography-studio.pages.dev/`
-- **Frame → `https://infrared-photography-studio.pages.dev/frame/`**
-- eBird proxy → mounted at the project root (`/api/ebird`)
+- Production → `https://bird-location-scouting.pages.dev/`
+- Preview (push to `staging`) → `https://staging.bird-location-scouting.pages.dev/`
+- eBird proxy → the Pages Function at `frame/functions/api/ebird/[[path]].js`,
+  mounted at `/api/ebird`
 
-This shares the IR project because the current Cloudflare API token is scoped to
-that one project. To split Frame into its own `frame-bird-planner` project later,
-broaden the token to account-wide *Cloudflare Pages: Edit* and point the deploy
-command back at `frame-bird-planner` (one line).
-
-> **Heads-up:** the IR app's own `deploy.yml` (triggered from the
-> `claude/lost-session-info-huy4ha` branch) doesn't include Frame, so a deploy
-> from that branch will temporarily drop `/frame` until this workflow runs again.
+Needs three repo secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and
+(optional) `EBIRD_API_TOKEN` for the live overlay.
 
 To switch on the **live eBird overlay**, one thing from your phone:
 
 > github.com → repo **Settings → Secrets and variables → Actions → New
 > repository secret** → name `EBIRD_API_TOKEN`, value = your eBird key → save,
-> then re-run the **“Deploy IR app + Frame”** action.
+> then re-run the **“Deploy Frame to Cloudflare Pages”** action.
 
 The workflow pushes that secret to Cloudflare as a runtime variable the proxy
 reads. The key never lands in the repo or the browser bundle. Until it's set,
@@ -77,22 +72,27 @@ The planner covers a **region** — a named set of counties (`src/data/counties.
 eBird data lives in one file per county (`data/counties/US-CA-###.json`, keyed by
 locId), and the app loads only the active region's counties, so coverage scales
 without bloating any single download. `src/data/species.js` holds only the
-curated *photoability* judgments, keyed by eBird common name — species **codes**
-are resolved from the live eBird taxonomy at build time into `data/taxonomy.json`,
-so a code is never hand-typed (that was the source of an earlier data-hiding bug).
+curated *facet* judgments (type / size / nest / behaviour), keyed by eBird common
+name — species **codes** are resolved from the live eBird taxonomy at build time
+into `data/taxonomy.json`, so a code is never hand-typed (that was the source of
+an earlier data-hiding bug). The old hidden per-species *photoability* number was
+removed in v23; shootability is now a transparent global formula over the facets.
 
 ## Refresh / extend the real data
 **Easiest: the "Refresh eBird data" GitHub Action** — it validates species names,
-rebuilds **every county's** file (statewide, ~20 min), refreshes `taxonomy.json`,
-commits and deploys on a runner. Needs the `EBIRD_API_TOKEN` and `EBIRD_COOKIE`
-repo secrets, runs itself quarterly, and is fully driveable from a phone/iPad
-(see `HANDOFF.md`). Because all counties are pre-built, covering a **new area**
-is just adding its county code to a region in `counties.js` — no build needed.
-By hand:
+rebuilds **every county's** file (statewide, ~4.5 h — the four featured counties
+keep every hotspot), refreshes `taxonomy.json`, commits and deploys on a runner.
+Needs the `EBIRD_API_TOKEN` and `EBIRD_COOKIE` repo secrets, runs itself
+quarterly, and is fully driveable from a phone/iPad (see `HANDOFF.md`). Because
+all counties are pre-built, covering a **new area** is just adding its county
+code to a region in `counties.js` — no build needed. By hand:
 
 ```bash
 export EBIRD_API_TOKEN=yourkey     # species codes + hotspot lists
-export EBIRD_COOKIE="<document.cookie from a signed-in ebird.org>"  # bar charts
+# The session cookie is HttpOnly (no bookmarklet can read it): on a DESKTOP
+# browser signed into ebird.org, DevTools → Network → any ebird.org request →
+# Request Headers → copy the whole `cookie:` value.
+export EBIRD_COOKIE="<cookie header from a signed-in ebird.org>"  # bar charts
 node scripts/build-counties.mjs validate         # check species names resolve
 node scripts/build-counties.mjs build --force    # writes data/counties/*.json + taxonomy.json
 ```
@@ -109,7 +109,10 @@ week to week.
   (after the one-tap secret) the **live** "seen recently" badges from the eBird API.
 - **Refreshing/extending the data needs no computer:** the GitHub Action does the
   login-gated bar-chart pull on a runner; from an iPad you just paste a fresh
-  cookie into the repo secret and tap "Run workflow" (see `HANDOFF.md`).
+  cookie into the `EBIRD_COOKIE` repo secret. The refresh fires by pushing a bump
+  to `.github/trigger/refresh-data` on a `claude/*` branch (see `HANDOFF.md`) —
+  the one channel that works without the Actions UI. (The cookie itself must come
+  from a desktop browser's DevTools once a quarter — it's HttpOnly.)
 
 ## Screens (spec §5)
 - **Ranking** — current-month cards: bird-group facet icons (bright by real
