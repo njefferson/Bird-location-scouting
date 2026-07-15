@@ -2,3 +2,4 @@ Bump this file (any change) and push to fire the "Probe eBird endpoint"
 workflow. See the push-to-trigger note in .github/workflows/probe-ebird.yml.
 fired: 2026-07-05T15:05Z
 probe run 02:51 — is EBIRD_COOKIE still live? (Noah asked)
+probe run: verify the NEW cookie (updated 2026-07-15) before the full-depth statewide build
