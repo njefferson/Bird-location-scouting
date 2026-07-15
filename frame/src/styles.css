@@ -32,6 +32,15 @@
      one, distinct from red roads and blue rivers. */
   --boundary: #2e2618;
   --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
+  /* Dock edge (v27) — the bright cream dock sat on near-identical cream cards,
+     so in bright ambient light its faint border + shadow washed out and it
+     seemed to vanish. These give it a defined edge that always reads: a firmer
+     border with real contrast against the cards, a layered warm shadow (kept
+     alive, not crushed), and a bright top lip so the seam where cards scroll
+     behind it stays crisp. Recompute per theme. */
+  --dock-line: #cdb98f;
+  --dock-shadow: 0 1px 2px rgba(60,40,10,.18), 0 8px 18px rgba(60,40,10,.16), 0 22px 44px rgba(60,40,10,.22);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.75);
   /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
      for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
   --facet-lots: var(--accent);
@@ -64,6 +73,9 @@
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
   --dock: #30281c;
+  --dock-line: #574734; /* firmer than --line so the dock edge reads on dark cards */
+  --dock-shadow: 0 1px 2px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.5), 0 22px 46px rgba(0,0,0,.55);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.07);
   --facet-lots: var(--accent);
   --facet-some: color-mix(in srgb, var(--accent) 52%, var(--dim));
   --facet-ghost: color-mix(in srgb, var(--dim) 40%, transparent);
@@ -417,10 +429,10 @@ table.species-table tr[onclick] { cursor: pointer; }
    hairline — the bottom shares the column boundary like everything else. */
 .tabs { position: fixed; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; right: 0;
   margin-inline: auto; width: min(736px, calc(100% - 24px)); height: var(--tab-h);
-  background: color-mix(in srgb, var(--dock) 96%, transparent);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid color-mix(in srgb, var(--line) 60%, var(--dim)); border-radius: var(--r); overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,.10), 0 14px 34px rgba(60,40,10,.18);
+  background: color-mix(in srgb, var(--dock) 97%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.04); backdrop-filter: blur(12px) saturate(1.04);
+  border: 1px solid var(--dock-line); border-radius: var(--r); overflow: hidden;
+  box-shadow: var(--dock-shadow), var(--dock-lip);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
 .tab { background: none; border: 0; color: var(--dim); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }

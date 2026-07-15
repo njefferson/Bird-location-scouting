@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v27 — 2026-07-15
+- The bottom tab bar stays put. In bright light the floating bar at the bottom could blend into the cards behind it and seem to vanish — so it was easy to lose the very control you navigate with. It now carries a firmer edge, a clearer layered shadow, and a bright top lip that keeps the seam crisp as cards scroll behind it, so it always reads as a solid control you can find — in both the light and Dawn themes.
+
 ## v26 — 2026-07-15
 - Frame now tells you how old its data is — and stays useful as it ages. The app runs on eBird histograms that refresh every quarter, but those describe which birds turn up in which months: seasonal patterns that stay reliable for years. So if a refresh is ever missed for a long stretch, Frame doesn’t pretend to be current. Once the data passes about a year and a half old, a calm notice appears at the top of the screen telling you the month it was last updated and reassuring you the seasonal patterns still hold; past three years it honestly calls itself an archive. You can dismiss the notice, and the exact build date always lives in Settings.
 - If the quarterly refresh ever stops for good, the app winds down gracefully instead of churning forever for no reason. The background heartbeat that keeps the data pipeline awake now steps aside once the data is clearly no longer being maintained — so nothing runs in the background pointlessly, while the app keeps working offline with the last good data it has.
