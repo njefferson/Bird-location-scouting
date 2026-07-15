@@ -10,8 +10,10 @@
 ## What this is
 `frame/` is a self-contained installable PWA: a bird-photography hotspot planner
 for the Sacramento foothills (and, via regions, the wider state). Hotspots are
-ranked by presence = Σ frequency(species) per month (v23 removed the old
-subjective photoability weight); each spot shows objective bird-group facet
+ranked by photographic opportunity = Σ frequency × shootability per month
+(v24; shootability is a transparent global formula over each bird's published
+behaviour/size facets — the old hidden per-species photoability judgment was
+removed in v23 and stays gone); each spot shows objective bird-group facet
 icons that double as tri-state filters. See `frame/README.md`.
 
 ## Things only you can provide (don't try to fake these)

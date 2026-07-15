@@ -1,0 +1,4 @@
+Bump this file (any change) and push to fire the "Refresh eBird data" workflow.
+See the push-to-trigger note in .github/workflows/refresh-data.yml. [resume] in
+the commit message = resume mode.
+fired: 2026-07-15 full-depth statewide rebuild with the fresh cookie (featured counties first)

@@ -7,6 +7,15 @@
 // =============================================================================
 
 export const ROADMAP = [
+  // Noah's asks, 2026-07-15 (given with the v24 go). He also said "other
+  // things" — open-ended; confirm with him before inventing more.
+  { title: 'Icons that do things, everywhere',
+    detail: 'the facet icons go to work across the whole app: wherever an icon appears and a filter makes sense — species pages, the target picker, the seen list — tapping it filters, so what you touch responds.' },
+  { title: 'Collapsible groups when picking target birds',
+    detail: 'the species sections in the target-bird picker fold up, so starring birds stops being one long scroll.' },
+  // v24 shipped "Photo-first ranking" — frequency × a transparent facet-derived
+  // shootability weight (behaviour × size), default on, camera chip + tables,
+  // one-tap plain-presence exit; target-presence mode stays frequency-only.
   // v23 shipped "Facet icons" — the 0–100 score was replaced by per-site bird-
   // group icons (bright/subdued/faint from real frequency) that double as a
   // tri-state filter, plus size / nest / behaviour filters.

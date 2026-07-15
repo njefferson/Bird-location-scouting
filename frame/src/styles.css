@@ -747,3 +747,25 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-facet-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink);
   background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 7px; }
 .sp-facet-chip .sp-fi { color: var(--dim); }
+
+/* =============================================================================
+   PHOTO-FIRST (v24) — the standing camera chip + the weight-table dialog.
+   The chip reuses the .facet-entry chassis; the camera wears the app accent
+   when photo-first is steering the ranking, and goes quiet when every bird
+   counts equally (or the ★ target-presence promise suspends it).
+   ========================================================================== */
+.photo-entry .facet-entry-mark, .photo-entry .facet-entry-go { color: var(--dim); }
+.photo-entry.photo-on .facet-entry-mark, .photo-entry.photo-on .facet-entry-go { color: var(--accent); }
+.photo-entry.photo-on .facet-entry-main { color: var(--accent-ink); }
+
+.pw-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.pw-row { display: flex; align-items: center; gap: 10px; }
+.pw-icon { flex: 0 0 auto; color: var(--ink); display: inline-grid; place-content: center; }
+.pw-label { flex: 1 1 auto; font-size: 13px; }
+.pw-w { flex: 0 0 auto; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 600; }
+.photo-dialog .si-note { font-size: 13px; color: var(--ink); margin: 8px 0; }
+.photo-dialog .si-dim { color: var(--dim); }
+.pw-toggle { flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+
+/* Species panel: the honest one-line weight readout. */
+.sp-photo { font-size: 12px; margin: 0 0 8px; font-family: var(--mono); font-variant-numeric: tabular-nums; }

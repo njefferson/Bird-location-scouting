@@ -14,26 +14,38 @@
 // They compose (AND): with all on you rank spots by the presence of the
 // wanted-facet targets you still NEED. Each tool keeps its own standing bar and
 // one-tap exit; none ever edits a list.
+//
+// PHOTO-FIRST (v24): on top of the working set, the default ranking weighs each
+// bird's frequency by its facet-derived shootability (model/photo.js) — present
+// AND shootable. Exceptions, both deliberate:
+//   - "Rank by target presence" promised frequency-only in v22 and keeps that
+//     promise: while it's on, the photo weight stands aside.
+//   - Turning photo-first off (standing chip / Settings) is the plain-presence
+//     exit; every bird then counts equally, exactly as v23 ranked.
 // =============================================================================
 
 import { SPECIES } from '../data/species.js';
 import { targetsRankActive, targetSubset } from './targets.js';
 import { newBirdsActive, isSeen } from './seen.js';
 import { facetsActive, applyFacetFilter } from './facets.js';
+import { photoFirstOn, shootability } from './photo.js';
 
 /**
- * The species set + active modes the ranked views should use right now.
- *   { species, targetsMode, newMode, facetsMode }
- * Scoring is always presence-based; there is no photoability weight any more.
+ * The species set + weight + active modes the ranked views should use now.
+ *   { species, weigh, targetsMode, newMode, facetsMode, photoMode }
+ * Pass species AND weigh straight to rankHotspots so every ranked view agrees.
+ * photoMode is true only when the photo weight is actually steering the
+ * ranking (on, and not suspended by target-presence mode).
  */
 export function rankingSpec() {
   const targetsMode = targetsRankActive();
   const newMode = newBirdsActive();
   const facetsMode = facetsActive();
+  const photoMode = photoFirstOn() && !targetsMode;
   let species = targetsMode ? targetSubset() : SPECIES;
   if (newMode) species = species.filter((s) => !isSeen(s.name));
   if (facetsMode) species = applyFacetFilter(species);
-  return { species, targetsMode, newMode, facetsMode };
+  return { species, weigh: photoMode ? shootability : null, targetsMode, newMode, facetsMode, photoMode };
 }
 
 /** Any list- or filter-driven mode currently steering the ranking? */

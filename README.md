@@ -20,14 +20,20 @@ Sacramento and Humboldt keep every hotspot); regions (sets of counties)
 are user-defined on the county map, up to 3 saved on-device.
 
 ### The ranking
-`presence(h, month) = Σ_species frequency` over the working species set,
-trust-shrunk and ranked within each month. Frequency comes from real eBird
-histogram data where it exists and from a transparent habitat/season model
-where it doesn't (always flagged *inferred*). As of v23 the old subjective
-`photoability` weight is gone: each hotspot shows objective per-species facets
+`opportunity(h, month) = Σ_species frequency × shootability` over the working
+species set, trust-shrunk and ranked within each month. Frequency comes from
+real eBird histogram data where it exists and from a transparent habitat/season
+model where it doesn't (always flagged *inferred*). `shootability` (v24,
+`frame/src/model/photo.js`) is the transparent photo-first weight — two small
+global tables over each bird's published facets (behaviour: open ×1 / mixed
+×0.6 / skulker ×0.25; size: ×0.5–×1) — on by default, announced by a standing
+camera chip with a one-tap "every bird equal" exit. The old *hidden per-species*
+`photoability` judgment stays gone (v23): each hotspot shows objective facets
 (type / size / nest / behaviour) as bright/subdued/faint icons keyed to real
-frequency, and those icons double as tri-state filters — you decide which
-birds count (`frame/src/data/species.js`, `frame/src/data/facets.js`).
+frequency, the icons double as tri-state filters, and displayed numbers (the
+"N birds likely" headline, every frequency) are never weighted — only the
+order and colour intensity are (`frame/src/data/species.js`,
+`frame/src/data/facets.js`).
 
 ### The map
 A fully **offline** SVG basemap — no tiles, no connection needed in the field:
