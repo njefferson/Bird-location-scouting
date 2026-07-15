@@ -7,8 +7,10 @@
 // =============================================================================
 
 export const ROADMAP = [
-  // Noah's asks, 2026-07-15 (given with the v24 go). He also said "other
+  // Noah's asks, 2026-07-15 (given with the v24/v25 go). He also said "other
   // things" — open-ended; confirm with him before inventing more.
+  { title: 'A bottom tab bar that never disappears',
+    detail: 'in bright light the floating bottom menu blends into the cards behind it and seems to vanish — give it a clearer edge and enough separation (a firmer surface and shadow, or a subtle blur) that it always reads as a solid control, in both themes.' },
   { title: 'Icons that do things, everywhere',
     detail: 'the facet icons go to work across the whole app: wherever an icon appears and a filter makes sense — species pages, the target picker, the seen list — tapping it filters, so what you touch responds.' },
   { title: 'Collapsible groups when picking target birds',
