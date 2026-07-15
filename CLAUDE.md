@@ -77,9 +77,18 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## Next-release plan: v24 "photo-first" BUILT 2026-07-15 (Noah's ask that day:
 ## "bringing the app in line with a photographer tool primarily… a new major
 ## version" — the documented identity in README: ranked by photographic
-## opportunity, present AND shootable). Candidate staged, awaiting his
-## on-device go. Older open thread from v22 ("Possibly other things off of
-## that") remains open-ended; confirm before building on the lists.
+## opportunity, present AND shootable). Noah's GO same day, WITHOUT the
+## on-device pass ("It's all fine for now… push this to Main" once the data
+## run lands — his call, his gate, v22 precedent). The PR #25 NEEDS-HIS-HANDS
+## items (default-flip feel, weight taste, chip crowding, dialog legibility)
+## are therefore UNCHECKED — friction reports on them are expected follow-up,
+## not regressions. He will run HIS OWN ultracode review pass after the merge.
+## ROADMAP AFTER v24 (Noah, 2026-07-15, now in frame/src/data/roadmap.js):
+## (1) icons do things everywhere — tap-to-filter wherever facet icons appear
+## and it makes sense; (2) collapsible species sections in the target-bird
+## picker. He said "other things" beyond these — open-ended; confirm before
+## inventing. Older v22 thread ("possibly other things off of that") stays
+## open too.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
