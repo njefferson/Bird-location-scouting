@@ -1,6 +1,6 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v24';
+const CACHE = 'frame-v25';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
@@ -11,12 +11,43 @@ const ASSETS = [
   './data/counties/US-CA-067.json', './data/counties/US-CA-017.json', './data/counties/US-CA-061.json',
 ];
 
+const PRECACHED = new Set(ASSETS.map((u) => new URL(u, self.registration.scope).href));
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS).catch(() => {})).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    // Precache each asset INDIVIDUALLY. cache.addAll is atomic — one flaky
+    // request (any of ~8 MB of assets) rejects the whole batch, and the old
+    // swallow-then-skipWaiting left the new cache empty while activate deleted
+    // the old one, permanently breaking offline. allSettled keeps whatever
+    // succeeded; the rest self-heal via the fetch handler on later loads.
+    await Promise.allSettled(ASSETS.map((u) => c.add(u)));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    for (const k of await caches.keys()) {
+      if (k === CACHE) continue;
+      // Carry forward runtime-cached data (county JSONs a user downloaded by
+      // visiting other regions, cached fonts) so a version bump doesn't force a
+      // re-download of offline data. App code is NOT carried over — the new
+      // precache already holds the current version, so the module graph stays
+      // consistent.
+      const old = await caches.open(k);
+      for (const req of await old.keys()) {
+        if (PRECACHED.has(req.url)) continue;
+        if (!(await c.match(req))) {
+          const res = await old.match(req);
+          if (res) await c.put(req, res);
+        }
+      }
+      await caches.delete(k);
+    }
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (e) => {
@@ -31,13 +62,19 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
     return;
   }
+  // Cross-origin Google Fonts (the IBM Plex faces — every number in the app):
+  // their responses are opaque (res.ok is false), so the generic branch below
+  // would never cache them and offline would lose the fonts entirely. Cache the
+  // opaque response so the offline-first promise holds after one online load.
+  const isFont = url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com');
+
   // Everything else: stale-while-revalidate — serve the cache instantly for
   // offline/speed, but ALWAYS refetch in the background so a deployed change
   // (new JS, refreshed county data) reaches installed clients on their
   // next load, without waiting for a service-worker version bump.
   e.respondWith(caches.match(e.request).then((hit) => {
     const refresh = fetch(e.request).then((res) => {
-      if (res && res.ok) {
+      if (res && (res.ok || (isFont && res.type === 'opaque'))) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
       }
