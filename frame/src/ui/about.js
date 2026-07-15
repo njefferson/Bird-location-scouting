@@ -56,7 +56,8 @@ const ABOUT_HTML = `
   Sacramento, CA · Frequency data: eBird (refresh quarterly) · Map landmarks:
   Natural Earth (public domain); lake shorelines © OpenStreetMap contributors
   (ODbL); curated reservoir &amp; refuge labels, each position verified against
-  its county — orientation, not navigation.</p>
+  its county — orientation, not navigation · Bird-group icons adapted from
+  game-icons.net (CC BY 3.0) by Lorc, Delapouite, Caro Asercion &amp; sbed.</p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move
