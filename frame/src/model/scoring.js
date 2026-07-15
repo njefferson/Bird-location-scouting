@@ -1,10 +1,12 @@
 // =============================================================================
-// PRESENCE RANKING (§4) + TRUST MODEL (§3) + OPPORTUNITY FILTERS (§5)
+// OPPORTUNITY RANKING (§4) + TRUST MODEL (§3) + OPPORTUNITY FILTERS (§5)
 // =============================================================================
-//   presence(h, m) = Σ_s frequency(s, h, m)   over the working species set
-// This is how much of what you're looking for is actually HERE this month. The
-// old subjective photoability weight is gone — the app shows which KINDS of
-// birds are present (facet icons) and lets you decide what you care about.
+//   opportunity(h, m) = Σ_s frequency(s, h, m) × weigh(s)   over the working set
+// With photo-first on (the default), weigh() is the transparent facet-derived
+// shootability from model/photo.js — present AND shootable, the app's stated
+// job. With it off (or in target-presence mode) weigh is 1 and this is plain
+// presence. The old HIDDEN per-species photoability stays gone (v23): the
+// weight is a global, visible formula over the bird's published facets.
 //
 // `vis` is that presence total, trust-shrunk and normalized 0–100 — used ONLY
 // to drive CSS colour intensity (pins, planner cells), never shown as a number.
@@ -44,20 +46,23 @@ export function checklistN(hotspot, monthIdx) {
 }
 
 /**
- * Raw (un-normalized) presence total for a hotspot in a month, plus the
- * per-species contributions (Σ frequency) used by the detail views. Each
- * contribution's `contrib` is just the species' frequency here this month.
+ * Raw (un-normalized) opportunity total for a hotspot in a month, plus the
+ * per-species contributions used by the detail views. Each contribution's
+ * `contrib` is the species' frequency here this month × `weigh(species)`
+ * (photo-first shootability by default; 1 when no weigh fn is given, which is
+ * plain presence). `freq` always stays the unweighted fact for display.
  */
-export function rawHotspotScore(hotspot, monthIdx, species = SPECIES) {
+export function rawHotspotScore(hotspot, monthIdx, species = SPECIES, weigh = null) {
   let raw = 0;
   let anyInferred = false;
   const contributions = [];
   for (const s of species) {
     const f = frequency(s, hotspot, monthIdx);
     if (f.inferred) anyInferred = true;
-    const contrib = f.value;
+    const w = weigh ? weigh(s) : 1;
+    const contrib = f.value * w;
     if (contrib > 0) {
-      contributions.push({ species: s, freq: f, contrib });
+      contributions.push({ species: s, freq: f, contrib, weight: w });
     }
     raw += contrib;
   }
@@ -78,15 +83,19 @@ export function shrinkFactor(n) {
 }
 
 /**
- * Rank all hotspots for a month by PRESENCE. Returns rows with:
- *   vis        — 0–100 trust-shrunk presence intensity (drives CSS colour only)
- *   diversity  — how many species clear the 5%-of-checklists bar ("N likely")
+ * Rank all hotspots for a month by PHOTOGRAPHIC OPPORTUNITY: presence, weighted
+ * by opts.weigh when given (photo-first shootability; omit for plain presence).
+ * Returns rows with:
+ *   vis        — 0–100 trust-shrunk opportunity intensity (drives CSS colour only)
+ *   diversity  — how many species clear the 5%-of-checklists bar ("N likely");
+ *                ALWAYS pure presence, never weighted — the headline is a fact
  *   trust, n, contributions — for the badges and detail view.
  */
 export function rankHotspots(hotspots, monthIdx, opts = {}) {
   const species = opts.species || SPECIES;
+  const weigh = opts.weigh || null;
   const rows = hotspots.map((h) => {
-    const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species);
+    const { raw, contributions, anyInferred, inferredCount } = rawHotspotScore(h, monthIdx, species, weigh);
     const n = checklistN(h, monthIdx);
     const shrink = shrinkFactor(n);
     return { hotspot: h, raw, shrunk: raw * shrink, contributions, anyInferred, inferredCount, n, shrink };
@@ -95,8 +104,9 @@ export function rankHotspots(hotspots, monthIdx, opts = {}) {
   const maxShrunk = Math.max(1e-9, ...rows.map((r) => r.shrunk));
   for (const r of rows) {
     r.vis = Math.round((r.shrunk / maxShrunk) * 100);
-    // "N species likely": how many species clear the keeper bar this month.
-    r.diversity = r.contributions.filter((c) => c.contrib >= KEEPER_FREQ).length;
+    // "N species likely": how many species clear the keeper bar this month —
+    // on their real frequency, so the count never moves with ranking weights.
+    r.diversity = r.contributions.filter((c) => c.freq.value >= KEEPER_FREQ).length;
     r.trust = trustTag(r);
   }
   rows.sort((a, b) => b.shrunk - a.shrunk);

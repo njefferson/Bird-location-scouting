@@ -6,6 +6,7 @@ import { el, clear, pct, sparkline, scoreScale } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
 import { facetEntryChip } from './facetbar.js';
+import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
 import { cycleFacet, facetState } from '../model/facets.js';
@@ -22,6 +23,7 @@ import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeReg
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
 import { ebirdSettings, saveEbirdSettings, probe, nearestForSpecies } from '../model/ebird.js';
 import { currentTheme, setTheme } from './theme.js';
+import { photoFirstOn, setPhotoFirst, shootFactors, xw } from '../model/photo.js';
 
 function daysAgo(obsDt) {
   if (!obsDt) return null;
@@ -120,11 +122,12 @@ export function renderCards(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Frame'),
-      el('span.subtitle', {}, `Where the birds are · ${MONTHS[state.monthIdx]}`),
+      el('span.subtitle', {}, `${photoFirstOn() && !targetsRankActive() ? 'Easiest shots first' : 'Where the birds are'} · ${MONTHS[state.monthIdx]}`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
     filterBar(state, (k) => nav.setFilter(k)),
     facetEntryChip(nav),
+    photoChip(nav),
   ]));
 
   // Dead-end guard: a region with no built hotspot data shouldn't leave the
@@ -137,7 +140,7 @@ export function renderCards(root, state, nav) {
   const spec = rankingSpec();
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species });
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, weigh: spec.weigh });
   const rows = (FILTERS[state.filter] || FILTERS.all).apply(ranked);
 
   const list = el('div.cards');
@@ -279,7 +282,7 @@ export function renderMatrix(root, state, nav) {
   clear(root);
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, 'Species likely by month — tap a cell for that month’s detail.'),
+    el('span.subtitle', {}, `Species likely by month${photoFirstOn() && !targetsRankActive() ? ' · colour ranks easiest shots first' : ''} — tap a cell for that month’s detail.`),
   ]));
 
   // Pre-rank each month so cell color is comparable within a month column.
@@ -287,7 +290,7 @@ export function renderMatrix(root, state, nav) {
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
   const byMonth = MONTHS.map((_, m) => {
-    const ranked = rankHotspots(getHotspots(), m, { species: spec.species });
+    const ranked = rankHotspots(getHotspots(), m, { species: spec.species, weigh: spec.weigh });
     return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
   });
 
@@ -315,7 +318,9 @@ export function renderMatrix(root, state, nav) {
     table.append(tr);
   }
   root.append(el('div.matrix-wrap', {}, table));
-  root.append(scoreScale('Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
+  root.append(scoreScale(spec.weigh
+    ? 'Fuller colour = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+    : 'Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================
@@ -327,7 +332,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   if (!h) { root.append(el('p.empty', {}, 'Unknown hotspot.')); return; }
 
   const spec = rankingSpec();
-  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species }).find((r) => r.hotspot.id === h.id);
+  const ranked = rankHotspots(getHotspots(), state.monthIdx, { species: spec.species, weigh: spec.weigh }).find((r) => r.hotspot.id === h.id);
 
   root.append(el('header.bar', {}, [
     el('button.back', { onclick: () => nav.go('#/') }, '‹ Back'),
@@ -458,6 +463,10 @@ function speciesPanel(s, state, nav) {
   // Facet chips: type · size · nest · behaviour (icon + label).
   panel.append(el('div.sp-facet-chips', {}, speciesFacetIcons(s).map((fi) =>
     el('span.sp-facet-chip', { title: fi.blurb }, [el('span.sp-fi', { html: facetSvg(fi.icon, 18) }), fi.label]))));
+  if (photoFirstOn() && !targetsRankActive()) {
+    const f = shootFactors(s);
+    panel.append(el('p.sp-photo.dim', {}, `Photo-first ranking counts ${xw(f.w)} of its frequency (${f.behavior.label} ${xw(f.behavior.w)} · ${f.size.label} ${xw(f.size.w)}).`));
+  }
   panel.append(el('p.sp-note', {}, s.note));
 
   const ranked = bestForSpecies(s, getHotspots());
@@ -551,6 +560,15 @@ export function renderSettings(root, state, nav) {
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
       : 'No region data loaded — running on the inference model.'),
+  ]));
+
+  // --- Photo-first ranking (v24 — the app's default posture) ----------------
+  form.append(section('Photo-first ranking', [
+    el('label.row', {}, [
+      el('span', {}, 'Rank easiest shots first'),
+      checkbox(photoFirstOn(), (v) => { setPhotoFirst(v); nav.rerender(); }),
+    ]),
+    el('p.dim', {}, 'On (the default), each bird’s eBird frequency is weighted by how shootable that kind of bird is — in the open ×1, in-and-out ×0.6, skulker ×0.25, and by size from tiny ×0.5 up to large ×1 — so hotspots rank by photographic opportunity, not raw bird counts. The weights come only from each bird’s published facet icons; tap the camera chip on the Ranking screen for the full tables. Off, every bird counts equally. Displayed numbers are never changed either way — only the order.'),
   ]));
 
   // --- Target birds ---------------------------------------------------------

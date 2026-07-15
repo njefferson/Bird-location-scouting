@@ -9,6 +9,16 @@
 
 export const CHANGELOG = [
   {
+    version: 'v24',
+    date: '2026-07-15',
+    changes: [
+      'Frame is a photographer’s tool first again. Hotspots now rank by SHOOTABLE presence, not raw bird counts: each bird’s real eBird frequency is weighted by how photographable that kind of bird is — in the open ×1, in-and-out ×0.6, skulker ×0.25, and by size from tiny ×0.5 up to large ×1. A marsh full of big, posing egrets now outranks one whose count is padded with hidden wrens. No hidden judgment came back: the weights are two small public tables applied to each bird’s published facet icons, shown in full behind the new camera chip.',
+      'The camera chip on the Ranking screen always tells you which ranking you’re looking at — “Photo-first: easiest shots rank higher” or “Every bird counts equally” — and tapping it shows exactly how the weights work, with a one-tap switch between the two. Your choice is remembered on this device. Every displayed number stays the plain truth: frequencies and the “N birds likely” count are never weighted, only the order and the colour intensity.',
+      'Every bird’s own page says what photo-first means for it, in one honest line — for example “counts ×0.6 of its frequency (In and out ×0.6 · Large ×1)”. And “Rank hotspots by target presence” keeps the promise it made when it shipped: with it on, your target ranking counts frequency only, and photo-first stands aside until you turn it off.',
+      'Under the hood, this release also makes the quarterly eBird data refresh sturdier: the four featured counties (El Dorado, Placer, Sacramento, Humboldt — the ones that keep every hotspot) are rebuilt first so a mid-run failure can’t cost them, and a session cookie pasted as multiple lines no longer breaks the download.',
+    ],
+  },
+  {
     version: 'v23',
     date: '2026-07-14',
     changes: [

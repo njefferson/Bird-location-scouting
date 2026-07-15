@@ -14,6 +14,7 @@ import { MONTHS, frequency } from '../model/inference.js';
 import { targetCount, targetsRankActive } from '../model/targets.js';
 import { seenCount, newBirdsActive } from '../model/seen.js';
 import { facetsActive } from '../model/facets.js';
+import { photoFirstOn } from '../model/photo.js';
 
 const LOTS = 0.5;   // guild Σ frequency ≥ this ⇒ "lots" (bright)
 const SOME = 0.05;  // ≥ this ⇒ "some" (subdued)
@@ -55,9 +56,13 @@ export function openIconInfo(row, monthName) {
       ', from eBird checklist frequencies — ', el('strong', {}, 'behavioural likelihood, not promises'), '.',
     ]),
 
+    photoFirstOn() && !targetsRankActive() ? el('p.si-targeting.si-photo', {}, [
+      el('strong', {}, '📷 Photo-first ranking is on (the default).'),
+      ' Spots are ordered by shootable presence: each bird’s frequency counts × its behaviour weight (in the open ×1, in-and-out ×0.6, skulker ×0.25) × its size weight (tiny ×0.5 up to large ×1) — worked out only from the bird’s published facet icons. Every number shown here is plain frequency; only the order and colour intensity are weighted. The camera chip on the Ranking screen has the full tables and the “every bird equal” switch.',
+    ]) : null,
     targetsRankActive() ? el('p.si-targeting', {}, [
       el('strong', {}, `★ Ranking by presence of your ${targetCount()} target bird${targetCount() === 1 ? '' : 's'}.`),
-      ' Only your starred birds are being counted. Turn it off from the ★ bar to count all birds again.',
+      ' Only your starred birds are being counted — by frequency only, as this mode promises (photo-first stands aside). Turn it off from the ★ bar to count all birds again.',
     ]) : null,
     newBirdsActive() ? el('p.si-targeting', {}, [
       el('strong', {}, '✦ New for me.'),

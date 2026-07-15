@@ -89,7 +89,7 @@ export function renderMapView(root, state, nav) {
   // pin at a constant on-screen size once you zoom past the opening view —
   // no more donut-sized blobs pinched all the way in.
   const spec = rankingSpec();
-  const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species });
+  const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species, weigh: spec.weigh });
   const visById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.vis]));
   const divById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.diversity]));
   const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };

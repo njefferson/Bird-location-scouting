@@ -10,11 +10,14 @@ opportunity (not by lister rarity). Built for a Nikon Z50 II + 50–250mm DX
 > sources, and the release process live in the [root README](../README.md).
 
 ## The idea (one line)
-`presence(h, m) = Σ_species frequency(s,h,m)` over the working species set,
-trust-shrunk and ranked per month. Each hotspot shows which **kinds** of birds
-are actually there (facet icons, bright by real frequency); the old subjective
-`photoability` weight was removed in v23 — the app shows the facts and lets you
-filter by what you care about.
+`opportunity(h, m) = Σ_species frequency(s,h,m) × shootability(s)` over the
+working species set, trust-shrunk and ranked per month — present **and**
+shootable. `shootability` (v24, `src/model/photo.js`) is a transparent global
+formula over each bird's published facets (behaviour × size), default-on with
+a standing camera chip and a one-tap plain-presence exit; the old *hidden
+per-species* `photoability` judgment was removed in v23 and stays gone. Each
+hotspot shows which **kinds** of birds are actually there (facet icons, bright
+by real frequency); displayed numbers are never weighted — only the order.
 
 ## Three data layers (spec §2)
 | Layer | What | Source | State |
