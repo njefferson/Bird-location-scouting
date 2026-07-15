@@ -17,7 +17,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Parse newest CHANGELOG entry
         id: parse
@@ -25,11 +25,14 @@ jobs:
           node --input-type=module <<'EOF'
           import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
           const lines = readFileSync('CHANGELOG.md', 'utf8').split('\n');
-          // Newest section is the first "## vN — YYYY-MM-DD" heading; its body
-          // runs until the next "## " heading (or end of file).
-          const start = lines.findIndex((l) => /^## v\d+ — \d{4}-\d{2}-\d{2}/.test(l));
+          // Newest section is the first "## vN <sep> YYYY-MM-DD" heading; its body
+          // runs until the next "## " heading (or end of file). The separator is
+          // tolerant (em-dash, en-dash, or hyphen) and spacing is flexible so a
+          // stray edit to the heading punctuation can't silently skip a release.
+          const HEAD = /^##\s+(v\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})/;
+          const start = lines.findIndex((l) => HEAD.test(l));
           if (start === -1) { console.error('No "## vN — date" section found in CHANGELOG.md'); process.exit(1); }
-          const [, ver, date] = lines[start].match(/^## (v\d+) — (\d{4}-\d{2}-\d{2})/);
+          const [, ver, date] = lines[start].match(HEAD);
           let end = lines.findIndex((l, i) => i > start && l.startsWith('## '));
           if (end === -1) end = lines.length;
           const body = lines.slice(start + 1, end).join('\n').trim();

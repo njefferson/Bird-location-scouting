@@ -2,10 +2,11 @@
 #
 # eBird's bar-chart endpoint is login-gated, so this needs your eBird session
 # cookie stored as the EBIRD_COOKIE repository secret (Settings → Secrets and
-# variables → Actions). Grab the cookie on any device — on iPad, the Safari
-# copy-to-clipboard bookmarklet in frame/HANDOFF.md does it in one tap on a
-# signed-in ebird.org page (it alerts the character count so a truncated
-# copy is obvious).
+# variables → Actions). The cookie is HttpOnly, so no bookmarklet or page
+# script can ever read it (proven 2026-07-05) — the ONLY way to capture it is
+# a desktop browser: DevTools → Network → any ebird.org request → Request
+# Headers → copy the whole `cookie:` value. Multi-line pastes are fine; they
+# are joined below.
 #
 # What the runner does:
 #   1. VALIDATE — resolve every curated species name against the live eBird
@@ -14,8 +15,10 @@
 #   2. BUILD — for EVERY county in src/data/counties.js (all 58 CA + the 5
 #      Tahoe/Reno NV counties), enumerate its top hotspots and download their
 #      bar charts, writing frame/data/counties/<code>.json + refreshing
-#      frame/data/taxonomy.json. Statewide is ~1,050 polite requests, ~20 min —
-#      the point is that any county added to a region later (or picked on the
+#      frame/data/taxonomy.json. The four featured counties are built first and
+#      at full depth (every hotspot, not just the top 15), so a statewide run
+#      is ~2,300 polite requests over ~4.5 hours (measured 2026-07-15) — the
+#      point is that any county added to a region later (or picked on the
 #      v13 county map) already has real data waiting.
 #   3. COMMIT the changed data to main (ignoring builtAt-only diffs) and DEPLOY.
 #      (Deploy is inline because GITHUB_TOKEN pushes don't trigger deploy.yml.)
@@ -58,12 +61,21 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # For push triggers, require the HEAD commit of the push to be the trigger
+    # bump itself. Without this, any push whose range happens to contain an old
+    # trigger commit re-fires the build — seen live 2026-07-15, when a session
+    # rewrote branch history and a docs-only push nearly started a second
+    # multi-hour statewide rebuild (only the dead cookie's fast-fail stopped it).
+    if: >-
+      github.event_name != 'push' ||
+      contains(toJSON(github.event.head_commit.modified), '.github/trigger/refresh-data') ||
+      contains(toJSON(github.event.head_commit.added), '.github/trigger/refresh-data')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # 22+: the scripts import ESM from .js files without a package.json,
           # which relies on Node's module-syntax detection.
@@ -86,7 +98,7 @@ jobs:
           RESUME: ${{ inputs.resume || contains(github.event.head_commit.message, '[resume]') }}
         run: |
           if [ -z "$EBIRD_COOKIE" ]; then
-            echo "::error::No EBIRD_COOKIE secret. Sign into ebird.org, copy document.cookie (bookmarklet on iPad — see frame/HANDOFF.md), and save it as the EBIRD_COOKIE repository secret."
+            echo "::error::No EBIRD_COOKIE secret. On a DESKTOP browser signed into ebird.org: DevTools → Network → any ebird.org request → Request Headers → copy the whole 'cookie:' value, then save it as the EBIRD_COOKIE repository secret. (The cookie is HttpOnly — no bookmarklet or page script can read it.)"
             exit 1
           fi
           # The cookie secret may be pasted as one name=value pair per line (how
@@ -123,7 +135,22 @@ jobs:
             echo "No real data changes (only builtAt stamps) — skipping commit and deploy."
           else
             git commit -m "Refresh eBird county data + taxonomy (automated)"
-            git push origin main
+            # Main may move during the multi-hour build (a merge, the keepalive
+            # heartbeat) — a plain push would then fail non-fast-forward and
+            # lose the whole run. Only this workflow ever writes the data
+            # files, so a rebase is clean; retry a few times before giving up.
+            pushed=false
+            for i in 1 2 3 4 5; do
+              if git pull --rebase origin main && git push origin main; then
+                pushed=true; break
+              fi
+              echo "Push attempt $i failed — retrying in $((10*i))s"
+              sleep $((10*i))
+            done
+            if [ "$pushed" != "true" ]; then
+              echo "::error::Could not push the refreshed data to main after 5 attempts — this run's data could not be saved. Resolve whatever is blocking pushes to main, then re-run the refresh."
+              exit 1
+            fi
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 

@@ -15,14 +15,20 @@ on:
     branches: [ main, staging ]
   workflow_dispatch:
 
+# One deploy per branch at a time; a newer push supersedes an in-flight one so
+# two runs can't finish out of order and leave production serving an older build.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Ensure Pages project exists
         continue-on-error: true
