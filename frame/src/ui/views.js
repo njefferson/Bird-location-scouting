@@ -12,6 +12,7 @@ import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.
 import { cycleFacet, facetState } from '../model/facets.js';
 import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
+import { freshness, monthYear } from '../model/freshness.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
 import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
 import { rankingSpec } from '../model/lists.js';
@@ -571,6 +572,18 @@ export function renderSettings(root, state, nav) {
     el('p.dim', {}, meta.loaded
       ? `${meta.region}: ${meta.hotspots} hotspots across ${meta.counties} county file(s), eBird histogram data built ${meta.builtAt || '(date n/a)'} · ${meta.taxonomy} species with resolved eBird codes. Data refreshes quarterly via the “Refresh eBird data” GitHub Action.`
       : 'No region data loaded — running on the inference model.'),
+    // Honest-aging note: what the app does if the quarterly refresh ever stops.
+    (() => {
+      if (!meta.loaded || !meta.builtAt) return null;
+      const f = freshness(meta.builtAt);
+      const asOf = monthYear(meta.builtAt) || meta.builtAt;
+      const line = f.tier === 'fresh'
+        ? `Data is current as of ${asOf}. This is seasonal frequency — which birds appear in which months — so it stays a reliable guide for a long time. If a refresh is ever missed for many quarters, Frame says so plainly at the top of the screen rather than pretending to be fresh.`
+        : f.tier === 'archived'
+          ? `This data is a snapshot from ${asOf} and Frame is running as an archive. Seasonal patterns hold up well, so it remains useful — treat specific numbers as historical.`
+          : `This data hasn’t refreshed since ${asOf}. Seasonal patterns are stable, so it’s still a good guide, just older than the usual quarterly update.`;
+      return el('p.dim', {}, line);
+    })(),
   ]));
 
   // --- Photo-first ranking (v24 — the app's default posture) ----------------

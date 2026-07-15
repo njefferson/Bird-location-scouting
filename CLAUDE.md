@@ -109,6 +109,49 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v26 built 2026-07-15: "Honest aging" — the app's graceful-degradation posture
+  for the day the quarterly refresh stops (Noah's ask: he worried that if he
+  ever can't/won't keep pasting the eBird cookie, the data goes stale silently
+  and the machinery churns "for no reason"). SETTLED FIRST: full login
+  automation stays impossible (eBird ToS — same wall as the cookie dance; do
+  NOT re-litigate). So this ships HONESTY, not automation. model/freshness.js is
+  the single source of truth: monthsSince()/freshness() over regionMeta().builtAt
+  (newest county build date); tiers fresh <18mo, aging ≥18mo, archived ≥36mo
+  (AGING_MONTHS/ARCHIVED_MONTHS). ui/freshness.js freshnessBanner(nav) — a calm
+  standing notice prepended on EVERY main view (just under the region pills, in
+  main.js render(), not only ranked views); slate .freshbar for aging, --warn
+  .freshbar.archived for archive; dismissible per build date
+  (localStorage frame.freshnessDismissed = the builtAt acknowledged, so a later
+  refresh's newer date can re-surface it). Copy reassures (seasonal frequency
+  ages gently) as much as it warns; "Details" routes to Settings, which gained
+  an honest-aging line via freshness()/monthYear(). WIND-DOWN: keepalive.yml now
+  checks the newest builtAt and STOPS the heartbeat once data is >13 months old
+  (clearly abandoned), letting GitHub's 60-day inactivity rule quietly pause all
+  schedules; a parse miss defaults to BEAT (never disable infra on ambiguity).
+  Revival needs a one-time "Enable workflow" if GitHub disabled them — documented
+  in the workflow. Verified: 24/24 node unit (boundaries + bad dates) + headless
+  Chromium across fresh/aging/archived × light/dark (banner copy, class, no page
+  errors) + dismiss-persists-across-reload + keepalive shell logic. NEEDS-HIS-
+  HANDS: the 18/36-month horizons are a judgment call (tune to taste); banner
+  prominence/placement feel on the iPad; whether it should also ride the pickers.
+  ALSO in v26: fixed a live v24 bug Noah caught on-device — the Photo-first
+  explainer printed a stray "null" above its toggle. Cause: photo.js passed the
+  `suspended ? el() : null` ★-paused row straight into native
+  dialog.replaceChildren(), which stringifies null into a "null" TEXT NODE
+  (unlike el(), which skips null children). Fix: build the children array and
+  .filter(Boolean) before spreading. GOTCHA FOR LATER SESSIONS: el() is
+  null-safe, but native replaceChildren/append/prepend/before/after are NOT —
+  never pass a bare `cond ? x : null` to them; audited, photo.js was the only
+  offender (every other `: null` branch sits inside an el() array). SAME dialog,
+  SECOND bug Noah caught on-device: its body (notes + weight tables) ran
+  edge-to-edge — the ×weights touched the right border. Cause: .facet-dialog is
+  padding:0; only .facet-dialog-head/-foot and the .facet-sections scroll
+  wrapper carry horizontal padding, and photo.js placed its body as DIRECT
+  dialog children, skipping .facet-sections (the facet-filter dialog wraps its
+  body correctly). Fix: wrap the photo body in .facet-sections (17px inset +
+  scroll). RULE: any .facet-dialog body content MUST live inside .facet-sections,
+  never directly as a dialog child. Verified headless: no "null" node + 17px edge gaps
+  on the ×weights and notes.
 - v25 shipped 2026-07-15 (PR #26): "Review fixes" — a from-a-full-review
   correctness/polish pass. Key facts so a later session doesn't regress them:
   * TRUST DECOUPLED FROM LISTS (was the big bug): trustTag() reads

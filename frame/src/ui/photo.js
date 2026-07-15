@@ -63,24 +63,31 @@ export function openPhotoInfo(rerender) {
         el('h2', {}, 'Photo-first ranking'),
         el('p.dim', {}, 'Frame ranks hotspots for a camera, not a checklist: each bird’s real eBird frequency is weighted by how shootable that KIND of bird is — then the spots with the most shootable presence rank first.'),
       ]),
-      el('p.si-note', {}, [
-        'The weight is worked out from the bird’s two published facts below — never a hidden per-bird judgment. ',
-        'Every number the app shows (frequencies, the “N birds likely” count) stays the plain truth; only the ',
-        el('strong', {}, 'order'), ' and colour intensity change.',
+      // The scrollable body MUST live inside .facet-sections — that wrapper
+      // carries the dialog's horizontal padding (the dialog itself is padding:0)
+      // and the scroll. Placing notes/sections directly in the dialog made them
+      // run edge-to-edge (the ×weights touched the right border). el() skips the
+      // ★-paused row's null branch, so no stray "null" text node either.
+      el('div.facet-sections', {}, [
+        el('p.si-note', {}, [
+          'The weight is worked out from the bird’s two published facts below — never a hidden per-bird judgment. ',
+          'Every number the app shows (frequencies, the “N birds likely” count) stays the plain truth; only the ',
+          el('strong', {}, 'order'), ' and colour intensity change.',
+        ]),
+        el('section.facet-sec', {}, [
+          el('h3', {}, 'Behaviour — can you get on it?'),
+          el('div.pw-rows', {}, weightRows(BEHAVIORS, SHOOT_BEHAVIOR)),
+        ]),
+        el('section.facet-sec', {}, [
+          el('h3', {}, 'Size — how much frame it fills'),
+          el('div.pw-rows', {}, weightRows(SIZES, SHOOT_SIZE)),
+        ]),
+        el('p.si-note.si-dim', {}, 'A bird’s weight is behaviour × size: an in-the-open large bird counts in full (×1); a skulking tiny one counts ×0.13 of its frequency.'),
+        suspended ? el('p.si-targeting', {}, [
+          el('strong', {}, '★ Paused right now: '),
+          'your “rank by target presence” toggle is on, and that ranking promised to count frequency only. Photo-first resumes when you turn it off.',
+        ]) : null,
       ]),
-      el('section.facet-sec', {}, [
-        el('h3', {}, 'Behaviour — can you get on it?'),
-        el('div.pw-rows', {}, weightRows(BEHAVIORS, SHOOT_BEHAVIOR)),
-      ]),
-      el('section.facet-sec', {}, [
-        el('h3', {}, 'Size — how much frame it fills'),
-        el('div.pw-rows', {}, weightRows(SIZES, SHOOT_SIZE)),
-      ]),
-      el('p.si-note.si-dim', {}, 'A bird’s weight is behaviour × size: an in-the-open large bird counts in full (×1); a skulking tiny one counts ×0.13 of its frequency.'),
-      suspended ? el('p.si-targeting', {}, [
-        el('strong', {}, '★ Paused right now: '),
-        'your “rank by target presence” toggle is on, and that ranking promised to count frequency only. Photo-first resumes when you turn it off.',
-      ]) : null,
       el('div.facet-dialog-foot', {}, [
         el('label.row.pw-toggle', {}, [
           el('span', {}, on ? 'Photo-first is ON' : 'Photo-first is OFF — every bird counts equally'),
