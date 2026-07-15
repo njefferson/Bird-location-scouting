@@ -97,16 +97,14 @@ jobs:
             { sub(/^[Cc][Oo][Oo][Kk][Ii][Ee]:[ \t]*/, ""); gsub(/[ \t]+$/, ""); gsub(/;+$/, "");
               if ($0 == "") next; if (n++) printf "; "; printf "%s", $0 }')
           export EBIRD_COOKIE
+          # (The script itself also joins a multi-line cookie and builds the
+          # full-depth featured counties first — the shell join above just
+          # keeps this workflow safe even against an older checked-out script.)
           if [ "$RESUME" = "true" ]; then
             echo "Resuming: counties with existing files are skipped."
             node frame/scripts/build-counties.mjs build
           else
-            # Build the full-depth featured counties FIRST: if the cookie dies
-            # partway through the ~4.5 h statewide run, the counties that carry
-            # every hotspot are already committed by the progress-saving step.
-            CODES=$(node -e "const{pathToFileURL}=require('url');import(pathToFileURL('frame/src/data/counties.js')).then(m=>{const full=m.COUNTY_CODES.filter(c=>!isFinite(m.countyDepth(c)));const rest=m.COUNTY_CODES.filter(c=>isFinite(m.countyDepth(c)));console.log([...full,...rest].join(' '))})")
-            echo "Build order: $CODES"
-            node frame/scripts/build-counties.mjs build --force $CODES
+            node frame/scripts/build-counties.mjs build --force
           fi
 
       # Runs even when the build step fails partway (cookie death): county files

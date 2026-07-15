@@ -50,7 +50,17 @@ const API = 'https://api.ebird.org';
 const DELAY_MS = 1000;
 
 const token = process.env.EBIRD_API_TOKEN;
-const cookie = process.env.EBIRD_COOKIE;
+// The cookie secret is sometimes pasted one name=value pair per line (that is
+// how some DevTools views present it), and a newline is an invalid HTTP header
+// value — fetch() throws on every request. Stitch any multi-line paste back
+// into the single "a=1; b=2" header eBird expects (proven live 2026-07-15:
+// 16-line paste → joined → verdict DATA). A single-line cookie passes through
+// unchanged.
+const cookie = (process.env.EBIRD_COOKIE || '')
+  .split(/\r?\n/)
+  .map((l) => l.replace(/^cookie:\s*/i, '').trim().replace(/;+$/, ''))
+  .filter(Boolean)
+  .join('; ') || undefined;
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function api(pathname) {
@@ -106,7 +116,13 @@ async function build(args) {
   if (!cookie) { console.error('Set EBIRD_COOKIE (bar charts are login-gated).'); process.exit(1); }
   const force = args.includes('--force');
   const wanted = args.filter((a) => a !== '--force');
-  const codes = wanted.length ? wanted : COUNTY_CODES; // default: EVERY county
+  // Default: EVERY county — full-depth (featured) counties FIRST, so if the
+  // cookie dies partway through a multi-hour statewide run, the counties that
+  // carry every hotspot are already written and committed by the workflow's
+  // progress-saving step. Stable sort keeps alphabetical order within groups.
+  const featuredFirst = [...COUNTY_CODES].sort((a, b) =>
+    (isFinite(countyDepth(a)) ? 1 : 0) - (isFinite(countyDepth(b)) ? 1 : 0));
+  const codes = wanted.length ? wanted : featuredFirst;
   for (const c of codes) if (!COUNTIES[c]) { console.error(`Unknown county code ${c}`); process.exit(1); }
 
   // Refresh the name→code map first so codes always match the live taxonomy.
