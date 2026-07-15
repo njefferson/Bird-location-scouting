@@ -23,4 +23,15 @@ jobs:
       - name: Probe bar-chart endpoint
         env:
           EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
-        run: node frame/scripts/build-counties.mjs probe
+        # The cookie secret may be pasted as one name=value pair per line (how
+        # some DevTools views present it). A newline is an invalid HTTP header
+        # value, so rebuild it into a single "a=1; b=2" line before use.
+        # NEVER echo the value — the transformed string is no longer masked.
+        run: |
+          BEFORE_LINES=$(printf '%s\n' "$EBIRD_COOKIE" | wc -l)
+          EBIRD_COOKIE=$(printf '%s\n' "$EBIRD_COOKIE" | tr -d '\r' | awk '
+            { sub(/^[Cc][Oo][Oo][Kk][Ii][Ee]:[ \t]*/, ""); gsub(/[ \t]+$/, ""); gsub(/;+$/, "");
+              if ($0 == "") next; if (n++) printf "; "; printf "%s", $0 }')
+          export EBIRD_COOKIE
+          echo "cookie: $BEFORE_LINES line(s) in secret -> ${#EBIRD_COOKIE} chars after joining"
+          node frame/scripts/build-counties.mjs probe
