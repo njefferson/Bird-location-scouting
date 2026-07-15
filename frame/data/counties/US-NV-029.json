@@ -1,7 +1,7 @@
 {
  "region": "US-NV-029",
  "name": "Storey (NV)",
- "builtAt": "2026-07-05",
+ "builtAt": "2026-07-15",
  "hotspots": [
   {
    "locId": "L878236",
@@ -10868,7 +10868,7 @@
    "name": "Truckee River--Lockwood (Storey Co.)",
    "lat": 39.5118,
    "lng": -119.6441,
-   "nSpecies": 46,
+   "nSpecies": 47,
    "freqByMonth": {
     "cangoo": [
      0,
@@ -11145,6 +11145,20 @@
      0,
      0,
      0.25,
+     0,
+     0,
+     0,
+     0
+    ],
+    "saypho": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
      0,
      0,
      0,
