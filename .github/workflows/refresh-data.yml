@@ -89,11 +89,24 @@ jobs:
             echo "::error::No EBIRD_COOKIE secret. Sign into ebird.org, copy document.cookie (bookmarklet on iPad — see frame/HANDOFF.md), and save it as the EBIRD_COOKIE repository secret."
             exit 1
           fi
+          # The cookie secret may be pasted as one name=value pair per line (how
+          # some DevTools views present it). A newline is an invalid HTTP header
+          # value, so rebuild it into a single "a=1; b=2" line before use.
+          # NEVER echo the value — the transformed string is no longer masked.
+          EBIRD_COOKIE=$(printf '%s\n' "$EBIRD_COOKIE" | tr -d '\r' | awk '
+            { sub(/^[Cc][Oo][Oo][Kk][Ii][Ee]:[ \t]*/, ""); gsub(/[ \t]+$/, ""); gsub(/;+$/, "");
+              if ($0 == "") next; if (n++) printf "; "; printf "%s", $0 }')
+          export EBIRD_COOKIE
           if [ "$RESUME" = "true" ]; then
             echo "Resuming: counties with existing files are skipped."
             node frame/scripts/build-counties.mjs build
           else
-            node frame/scripts/build-counties.mjs build --force
+            # Build the full-depth featured counties FIRST: if the cookie dies
+            # partway through the ~4.5 h statewide run, the counties that carry
+            # every hotspot are already committed by the progress-saving step.
+            CODES=$(node -e "const{pathToFileURL}=require('url');import(pathToFileURL('frame/src/data/counties.js')).then(m=>{const full=m.COUNTY_CODES.filter(c=>!isFinite(m.countyDepth(c)));const rest=m.COUNTY_CODES.filter(c=>isFinite(m.countyDepth(c)));console.log([...full,...rest].join(' '))})")
+            echo "Build order: $CODES"
+            node frame/scripts/build-counties.mjs build --force $CODES
           fi
 
       # Runs even when the build step fails partway (cookie death): county files
