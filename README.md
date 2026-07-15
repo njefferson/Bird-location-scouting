@@ -19,13 +19,15 @@ top eBird hotspots from the quarterly data build (El Dorado, Placer,
 Sacramento and Humboldt keep every hotspot); regions (sets of counties)
 are user-defined on the county map, up to 3 saved on-device.
 
-### The score
-`HotspotScore(h, month) = Σ_species frequency × photoability`, normalized 0–100
-within each month. Frequency comes from real eBird histogram data where it
-exists and from a transparent habitat/season model where it doesn't (always
-flagged *inferred*). Photoability is a curated 0–1 rating per species
-(`frame/src/data/species.js`) — currently one fixed paradigm for everyone;
-letting the user pick their own target species is on the roadmap.
+### The ranking
+`presence(h, month) = Σ_species frequency` over the working species set,
+trust-shrunk and ranked within each month. Frequency comes from real eBird
+histogram data where it exists and from a transparent habitat/season model
+where it doesn't (always flagged *inferred*). As of v23 the old subjective
+`photoability` weight is gone: each hotspot shows objective per-species facets
+(type / size / nest / behaviour) as bright/subdued/faint icons keyed to real
+frequency, and those icons double as tri-state filters — you decide which
+birds count (`frame/src/data/species.js`, `frame/src/data/facets.js`).
 
 ### The map
 A fully **offline** SVG basemap — no tiles, no connection needed in the field:

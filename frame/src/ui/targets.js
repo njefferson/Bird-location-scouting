@@ -2,14 +2,15 @@
 // TARGET BIRDS — the picker screen (#/targets), the standing presence-mode
 // indicator, and a reusable star toggle. Starring is INFORMATIONAL: tap a star
 // anywhere (here, a species page, a hotspot's matrix) and the bird joins your
-// list, where the app tells you WHERE and WHEN to find it. Photoability never
-// enters. One optional toggle — "rank by presence" — additionally sorts the
-// hotspots by how often your targets appear; it announces itself with a standing
-// bar and a non-destructive exit, per the product's taste rules.
+// list, where the app tells you WHERE and WHEN to find it. One optional toggle —
+// "rank by presence" — additionally sorts the hotspots by how often your targets
+// appear; it announces itself with a standing bar and a non-destructive exit,
+// per the product's taste rules.
 // =============================================================================
 import { el, clear, pct, sparkline } from './dom.js';
 import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
+import { BEHAVIORS, SIZES, facetSvg } from '../data/facets.js';
 import { MONTHS, STATUS_LABEL } from '../model/inference.js';
 import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
@@ -27,11 +28,13 @@ function primaryHabitat(s) {
   return { key, label: HABITATS[key]?.label || key };
 }
 
-// A small photoability meter reused from the hotspot matrix' visual language.
-function paMeter(s) {
-  return el('span.photoability', { title: s.note, style: `--p:${Math.round(s.photoability * 100)}` }, [
-    el('i'), el('span.pa-num', {}, s.photoability.toFixed(2)),
-  ]);
+// Size + behaviour facet icons, the picker-row at-a-glance read.
+function sizeBehaviorIcons(s) {
+  const bits = [];
+  const sz = SIZES[s.size]; const bh = BEHAVIORS[s.behavior];
+  if (sz) bits.push(el('span.sp-fi', { title: `Size: ${sz.label} — ${sz.blurb}`, html: facetSvg(sz.icon, 18) }));
+  if (bh) bits.push(el('span.sp-fi', { title: `Behaviour: ${bh.label} — ${bh.blurb}`, html: facetSvg(bh.icon, 18) }));
+  return el('span.sp-facets', {}, bits);
 }
 
 /**
@@ -73,7 +76,7 @@ export function targetBar(state, nav, rerender) {
   bar.append(el('span.tb-mark', { 'aria-hidden': 'true' }, '★'));
   bar.append(el('span.tb-label', {}, [
     el('strong', {}, `Ranking by presence of your ${n} target bird${n === 1 ? '' : 's'}`),
-    ' — how often they’re here, not how shootable.',
+    ' — how often they’re here.',
   ]));
   bar.append(el('div.tb-actions', {}, [
     el('button.btn.small', { onclick: () => { setTargetsRank(false); rerender(); } }, 'Show all birds'),
@@ -139,7 +142,7 @@ export function renderTargets(root, state, nav) {
   }
 
   function infoCard(s, hotspots, nav) {
-    const ranked = bestForSpecies(s, hotspots, { byPresence: true });
+    const ranked = bestForSpecies(s, hotspots);
     const withPresence = ranked.filter((r) => r.best.value > 0.01);
     const node = el('div.tl-card', { class: isSeen(s.name) ? 'is-seen' : '' });
     node.append(starButton(s, () => { repaintYourList(); repaintList(); repaintSummary(); }));
@@ -175,8 +178,9 @@ export function renderTargets(root, state, nav) {
     const match = SPECIES.filter((s) => !q || s.name.toLowerCase().includes(q));
     if (!match.length) { listWrap.append(el('p.dim', {}, 'No species match that filter.')); return; }
 
-    // Group by dominant habitat; within a group, most-shootable first. A live
-    // filter flattens to a single "Matches" group so results aren't buried.
+    // Group by dominant habitat; within a group, commoner birds first, then
+    // alphabetical. A live filter flattens to a single "Matches" group so
+    // results aren't buried.
     const groups = new Map();
     for (const s of match) {
       const g = q ? { key: 'matches', label: 'Matches' } : primaryHabitat(s);
@@ -184,7 +188,7 @@ export function renderTargets(root, state, nav) {
       groups.get(g.key).items.push(s);
     }
     for (const { label, items } of groups.values()) {
-      items.sort((a, b) => b.photoability - a.photoability);
+      items.sort((a, b) => (b.abundance ?? 0) - (a.abundance ?? 0) || a.name.localeCompare(b.name));
       listWrap.append(el('h2.tg-group', {}, label));
       for (const s of items) listWrap.append(row(s));
     }
@@ -197,7 +201,7 @@ export function renderTargets(root, state, nav) {
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),
-      paMeter(s),
+      sizeBehaviorIcons(s),
     ]);
     return node;
   }
@@ -208,6 +212,6 @@ export function renderTargets(root, state, nav) {
   root.append(summary);
   root.append(yourList);
   root.append(el('div.search-wrap', {}, search));
-  root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear (frequency only — photoability, how easy a bird is to shoot, is shown but never used here).'));
+  root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear.'));
   root.append(listWrap);
 }

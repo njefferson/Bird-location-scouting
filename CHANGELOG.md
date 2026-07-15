@@ -5,6 +5,12 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v23 — 2026-07-14
+- The 0–100 “photographer’s score” is gone. It always hid one subjective call — a hand-picked guess at how “shootable” each bird is — inside a single number. In its place, each hotspot now shows a row of bird-group icons: waders, raptors, songbirds, waterfowl, shorebirds and more. An icon is bright when that group is really there this month, subdued when it’s scarce, faint when it’s absent — straight from eBird checklist frequencies. The headline on each card is now honest and countable: how many species you’d likely run into.
+- Tap an icon to filter. One tap wants that group (only these), tap again to exclude it (never these), once more to clear — one gesture, one undo. It works right on the cards, or open the full picker to filter by bird type, by size (from a tiny songbird up to condor scale), by nest style, or by behaviour (poses in the open vs. skulks in cover). A standing bar shows when a filter’s on, with a one-tap “Show all birds”.
+- A dashed icon means the numbers behind it are still the habitat/season model, not real eBird data — an honest sketch, never dressed up as fact. The icons are a likelihood of running into a bird, not a promise of a photo.
+- Everything composes: your target list, “New for me”, and the new icon filters all narrow the same ranking together. The Shoot Now / Underrated / Be the Documenter / Skip-Thin views stay, now built on how present the birds are and how well-covered the spot is.
+
 ## v22 — 2026-07-14
 - Starring a bird is just information now. Star the birds you want and Frame tells you WHERE and WHEN to find each one — the best hotspots and its peak months in your region — right on your target list. Starring no longer quietly re-ranks your hotspots: your list is a set of tips, not a verdict.
 - Still want your list to steer the ranking? One optional toggle — “Rank hotspots by presence” — sorts the hotspots by how often your target birds actually turn up (frequency only; how easy a bird is to shoot no longer enters when you’re ranking by your list). A standing ★ bar tells you when it’s on, with a one-tap “Show all birds”.

@@ -9,8 +9,10 @@
 
 ## What this is
 `frame/` is a self-contained installable PWA: a bird-photography hotspot planner
-for the Sacramento foothills (and, via regions, the wider state). Score =
-Σ frequency(species) × photoability(species), per month. See `frame/README.md`.
+for the Sacramento foothills (and, via regions, the wider state). Hotspots are
+ranked by presence = Σ frequency(species) per month (v23 removed the old
+subjective photoability weight); each spot shows objective bird-group facet
+icons that double as tri-state filters. See `frame/README.md`.
 
 ## Things only you can provide (don't try to fake these)
 - **GitHub auth** — to push / set secrets.
@@ -77,7 +79,8 @@ The planner covers a **region** = a named set of counties, defined in
 (`frame/data/counties/US-CA-###.json`), and the app loads only the active
 region's counties — but the pipeline pre-builds **all** counties, so adding a
 county to a region is instant (no build needed). `species.js` holds only your
-photoability judgments, keyed by eBird common name; the codes are resolved from
+curated per-species facets (type / size / nest / behaviour) + model inputs,
+keyed by eBird common name; the codes are resolved from
 eBird into `frame/data/taxonomy.json` by the build (so no code is ever
 hand-typed).
 

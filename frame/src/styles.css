@@ -23,6 +23,15 @@
      one, distinct from red roads and blue rivers. */
   --boundary: #2e2618;
   --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
+  /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
+     for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
+  --facet-lots: var(--accent);
+  --facet-some: color-mix(in srgb, var(--accent) 52%, var(--dim));
+  --facet-ghost: color-mix(in srgb, var(--dim) 40%, transparent);
+  --facet-want: var(--accent);
+  --facet-block: #a0472f;
+  --facet-mode: var(--park);
+  --facet-mode-wash: color-mix(in srgb, var(--park) 16%, var(--card));
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -43,6 +52,13 @@
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
   --dock: #30281c;
+  --facet-lots: var(--accent);
+  --facet-some: color-mix(in srgb, var(--accent) 52%, var(--dim));
+  --facet-ghost: color-mix(in srgb, var(--dim) 40%, transparent);
+  --facet-want: var(--accent);
+  --facet-block: #e8795a;
+  --facet-mode: var(--park);
+  --facet-mode-wash: color-mix(in srgb, var(--park) 22%, var(--card));
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -56,7 +72,7 @@ h2 { font-size: 16px; margin: 0 0 6px; }
 .card-head-main h2 { font-family: var(--serif); font-weight: 600; }
 /* Every number is IBM Plex Mono, tabular — scores, freq %, cells, pills,
    month initials, legends. */
-.score-num, .tsp-freq, .pa-num, .pill, .cell, .spark-mon,
+.tsp-freq, .cell, .spark-mon, .si-count-num, .div-chip,
 .legend, .rel-ver, .about-formula { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 a { color: var(--accent); }
 .dim { color: var(--dim); }
@@ -92,26 +108,20 @@ a { color: var(--accent); }
   box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(60,40,10,.05); }
 .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .card-head-main { min-width: 0; }
-.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.score { --s: 0; flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%;
-  display: grid; place-content: center; text-align: center; position: relative;
-  border: 0; padding: 0; color: inherit; font-family: inherit; cursor: pointer;
-  /* A slim ring: the inner disk covers ~82% of the radius so the mono digits
-     never touch the band, and the accent arc reads as a thin stroke. */
-  background: radial-gradient(closest-side, var(--card) 82%, transparent 83%),
-    conic-gradient(var(--accent) calc(var(--s) * 1%), var(--track) 0); }
-.score:active { transform: translateY(1px); }
-.score-num { font-size: 17px; font-weight: 700; line-height: 1; font-family: var(--mono); }
-.score-cap { font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+/* "N birds likely" chip — the headline that replaced the 0–100 score ring.
+   Tap for the icon explainer; a quiet "?" makes that discoverable. */
+.div-chip { position: relative; background: var(--accent-wash); border: 1px solid var(--accent);
+  color: var(--accent-ink); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.div-chip:active { transform: translateY(1px); }
 /* A quiet "?" affordance so the tap-for-meaning is discoverable without hover. */
-.score-q { position: absolute; top: -3px; right: -3px; width: 15px; height: 15px; border-radius: 50%;
-  background: var(--accent); color: var(--card); font-size: 10px; font-weight: 700; line-height: 15px;
-  text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
-/* Inline tappable score (hotspot detail header). */
+.score-q { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: var(--card);
+  font-size: 10px; font-weight: 700; line-height: 14px; text-align: center; }
+/* Inline tappable "species likely" (hotspot detail header). */
 .score-inline { background: var(--bg2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 2px 8px 2px 10px; font-size: 13px; cursor: pointer;
   font-family: var(--mono); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
-.score-inline .score-q { position: static; box-shadow: none; }
 .score-inline:active { transform: translateY(1px); }
 
 .badge { --c: #555; font-size: 11px; font-weight: 700; color: #fff; background: var(--c);
@@ -180,13 +190,10 @@ table.species-table th { text-align: left; color: var(--dim); font-weight: 600; 
 table.species-table td { padding: 6px 8px; border-bottom: 1px solid var(--bg2); vertical-align: middle; }
 table.species-table tr[onclick] { cursor: pointer; }
 .star { color: var(--warn); }
-.photoability { display: inline-flex; align-items: center; gap: 6px; }
-.photoability i { width: 40px; height: 6px; border-radius: 3px; background: var(--bg2); position: relative; }
-.photoability i::after { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 1%);
-  background: var(--accent); border-radius: 3px; }
-.pa-num { font-variant-numeric: tabular-nums; color: var(--dim); }
-.pill { --v: 0; display: inline-block; min-width: 26px; text-align: center; padding: 2px 6px; border-radius: 6px;
-  font-weight: 700; color: #06160f; background: color-mix(in srgb, var(--accent) calc(var(--v) * 1%), var(--card2)); }
+/* Informational facet mini-icons in tables / panels (type·size·nest·behaviour). */
+.sp-facets { display: inline-flex; align-items: center; gap: 5px; }
+.sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
+.sp-fi svg { display: block; }
 .spark { display: block; }
 .spark polyline { stroke: var(--accent); stroke-width: 1.5; }
 .spark.inferred polyline { stroke: var(--warn); stroke-dasharray: 2 2; opacity: .8; }
@@ -476,12 +483,13 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-close:active { transform: translateY(1px); }
 .si-head { display: flex; align-items: center; gap: 14px; padding: 20px 20px 14px;
   border-bottom: 1px solid var(--line); }
-.si-score { --s: 0; flex: 0 0 auto; width: 60px; height: 60px; border-radius: 50%;
-  display: grid; place-content: center; text-align: center;
-  background: radial-gradient(closest-side, var(--card) 82%, transparent 83%),
-    conic-gradient(var(--accent) calc(var(--s) * 1%), var(--track) 0); }
-.si-score-num { font-size: 19px; font-weight: 700; line-height: 1; font-family: var(--mono); }
-.si-score-cap { font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
+.si-count { flex: 0 0 auto; width: 60px; height: 60px; border-radius: 50%; display: grid;
+  place-content: center; text-align: center; background: var(--accent-wash); border: 1px solid var(--accent); }
+.si-count-num { font-size: 22px; font-weight: 700; line-height: 1; color: var(--accent-ink); }
+.si-count-cap { font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
+/* Guild icon at the head of each explainer row, inheriting the fi-* state colour. */
+.si-icon { flex: 0 0 auto; display: inline-grid; place-content: center; }
+.si-icon svg { display: block; }
 .si-title h2 { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 0; padding-right: 30px; }
 .si-sub { color: var(--dim); font-size: 12px; }
 .si-body { padding: 16px 20px 22px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -496,7 +504,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-legend { color: var(--dim); font-size: 11px !important; margin-top: 6px !important; }
 .si-trust { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .si-contribs { display: flex; flex-direction: column; gap: 6px; }
-.si-row { display: grid; grid-template-columns: 1fr 84px auto; align-items: center; gap: 8px; font-size: 13px; }
+.si-row { display: grid; grid-template-columns: auto 1fr 84px auto; align-items: center; gap: 8px; font-size: 13px; }
 .si-sp { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .si-bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; }
 .si-bar i { display: block; height: 100%; background: var(--accent); }
@@ -632,3 +640,110 @@ table.species-table tr[onclick] { cursor: pointer; }
   color: var(--ink); resize: vertical; }
 .import-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .import-status { margin: 0; font-size: 12px; }
+
+/* ==========================================================================
+   FACET ICONS (v23) — per-site guild rows + the tri-state icon filter.
+   Every state is distinguishable in greyscale, not by colour alone: brightness
+   (glyph colour) + a bottom level-bar for presence, a dashed glyph for
+   inferred, a ring+✓ for wanted and a diagonal slash for excluded.
+   ========================================================================== */
+
+/* A row of tappable guild icons on a card / hotspot header. */
+.facet-row { display: flex; flex-wrap: wrap; gap: 2px; }
+.guild-row { margin: 4px 0 10px; }
+.card-head + .guild-row { margin-top: 0; }
+
+/* One icon button — a full ≥44px tap target. */
+.fi { position: relative; width: 44px; height: 44px; min-width: 44px; padding: 0; border: 0;
+  background: none; cursor: pointer; display: grid; place-content: center; border-radius: 10px;
+  color: var(--facet-ghost); -webkit-tap-highlight-color: transparent; }
+.fi svg { display: block; }
+.fi:active { transform: scale(.92); }
+.fi:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Presence level: glyph colour + a bottom bar whose width reads in greyscale. */
+.fi::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); bottom: 5px;
+  height: 2px; border-radius: 2px; }
+.fi-none  { color: var(--facet-ghost); }
+.fi-none::after  { width: 12px; border-top: 2px dotted var(--facet-ghost); }
+.fi-some  { color: var(--facet-some); }
+.fi-some::after  { width: 8px; background: var(--facet-some); }
+.fi-lots  { color: var(--facet-lots); }
+.fi-lots::after  { width: 18px; background: var(--facet-lots); }
+.fi-lots { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* Inferred (modeled, not real eBird): ghost the filled glyph + a dashed tile
+   outline so it reads as a sketch. A separate channel from the dotted level-bar
+   (so a lit-but-modeled icon still shows its level) and works on filled icons,
+   which have no stroke to dash. */
+.fi.inferred svg { opacity: .5; }
+.fi.inferred { outline: 1.5px dashed currentColor; outline-offset: -3px; }
+
+/* Tri-state filter overlay — shape, not just colour. */
+.fi.wanted { box-shadow: inset 0 0 0 2px var(--facet-want); }
+.fi.wanted::before { content: "✓"; position: absolute; top: 0; right: 3px; font-size: 11px;
+  font-weight: 700; color: var(--facet-want); line-height: 1; }
+.fi.excluded { color: var(--facet-block); opacity: .75; }
+.fi.excluded::before { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 2px;
+  background: var(--facet-block); transform: rotate(-45deg); }
+
+/* Standing filter bar — same shape as the target/new bars, in the park-green
+   facet identity so the three modes never read as one another. */
+.facetbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--facet-mode); background: var(--facet-mode-wash); }
+.facetbar .tb-mark { color: var(--facet-mode); display: inline-grid; place-content: center; }
+.facetbar .tb-mark svg { display: block; }
+.facet-chip { display: inline-block; font-size: 12px; color: var(--ink); margin-right: 8px; }
+.facet-chip strong { color: var(--facet-mode); font-weight: 700; }
+
+/* Collapsed entry chip in the Ranking header — summarises or invites, opens the
+   picker. Sits on its own row under the opportunity filters. */
+.facet-entry { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  margin-top: 8px; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px dashed var(--facet-mode); background: var(--facet-mode-wash); color: var(--ink); }
+.facet-entry:active { transform: translateY(1px); }
+.facet-entry-mark { flex: 0 0 auto; color: var(--facet-mode); display: inline-grid; place-content: center; }
+.facet-entry-mark svg { display: block; }
+.facet-entry-main { flex: 1 1 auto; min-width: 0; font-size: 13px; overflow: hidden; }
+.facet-entry-main.dim { color: var(--dim); }
+.facet-entry-go { flex: 0 0 auto; color: var(--facet-mode); font-size: 18px; font-weight: 700; line-height: 1; }
+
+/* The picker dialog — reuses the explainer dialog frame + close button. */
+.facet-dialog { position: fixed; inset: 0; margin: auto; width: min(92vw, 480px); max-height: 86vh;
+  padding: 0; overflow: hidden; background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+.facet-dialog[open] { display: flex; flex-direction: column; }
+.facet-dialog::backdrop { background: rgba(4,12,9,.66); backdrop-filter: blur(2px); }
+.facet-dialog-head { padding: 18px 20px 8px; border-bottom: 1px solid var(--line); }
+.facet-dialog-head h2 { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 0 30px 4px 0; }
+.facet-dialog-head .dim { font-size: 12px; margin: 0; }
+.facet-sections { padding: 8px 16px 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.facet-sec { margin: 12px 0; }
+.facet-sec h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--accent);
+  margin: 0 0 8px; }
+.facet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
+.facet-dialog-foot { display: flex; gap: 8px; justify-content: flex-end; align-items: center;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+
+/* A picker tile — icon + label + state word. Same state language as .fi. */
+.facet-pick { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-height: 66px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--card2); color: var(--dim); cursor: pointer; }
+.facet-pick:active { transform: scale(.96); }
+.facet-pick .fi-glyph { display: inline-grid; place-content: center; }
+.facet-pick .fi-glyph svg { display: block; }
+.facet-pick .fi-label { font-size: 11px; color: var(--ink); text-align: center; line-height: 1.15; }
+.facet-pick .fi-state { font-size: 9px; text-transform: uppercase; letter-spacing: .4px; min-height: 11px; }
+.facet-pick.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
+  color: var(--facet-want); background: var(--accent-wash); }
+.facet-pick.wanted .fi-state { color: var(--facet-want); }
+.facet-pick.excluded { border-color: var(--facet-block); color: var(--facet-block); opacity: .8; }
+.facet-pick.excluded .fi-label { text-decoration: line-through; }
+.facet-pick.excluded .fi-state { color: var(--facet-block); }
+
+/* Species-panel facet chips (icon + label, informational). */
+.sp-facet-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.sp-facet-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink);
+  background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 7px; }
+.sp-facet-chip .sp-fi { color: var(--dim); }

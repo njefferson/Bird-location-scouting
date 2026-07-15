@@ -7,6 +7,7 @@ import { renderRegionPicker } from './ui/regionpicker.js';
 import { renderMapView } from './ui/mapview.js';
 import { renderTargets, targetBar } from './ui/targets.js';
 import { renderSeen, newBirdsBar } from './ui/seen.js';
+import { facetBar } from './ui/facetbar.js';
 import { loadActiveRegion, regions, activeRegion, setActiveRegion, canAddRegion, regionCenter, regionOverlayDist } from './model/regions.js';
 import { recentInBox } from './model/ebird.js';
 import { autoSwitchEnabled, pointInCounty } from './model/geo.js';
@@ -28,6 +29,7 @@ const nav = {
   go(hash) { if (location.hash === hash) render(); else location.hash = hash; },
   setMonth(i) { state.monthIdx = i; render(); },
   setFilter(k) { state.filter = k; render(); },
+  rerender() { render(); },
 };
 
 // 22px line icons, stroke=currentColor so the tab's colour (--dim / active
@@ -138,6 +140,7 @@ function render() {
   if (rankedView) {
     const tb = targetBar(state, nav, render); if (tb) app.prepend(tb);
     const nb = newBirdsBar(state, nav, render); if (nb) app.prepend(nb);
+    const fb = facetBar(state, nav, render); if (fb) app.prepend(fb);
   }
   app.prepend(renderRegionBar());
 }
