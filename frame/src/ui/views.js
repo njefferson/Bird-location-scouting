@@ -431,7 +431,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, speciesFacetRow(r.s)),
-      el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
+      el('td.freq-cell', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
     return tr;

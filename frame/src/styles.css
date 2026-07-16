@@ -252,6 +252,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* clickable bird names -> open that species inside the planner (subtle until hovered) */
 .bird-link { color: inherit; text-decoration: none; cursor: pointer; }
 .bird-link:hover, .bird-link:focus-visible { color: var(--accent); text-decoration: underline; outline: none; }
+/* In the species table the NAME is the headline each row supports — bigger,
+   bolder, full ink, so the facet line / freq / marks read as secondary data. */
+.species-table td .bird-link { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+.species-table td.freq-cell { color: var(--dim); }
 /* external eBird link, shown on the species page */
 .ebird-link { font-size: 11px; color: var(--accent); text-decoration: none;
   border: 1px solid var(--line); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
@@ -673,8 +677,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Star + seen stacked in one narrow matrix cell. */
 .species-table td.mark-cell { padding: 0 2px; width: 34px; }
 .species-table td.mark-cell { display: table-cell; }
+/* Marks are supporting affordances, not the focus — small and faint when off,
+   still gold/slate when the bird is on your list/seen. */
 .species-table td.mark-cell .star-btn,
-.species-table td.mark-cell .seen-btn { width: 30px; height: 28px; font-size: 16px; }
+.species-table td.mark-cell .seen-btn { width: 24px; height: 22px; font-size: 13px; }
+.species-table td.mark-cell .star-btn:not(.on),
+.species-table td.mark-cell .seen-btn:not(.on) { color: var(--dim); opacity: .5; }
 
 /* Seen-list picker rows check off in slate (targets star on in gold). */
 .tg-row.seen-row.on { background: var(--slate-wash); }
