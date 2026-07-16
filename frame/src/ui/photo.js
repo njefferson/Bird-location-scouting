@@ -33,7 +33,7 @@ export function photoChip(nav) {
   }, [
     el('span.facet-entry-mark', { 'aria-hidden': 'true', html: facetSvg(CAMERA, 18) }),
     el('span.facet-entry-main', { class: on ? '' : 'dim' },
-      on ? (suspended ? 'Photo-first (paused by ★ ranking)' : 'Photo-first: easiest shots rank higher') : 'Every bird counts equally'),
+      on ? (suspended ? 'Photo-first (paused by shot-list ranking)' : 'Photo-first: easiest shots rank higher') : 'Every bird counts equally'),
     el('span.facet-entry-go', { 'aria-hidden': 'true' }, '⋯'),
   ]);
 }
@@ -84,8 +84,8 @@ export function openPhotoInfo(rerender) {
         ]),
         el('p.si-note.si-dim', {}, 'A bird’s weight is behaviour × size: an in-the-open large bird counts in full (×1); a skulking tiny one counts ×0.13 of its frequency.'),
         suspended ? el('p.si-targeting', {}, [
-          el('strong', {}, '★ Paused right now: '),
-          'your “rank by target presence” toggle is on, and that ranking promised to count frequency only. Photo-first resumes when you turn it off.',
+          el('strong', {}, 'Paused right now: '),
+          'your “rank by shot-list presence” toggle is on, and that ranking promised to count frequency only. Photo-first resumes when you turn it off.',
         ]) : null,
       ]),
       el('div.facet-dialog-foot', {}, [

@@ -61,8 +61,8 @@ export function openIconInfo(row, monthName) {
       ' Spots are ordered by shootable presence: each bird’s frequency counts × its behaviour weight (in the open ×1, in-and-out ×0.6, skulker ×0.25) × its size weight (tiny ×0.5 up to large ×1) — worked out only from the bird’s published facet icons. Every number shown here is plain frequency; only the order and colour intensity are weighted. The camera chip on the Ranking screen has the full tables and the “every bird equal” switch.',
     ]) : null,
     targetsRankActive() ? el('p.si-targeting', {}, [
-      el('strong', {}, `★ Ranking by presence of your ${targetCount()} target bird${targetCount() === 1 ? '' : 's'}.`),
-      ' Only your starred birds are being counted — by frequency only, as this mode promises (photo-first stands aside). Turn it off from the ★ bar to count all birds again.',
+      el('strong', {}, `Ranking by presence of your ${targetCount()} shot-list bird${targetCount() === 1 ? '' : 's'}.`),
+      ' Only your shot-list birds are being counted — by frequency only, as this mode promises (photo-first stands aside). Turn it off from the shot-list bar to count all birds again.',
     ]) : null,
     newBirdsActive() ? el('p.si-targeting', {}, [
       el('strong', {}, '✦ New for me.'),

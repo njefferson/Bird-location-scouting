@@ -18,7 +18,7 @@ import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.j
 import { rankingSpec } from '../model/lists.js';
 import { isTarget, targetCount, targetsRankOn, setTargetsRank, targetsRankActive } from '../model/targets.js';
 import { isSeen, seenCount, newBirdsOn, setNewBirds, newBirdsActive } from '../model/seen.js';
-import { starButton } from './targets.js';
+import { starButton, cameraMark } from './targets.js';
 import { seenButton } from './seen.js';
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
@@ -447,7 +447,8 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     root.append(more);
   }
   root.append(el('p.legend', {}, [
-    '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
+    el('span.leg-ico', { 'aria-hidden': 'true', html: cameraMark(true) }),
+    ' = your shot list (see where & when to find it). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
     spec.targetsMode ? el('span', {}, ' The count above uses only your target birds.') : null,
     spec.newMode ? el('span', {}, ' The count above counts only birds you haven’t got yet.') : null,
     spec.facetsMode ? el('span', {}, ' The count above uses only birds matching your icon filters.') : null,
@@ -480,7 +481,7 @@ export function renderSpecies(root, state, nav) {
   // Target-birds entry: star birds to see where & when to find them.
   const n = targetCount();
   root.append(el('button.tg-entry', { onclick: () => nav.go('#/targets') }, [
-    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '★'),
+    el('span.tg-entry-mark', { 'aria-hidden': 'true', html: cameraMark(true) }),
     el('span.tg-entry-main', {}, [
       el('strong', {}, n ? `Your ${n} target bird${n === 1 ? '' : 's'}` : 'Pick your target birds'),
       el('span.dim', {}, n

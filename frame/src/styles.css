@@ -578,6 +578,14 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn:hover, .star-btn:focus-visible { color: var(--accent); outline: none; }
 .star-btn.on { color: var(--accent); }
 .star-btn:active { transform: scale(.86); }
+/* The target mark is now a camera (a photographer's shot list). Size the SVG per
+   context; on = solid accent (from .star-btn.on), off = the faint outline. */
+.star-btn svg { width: 19px; height: 19px; display: block; }
+.species-table td.mark-cell .star-btn svg { width: 16px; height: 16px; }
+.tb-mark svg { width: 16px; height: 16px; display: block; }
+.tg-entry-mark svg { width: 20px; height: 20px; display: block; }
+.legend .leg-ico { display: inline-grid; place-content: center; color: var(--accent); vertical-align: -3px; }
+.legend .leg-ico svg { width: 14px; height: 14px; display: block; }
 
 /* Standing mode indicator on the ranked views. Engaged = accent-washed so the
    "your birds are driving this" state is unmistakable; disengaged = quiet. */
