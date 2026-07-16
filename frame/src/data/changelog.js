@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v29',
+    date: '2026-07-16',
+    changes: [
+      'A faint bird now sits behind each species name in a hotspot’s list — the silhouette for that bird’s group (heron for waders, duck for waterfowl, and so on), kept very light so the name stays perfectly readable. It’s a quiet visual cue for the kind of bird you’re looking at, in both the light and Dawn themes.',
+    ],
+  },
+  {
     version: 'v28',
     date: '2026-07-16',
     changes: [

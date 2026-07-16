@@ -429,7 +429,11 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     };
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
-      el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
+      el('td.sp-name-cell', {}, [
+        el('span.bird-ghost', { 'aria-hidden': 'true', html: facetSvg(GUILDS[r.s.guild]?.icon || '', 34) }),
+        speciesLink('', r.s, state, nav),
+        inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null,
+      ]),
       el('td', {}, speciesFacetRow(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),

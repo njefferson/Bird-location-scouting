@@ -108,6 +108,32 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v28 SHIPPED 2026-07-16 (PR #32): "Icons that do things, everywhere" — roadmap
+  item #1 (Noah's top ask), MERGED WITH his on-device pass ("I like it, promote
+  to main"). Three things landed together on one candidate (two sessions):
+  (1) TAP-TO-FILTER facet icons everywhere via the shared facetIconButton()
+  (ui/facetbar.js) — species matrix, species page, Target/Seen picker rows;
+  each screen carries its own standing facetBar exit; pickers narrow their browse
+  list. (2) A PERF fix: facet-tap re-sort on the ~760-hotspot Home region went
+  ~3.4–5.4 s → ~0.2 s by capping render lists (top 50/40 + "Show all N") and
+  memoizing coverageDiversity/guildPresence in WeakMaps keyed by the hotspot
+  object. (3) The frankensteined ICONS were redrawn (Noah: "the upside-down
+  woodpecker"): woodpecker/kingfisher/curlew are real silhouettes from the
+  PUBLIC-DOMAIN QGISsvgAnimals set (Unlicense; only raw.githubusercontent.com is
+  reachable from the sandbox — game-icons/PhyloPic/svgrepo CDNs are blocked, and
+  game-icons has NO woodpecker/kingfisher/sandpiper), ground/platform nests are
+  game-icons nest-eggs/nest-birds; each fitted to the 24-box by a getBBox-based
+  translate()+scale() (see scratchpad harness). Then LABELS (Noah's follow-up,
+  "I want labels on the glyphs" → "everywhere bare; card row = present-only"):
+  the 12-guild card row shows a short caption (GUILDS[k].short || label, new
+  `short` field) ONLY under present (some/lots) guilds via .fi.has-cap/.fi-cap
+  (white-space:nowrap keeps the word whole); the SPECIES TABLE facets are a
+  single italic .sp-facet-note line `(Type · Size · Nest · Behaviour)` — NO
+  glyphs, tap-to-filter deliberately dropped there (stays on card row/picker/
+  species page/Target-Seen); Target/Seen rows use the .sp-fi-btn.labelled pill.
+  Attribution (QGISsvgAnimals) added in ui/about.js. NEEDS-HIS-HANDS (taste, not
+  regressions): card-caption density in a birdy month; the platform nest reads as
+  "nest with chicks" not a stick platform; short guild names.
 - v27 SHIPPED 2026-07-16 (PR #30): "The bottom tab bar is its own surface" —
   roadmap item #0 (Noah's top ask). The floating dock kept vanishing in bright
   light. MERGED WITH the on-device acceptance pass — Noah reviewed the staged
