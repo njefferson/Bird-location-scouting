@@ -919,8 +919,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi-lots .pi-glyph { opacity: 1; }
 .pi-some { color: var(--facet-some); }               /* OFF / maybe — dimmed glyph */
 .pi-some .pi-glyph { opacity: .6; }
-.pi-none { color: var(--facet-some); }               /* not expected — SAME weight as "maybe", the red ✕ is the only difference */
-.pi-none .pi-glyph { opacity: .6; }                  /* match .pi-some exactly (was ghosted, read too light) */
+.pi-none { color: color-mix(in srgb, var(--facet-some) 72%, var(--dim)); }  /* not expected — a touch more muted than "maybe" (plus the red ✕) */
+.pi-none .pi-glyph { opacity: .6; }                  /* same weight as .pi-some — separation is tone, not fading */
 .pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
   content: ''; position: absolute; top: 1px; right: 1px; left: auto; width: 7px; height: 7px;
   background:
