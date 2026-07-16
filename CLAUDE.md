@@ -88,12 +88,11 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## weight taste, chip crowding, dialog legibility; v25 planner-cell ink split
 ## point, badge hue nudges, two-finger pan feel) are UNCHECKED taste follow-up,
 ## not regressions.
-## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): (0) a bottom tab
-## bar that never disappears — the floating menu blends into the cards behind it
-## in bright light and seems to vanish; needs a firmer surface/shadow or blur,
-## both themes (his NEW ask, on-device, now the top roadmap item); (1) icons do
+## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): the bottom-tab-bar
+## item SHIPPED as v27 (see Project facts) — remaining, in order: (1) icons do
 ## things everywhere — tap-to-filter wherever facet icons appear and it makes
-## sense; (2) collapsible species sections in the target-bird picker. He said
+## sense; (2) collapsible species sections in the target-bird picker; then the
+## older "more map landmarks" and "access notes: fill or drop" items. He said
 ## "other things" beyond these — open-ended; confirm before inventing. Older
 ## v22 thread ("possibly other things off of that") stays open too.
 
@@ -109,6 +108,29 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v27 SHIPPED 2026-07-16 (PR #30): "The bottom tab bar is its own surface" —
+  roadmap item #0 (Noah's top ask). The floating dock kept vanishing in bright
+  light. MERGED WITH the on-device acceptance pass — Noah reviewed the staged
+  candidate and replied "that's perfect promote to main" (his gate, satisfied).
+  So the tab-bar read IS verified-on-device; nothing about it is a follow-up.
+  THE KEY LESSON (cost two misses): the app's whole palette is high-key warm
+  cream — bright cards (--card #faf4e8) on a tan page (--bg #ebe1cf). Any
+  WARM-and-light dock blends into ONE or the OTHER (brighter → dissolves into
+  cards; deeper → matches the background). A firmer border/shadow alone did NOT
+  fix it, and neither did a deeper warm tan. The fix that worked: the dock
+  BREAKS FROM THE PALETTE — a NEUTRAL desaturated slate-taupe bar with LIGHT
+  glyphs (light --dock #8f7f66, Dawn --dock #4a4436), so it can't be mistaken
+  for cream cards or tan bg in either theme. Implementation: new tokens in
+  styles.css --dock / --dock-line / --dock-shadow (layered warm, alive not
+  crushed) / --dock-lip (top sheen); AND new --tab-ink / --tab-ink-active that
+  relight the .tab glyphs for the dark dock surface — DELIBERATELY separate from
+  the app-wide --dim / --accent (which are unchanged everywhere else; do not
+  collapse these back into --dim/--accent or the glyphs break on the taupe).
+  Active tab stays a bright orange and pops. Dock surface is 97% + blur(12px)
+  saturate(1.04). Verified headless both themes: glyphs legible, active pops,
+  no page errors. NEEDS-HIS-HANDS (taste follow-up, not regressions): the exact
+  taupe depth/temperature (can go deeper=more toolbar or lighter; one --dock
+  value per theme, border tunes alongside).
 - v26 SHIPPED 2026-07-15 (PR #28): "Honest aging" — the app's graceful-degradation
   posture for the day the quarterly refresh stops. Merged to main on Noah's
   explicit "Promote to main" WITHOUT the staging on-device pass (his gate, his
