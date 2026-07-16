@@ -6,7 +6,7 @@ tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
 ## v29 — 2026-07-16
-- Every bird now shows a little silhouette of its group next to it — a heron for waders, a duck for waterfowl, a hawk for raptors, and so on. It leads the facet line in a hotspot’s species list, sits beside each bird in your Target and Seen lists, and shows next to the name on a bird’s own page. A quick visual cue for the kind of bird you’re looking at (it’s the group, not the exact species), in both the light and Dawn themes.
+- Every bird now shows a little silhouette of its group next to it — a heron for waders, a duck for waterfowl, a hawk for raptors, and so on. It leads the facet line in a hotspot’s species list and sits beside each bird in your Target and Seen lists. A quick visual cue for the kind of bird you’re looking at (it’s the group, not the exact species), in both the light and Dawn themes.
 - In a hotspot’s species list the bird’s name is now the clear headline of its row, with the group icon, facets, frequency and marks reading as the detail beneath it. The “add to your list” control is now a camera — this is a shot list — filled gold when a bird’s on it, a faint outline when it isn’t.
 
 ## v28 — 2026-07-16

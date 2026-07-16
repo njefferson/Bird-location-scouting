@@ -43,6 +43,12 @@ function speciesLink(cls, s, state, nav) {
   }, s.name);
 }
 
+// Filled check-circle for the "Birds I've seen" entry — a bird you've ticked off
+// (the disc is currentColor/slate, the check knocked out via evenodd).
+function seenMark() {
+  return '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM10.6 16.2 6.4 12 8 10.4 10.6 13 16 7.6 17.6 9.2Z"/></svg>';
+}
+
 // External link to a species' full eBird page (kept available from the Species view).
 function ebirdLink(s) {
   return el('a.ebird-link', {
@@ -478,7 +484,7 @@ export function renderSpecies(root, state, nav) {
     el('span.subtitle', {}, 'Where in your region, and which month, to photograph one bird.'),
   ]));
 
-  // Target-birds entry: star birds to see where & when to find them.
+  // Target-birds entry: add birds to your shot list to see where & when.
   const n = targetCount();
   root.append(el('button.tg-entry', { onclick: () => nav.go('#/targets') }, [
     el('span.tg-entry-mark', { 'aria-hidden': 'true', html: cameraMark(true) }),
@@ -486,15 +492,16 @@ export function renderSpecies(root, state, nav) {
       el('strong', {}, n ? `Your ${n} target bird${n === 1 ? '' : 's'}` : 'Pick your target birds'),
       el('span.dim', {}, n
         ? (targetsRankActive() ? 'ranking spots by their presence — tap to edit' : 'tap to see where & when, or edit')
-        : 'star the birds you want — see where and when to find each one'),
+        : 'pick the birds you want to photograph — see where and when to find each one'),
     ]),
     el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
 
-  // Seen / life-list entry: track what you've got, focus on what's new.
+  // Seen / life-list entry: track what you've got, focus on what's new. The mark
+  // is a check — a bird you've already got, ticked off (parallels the seen ✓).
   const sn = seenCount();
   root.append(el('button.tg-entry.seen-entry', { onclick: () => nav.go('#/seen') }, [
-    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '✦'),
+    el('span.tg-entry-mark', { 'aria-hidden': 'true', html: seenMark() }),
     el('span.tg-entry-main', {}, [
       el('strong', {}, sn ? `${sn} bird${sn === 1 ? '' : 's'} on your life list` : 'Birds I’ve seen'),
       el('span.dim', {}, sn
@@ -541,7 +548,6 @@ function speciesPanel(s, state, nav, onFacetChange) {
   const head = el('div.sp-head', {}, [
     starButton(s),
     seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
-    guildBird(s, 'sp-name-bird', 26),
     el('h2', {}, s.name),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
     ebirdLink(s),

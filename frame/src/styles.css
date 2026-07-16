@@ -238,8 +238,6 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-facet-bird { flex: 0 0 auto; color: var(--dim); opacity: .7; }
 .sp-facet-bird svg { display: block; }
 .sp-facet-line .sp-facet-bird { margin-top: 1px; }
-.sp-name-bird { flex: 0 0 auto; color: var(--dim); opacity: .8; align-self: center; }
-.sp-name-bird svg { display: block; }
 .sp-facet-note { font-style: italic; font-size: 11.5px; color: var(--dim); line-height: 1.3; }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
