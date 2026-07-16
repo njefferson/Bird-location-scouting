@@ -31,16 +31,16 @@
   /* County boundaries: near-black and dashed — a man-made line should read as
      one, distinct from red roads and blue rivers. */
   --boundary: #2e2618;
-  --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
-  /* Dock edge (v27) — the bright cream dock sat on near-identical cream cards,
-     so in bright ambient light its faint border + shadow washed out and it
-     seemed to vanish. These give it a defined edge that always reads: a firmer
-     border with real contrast against the cards, a layered warm shadow (kept
-     alive, not crushed), and a bright top lip so the seam where cards scroll
-     behind it stays crisp. Recompute per theme. */
-  --dock-line: #cdb98f;
+  /* Tab dock (v27) — the nav is its OWN surface, not the brightest cream of all.
+     A brighter-than-the-cards dock disappeared into them in bright light; the
+     fix is a tonal shift, not just an outline. Think of the Field Notebook:
+     the dock is the board/cover, a step DEEPER and warmer than the cream pages,
+     so it always reads as a distinct control. Plus a firm border, a layered
+     warm shadow (alive, not crushed), and a soft top sheen. Recompute per theme. */
+  --dock: #e5d7b6;
+  --dock-line: #bfa875;
   --dock-shadow: 0 1px 2px rgba(60,40,10,.18), 0 8px 18px rgba(60,40,10,.16), 0 22px 44px rgba(60,40,10,.22);
-  --dock-lip: inset 0 1px 0 rgba(255,255,255,.75);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.55);
   /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
      for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
   --facet-lots: var(--accent);
@@ -72,8 +72,8 @@
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
-  --dock: #30281c;
-  --dock-line: #574734; /* firmer than --line so the dock edge reads on dark cards */
+  --dock: #3b3220; /* lifted + warmer than the cards so the nav reads as its own raised bar */
+  --dock-line: #5f4e37;
   --dock-shadow: 0 1px 2px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.5), 0 22px 46px rgba(0,0,0,.55);
   --dock-lip: inset 0 1px 0 rgba(255,255,255,.07);
   --facet-lots: var(--accent);
