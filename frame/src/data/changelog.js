@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v27',
+    date: '2026-07-15',
+    changes: [
+      'The bottom tab bar is now its own surface. In bright light the floating bar used to blend into the pale cards and the warm background behind it — so it was easy to lose the very control you navigate with. It now sits on a distinct, neutral slate-taupe bar with light icons that stands clear of the warm cream of the rest of the app, with a firmer edge and a clearer shadow — so it always reads as a solid control, in both the light and Dawn themes.',
+    ],
+  },
+  {
     version: 'v26',
     date: '2026-07-15',
     changes: [

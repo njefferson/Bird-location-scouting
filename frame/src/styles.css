@@ -31,7 +31,19 @@
   /* County boundaries: near-black and dashed — a man-made line should read as
      one, distinct from red roads and blue rivers. */
   --boundary: #2e2618;
-  --dock: #fdf9ef; /* tab dock: a step brighter than the page so it reads as a surface */
+  /* Tab dock (v27) — the nav is its OWN surface. Everything else in the app is
+     warm cream (bright cards, tan page): any warm-and-light dock blended into
+     one or the other in bright light. So the dock breaks from the palette
+     entirely — a neutral, desaturated deep taupe with LIGHT icons, a bar that
+     can't be mistaken for either the cards or the background, in either theme.
+     --tab-ink / --tab-ink-active relight the tab glyphs for the dark surface
+     (kept separate from the app-wide --dim / --accent). Recompute per theme. */
+  --dock: #8f7f66;
+  --dock-line: #6b5d45;
+  --dock-shadow: 0 1px 2px rgba(40,30,10,.22), 0 8px 18px rgba(40,30,10,.18), 0 22px 44px rgba(40,30,10,.24);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.16);
+  --tab-ink: #efe6d4;
+  --tab-ink-active: #f6b45c;
   /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
      for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
   --facet-lots: var(--accent);
@@ -63,7 +75,14 @@
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
-  --dock: #30281c;
+  /* Same neutral-taupe bar, tuned for low light: a deep taupe clearly lifted
+     off the near-black warm cards, with light glyphs. */
+  --dock: #4a4436;
+  --dock-line: #6a6047;
+  --dock-shadow: 0 1px 2px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.5), 0 22px 46px rgba(0,0,0,.55);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.09);
+  --tab-ink: #d8ccb5;
+  --tab-ink-active: #f0a94e;
   --facet-lots: var(--accent);
   --facet-some: color-mix(in srgb, var(--accent) 52%, var(--dim));
   --facet-ghost: color-mix(in srgb, var(--dim) 40%, transparent);
@@ -417,14 +436,14 @@ table.species-table tr[onclick] { cursor: pointer; }
    hairline — the bottom shares the column boundary like everything else. */
 .tabs { position: fixed; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; right: 0;
   margin-inline: auto; width: min(736px, calc(100% - 24px)); height: var(--tab-h);
-  background: color-mix(in srgb, var(--dock) 96%, transparent);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid color-mix(in srgb, var(--line) 60%, var(--dim)); border-radius: var(--r); overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,.10), 0 14px 34px rgba(60,40,10,.18);
+  background: color-mix(in srgb, var(--dock) 97%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.04); backdrop-filter: blur(12px) saturate(1.04);
+  border: 1px solid var(--dock-line); border-radius: var(--r); overflow: hidden;
+  box-shadow: var(--dock-shadow), var(--dock-lip);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
-.tab { background: none; border: 0; color: var(--dim); display: flex; flex-direction: column;
+.tab { background: none; border: 0; color: var(--tab-ink); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }
-.tab.active { color: var(--accent); }
+.tab.active { color: var(--tab-ink-active); }
 .tab-icon { display: flex; align-items: center; justify-content: center; line-height: 0; }
 
 /* Floating corner buttons hug the content column on wide screens (the .view
