@@ -123,11 +123,22 @@ export function rankHotspots(hotspots, monthIdx, opts = {}) {
   return rows;
 }
 
-/** Keeper-species count over the FULL curated set (coverage, for trust). */
+/** Keeper-species count over the FULL curated set (coverage, for trust).
+ * Pure in (hotspot, monthIdx) and independent of the working set, but called
+ * for every hotspot on every narrowed rank — and a facet/target tap re-ranks.
+ * Memoized per hotspot object (WeakMap ⇒ a region switch swaps in fresh hotspot
+ * objects and the old cache is collected, so no manual invalidation is needed). */
+const _coverageCache = new WeakMap();
 function coverageDiversity(hotspot, monthIdx) {
-  let k = 0;
-  for (const s of SPECIES) {
-    if (frequency(s, hotspot, monthIdx).value >= KEEPER_FREQ) k++;
+  let byMonth = _coverageCache.get(hotspot);
+  if (!byMonth) { byMonth = new Array(12); _coverageCache.set(hotspot, byMonth); }
+  let k = byMonth[monthIdx];
+  if (k === undefined) {
+    k = 0;
+    for (const s of SPECIES) {
+      if (frequency(s, hotspot, monthIdx).value >= KEEPER_FREQ) k++;
+    }
+    byMonth[monthIdx] = k;
   }
   return k;
 }

@@ -13,6 +13,7 @@ export const CHANGELOG = [
     date: '2026-07-16',
     changes: [
       'The bird-type, size, nest and behaviour icons now do something wherever you see them. Before, only the row of type icons on a hotspot card could filter; the same icons on the species matrix, on a species’ page, and beside each bird in your Target and Seen lists were just labels. Now every one of them is a tap-to-filter control: tap an icon to show only birds like that one, tap again to hide them, once more to clear — the same want / exclude / off you already knew from the cards. Touch the “small” icon next to a sparrow and the list narrows to small birds; touch it again and they step aside. A filter you set from anywhere shows the same standing “filtering by…” bar with a one-tap “Show all birds”, so you always know it’s on and can turn it off in a tap.',
+      'Tapping to filter is now fast. In a big region — Home is around 760 hotspots — the ranking, the year planner and a hotspot’s species table used to rebuild every single row on each tap, so re-sorting after a filter could hang for seconds. Those lists now show the top of the ranking straight away with a “Show all…” button for the rest, and repeat calculations are cached — so a tap re-sorts right away instead of stalling.',
     ],
   },
   {
