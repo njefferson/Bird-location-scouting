@@ -10,10 +10,21 @@ import { el, clear, toast } from './dom.js';
 import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
 import { STATUS_LABEL } from '../model/inference.js';
+import { facetsActive, applyFacetFilter } from '../model/facets.js';
+import { facetBar, facetIconButton } from './facetbar.js';
 import {
   isSeen, toggleSeen, addSeen, seenCount, getSeen, clearSeen, setSeen,
   newBirdsOn, setNewBirds, newBirdsActive,
 } from '../model/seen.js';
+
+// Size + behaviour facet icons — each a tri-state filter (tap to narrow the
+// browse list, and every ranked view, to birds like this one).
+function sizeBehaviorIcons(s, onChange) {
+  return el('span.sp-facets', {}, [
+    facetIconButton('size', s.size, { size: 18, onChange }),
+    facetIconButton('behavior', s.behavior, { size: 18, onChange }),
+  ]);
+}
 
 function primaryHabitat(s) {
   const entries = Object.entries(s.habitats || {});
@@ -86,6 +97,17 @@ export function renderSeen(root, state, nav) {
   const summary = el('div.tg-summary');
   const listWrap = el('div.tg-list');
 
+  // Standing facet-filter bar for this screen (see the target picker): a tapped
+  // size/behaviour icon sets the shared filter, announced here with a one-tap
+  // exit and reflected by narrowing the browse list below. Local repaint only,
+  // so the import textarea is never wiped.
+  const facetSlot = el('div.facet-slot');
+  const onFacetChange = () => { repaintFacetBar(); repaintList(); };
+  function repaintFacetBar() {
+    const bar = facetBar(state, nav, onFacetChange);
+    facetSlot.replaceChildren(...(bar ? [bar] : []));
+  }
+
   function repaintSummary() {
     clear(summary);
     const n = seenCount();
@@ -140,8 +162,15 @@ export function renderSeen(root, state, nav) {
   function repaintList() {
     clear(listWrap);
     const q = (state.seenQuery || '').trim().toLowerCase();
-    const match = SPECIES.filter((s) => !q || s.name.toLowerCase().includes(q));
-    if (!match.length) { listWrap.append(el('p.dim', {}, 'No species match that filter.')); return; }
+    // Compose the text search with the tapped icon-filters.
+    const pool = facetsActive() ? applyFacetFilter(SPECIES) : SPECIES;
+    const match = pool.filter((s) => !q || s.name.toLowerCase().includes(q));
+    if (!match.length) {
+      listWrap.append(el('p.dim', {}, facetsActive()
+        ? 'No species match your icon filters (and search). Tap “Show all birds” above to widen.'
+        : 'No species match that filter.'));
+      return;
+    }
     const groups = new Map();
     for (const s of match) {
       const g = q ? { key: 'matches', label: 'Matches' } : primaryHabitat(s);
@@ -162,15 +191,18 @@ export function renderSeen(root, state, nav) {
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),
+      sizeBehaviorIcons(s, onFacetChange),
     ]);
     return node;
   }
 
   repaintSummary();
+  repaintFacetBar();
   repaintList();
   root.append(summary);
   root.append(importBox);
   root.append(el('p.dim.tg-hint', {}, 'Seen birds stay visible everywhere — just dimmed — and still count toward every hotspot’s photographer score. They’re set aside only in “New for me” mode, which re-ranks the hotspots by the birds you still need. Your list lives on this device.'));
+  root.append(facetSlot);
   root.append(el('div.search-wrap', {}, search));
   root.append(listWrap);
 }

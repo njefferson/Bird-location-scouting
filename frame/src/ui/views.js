@@ -5,7 +5,7 @@
 import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetEntryChip } from './facetbar.js';
+import { facetEntryChip, facetBar, facetIconButton } from './facetbar.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -383,7 +383,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
-      el('td', {}, speciesFacetRow(r.s)),
+      el('td', {}, speciesFacetRow(r.s, nav)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
@@ -398,10 +398,13 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   ]));
 }
 
-// The four facet icons for one species, informational (title = label + blurb).
-function speciesFacetRow(s) {
+// The four facet icons for one species — each a tri-state filter button (type ·
+// size · nest · behaviour). Tapping narrows every ranked view to that facet;
+// the standing filter bar (prepended here as this is a ranked view) shows the
+// exit. Re-render keeps the scroll so a tap deep in the table doesn't jump.
+function speciesFacetRow(s, nav) {
   return el('div.sp-facets', {}, speciesFacetIcons(s).map((fi) =>
-    el('span.sp-fi', { title: `${fi.facetLabel}: ${fi.label} — ${fi.blurb}`, html: facetSvg(fi.icon, 20) })));
+    facetIconButton(fi.facet, fi.key, { size: 20, onChange: () => nav.rerenderKeep() })));
 }
 
 // =============================================================================
@@ -440,6 +443,18 @@ export function renderSpecies(root, state, nav) {
     el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
 
+  // Standing filter bar: this screen isn't a ranked view, so main.js doesn't
+  // prepend one — but tapping a facet chip below sets a filter, and a mode must
+  // always announce itself with a one-tap exit. Managed locally so a tap only
+  // repaints the bar + the panel (never the whole app / any typed input).
+  const facetSlot = el('div.facet-slot');
+  const onFacetChange = () => { repaintFacetBar(); run(); };
+  function repaintFacetBar() {
+    const bar = facetBar(state, nav, onFacetChange);
+    facetSlot.replaceChildren(...(bar ? [bar] : []));
+  }
+  root.append(facetSlot);
+
   const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
   const results = el('div.species-results');
   const list = el('datalist', { id: 'splist' }, SPECIES.map((s) => el('option', { value: s.name })));
@@ -451,15 +466,16 @@ export function renderSpecies(root, state, nav) {
     const q = input.value.trim().toLowerCase();
     const s = SPECIES.find((x) => x.name.toLowerCase() === q) || SPECIES.find((x) => x.name.toLowerCase().includes(q) && q.length >= 2);
     if (!s) { results.append(el('p.dim', {}, q ? 'No match in the curated list.' : 'Type a species name.')); return; }
-    results.append(speciesPanel(s, state, nav));
+    results.append(speciesPanel(s, state, nav, onFacetChange));
   }
   input.addEventListener('input', run);
   root.append(el('div.search-wrap', {}, [input, list]));
   root.append(results);
+  repaintFacetBar();
   run();
 }
 
-function speciesPanel(s, state, nav) {
+function speciesPanel(s, state, nav, onFacetChange) {
   const panel = el('div.sp-panel', { class: isSeen(s.name) ? 'is-seen' : '' });
   const head = el('div.sp-head', {}, [
     starButton(s),
@@ -469,9 +485,10 @@ function speciesPanel(s, state, nav) {
     ebirdLink(s),
   ]);
   panel.append(head);
-  // Facet chips: type · size · nest · behaviour (icon + label).
+  // Facet chips: type · size · nest · behaviour — each a tri-state filter you
+  // can tap to narrow every ranked view (the standing bar above shows the exit).
   panel.append(el('div.sp-facet-chips', {}, speciesFacetIcons(s).map((fi) =>
-    el('span.sp-facet-chip', { title: fi.blurb }, [el('span.sp-fi', { html: facetSvg(fi.icon, 18) }), fi.label]))));
+    facetIconButton(fi.facet, fi.key, { size: 18, label: true, onChange: onFacetChange }))));
   if (photoFirstOn() && !targetsRankActive()) {
     const f = shootFactors(s);
     panel.append(el('p.sp-photo.dim', {}, `Photo-first ranking counts ${xw(f.w)} of its frequency (${f.behavior.label} ${xw(f.behavior.w)} · ${f.size.label} ${xw(f.size.w)}).`));

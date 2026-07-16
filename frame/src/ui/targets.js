@@ -10,11 +10,12 @@
 import { el, clear, pct, sparkline, toast } from './dom.js';
 import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
-import { BEHAVIORS, SIZES, facetSvg } from '../data/facets.js';
 import { MONTHS, STATUS_LABEL } from '../model/inference.js';
 import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
+import { facetsActive, applyFacetFilter } from '../model/facets.js';
+import { facetBar, facetIconButton } from './facetbar.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -28,13 +29,13 @@ function primaryHabitat(s) {
   return { key, label: HABITATS[key]?.label || key };
 }
 
-// Size + behaviour facet icons, the picker-row at-a-glance read.
-function sizeBehaviorIcons(s) {
-  const bits = [];
-  const sz = SIZES[s.size]; const bh = BEHAVIORS[s.behavior];
-  if (sz) bits.push(el('span.sp-fi', { title: `Size: ${sz.label} — ${sz.blurb}`, html: facetSvg(sz.icon, 18) }));
-  if (bh) bits.push(el('span.sp-fi', { title: `Behaviour: ${bh.label} — ${bh.blurb}`, html: facetSvg(bh.icon, 18) }));
-  return el('span.sp-facets', {}, bits);
+// Size + behaviour facet icons — each a tri-state filter you can tap to narrow
+// the browse list below (and every ranked view) to birds like this one.
+function sizeBehaviorIcons(s, onChange) {
+  return el('span.sp-facets', {}, [
+    facetIconButton('size', s.size, { size: 18, onChange }),
+    facetIconButton('behavior', s.behavior, { size: 18, onChange }),
+  ]);
 }
 
 /**
@@ -102,6 +103,17 @@ export function renderTargets(root, state, nav) {
   const summary = el('div.tg-summary');
   const yourList = el('div.tg-yourlist');
   const listWrap = el('div.tg-list');
+
+  // Standing facet-filter bar for this screen. Tapping a size/behaviour icon on
+  // a browse row sets the shared filter; the bar announces it with a one-tap
+  // exit and (below) narrows the browse list to matching birds. Managed locally
+  // so a tap never re-renders the whole app or clears the import textarea.
+  const facetSlot = el('div.facet-slot');
+  const onFacetChange = () => { repaintFacetBar(); repaintList(); };
+  function repaintFacetBar() {
+    const bar = facetBar(state, nav, onFacetChange);
+    facetSlot.replaceChildren(...(bar ? [bar] : []));
+  }
 
   function repaintSummary() {
     clear(summary);
@@ -183,8 +195,16 @@ export function renderTargets(root, state, nav) {
   function repaintList() {
     clear(listWrap);
     const q = (state.targetQuery || '').trim().toLowerCase();
-    const match = SPECIES.filter((s) => !q || s.name.toLowerCase().includes(q));
-    if (!match.length) { listWrap.append(el('p.dim', {}, 'No species match that filter.')); return; }
+    // Compose the text search with the tapped icon-filters: browsing narrows to
+    // birds like the one you touched.
+    const pool = facetsActive() ? applyFacetFilter(SPECIES) : SPECIES;
+    const match = pool.filter((s) => !q || s.name.toLowerCase().includes(q));
+    if (!match.length) {
+      listWrap.append(el('p.dim', {}, facetsActive()
+        ? 'No species match your icon filters (and search). Tap “Show all birds” above to widen.'
+        : 'No species match that filter.'));
+      return;
+    }
 
     // Group by dominant habitat; within a group, commoner birds first, then
     // alphabetical. A live filter flattens to a single "Matches" group so
@@ -209,16 +229,18 @@ export function renderTargets(root, state, nav) {
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),
-      sizeBehaviorIcons(s),
+      sizeBehaviorIcons(s, onFacetChange),
     ]);
     return node;
   }
 
   repaintSummary();
   repaintYourList();
+  repaintFacetBar();
   repaintList();
   root.append(summary);
   root.append(yourList);
+  root.append(facetSlot);
   root.append(el('div.search-wrap', {}, search));
   root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear.'));
   root.append(listWrap);

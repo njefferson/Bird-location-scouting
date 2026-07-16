@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v28 — 2026-07-16
+- The bird-type, size, nest and behaviour icons now do something wherever you see them. Before, only the row of type icons on a hotspot card could filter; the same icons on the species matrix, on a species’ page, and beside each bird in your Target and Seen lists were just labels. Now every one of them is a tap-to-filter control: tap an icon to show only birds like that one, tap again to hide them, once more to clear — the same want / exclude / off you already knew from the cards. Touch the “small” icon next to a sparrow and the list narrows to small birds; touch it again and they step aside. A filter you set from anywhere shows the same standing “filtering by…” bar with a one-tap “Show all birds”, so you always know it’s on and can turn it off in a tap.
+
 ## v27 — 2026-07-15
 - The bottom tab bar is now its own surface. In bright light the floating bar used to blend into the pale cards and the warm background behind it — so it was easy to lose the very control you navigate with. It now sits on a distinct, neutral slate-taupe bar with light icons that stands clear of the warm cream of the rest of the app, with a firmer edge and a clearer shadow — so it always reads as a solid control, in both the light and Dawn themes.
 

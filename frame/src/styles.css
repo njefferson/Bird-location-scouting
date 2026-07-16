@@ -792,11 +792,36 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-pick.excluded .fi-label { text-decoration: line-through; }
 .facet-pick.excluded .fi-state { color: var(--facet-block); }
 
-/* Species-panel facet chips (icon + label, informational). */
 .sp-facet-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.sp-facet-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink);
-  background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 7px; }
-.sp-facet-chip .sp-fi { color: var(--dim); }
+
+/* A species-facet icon that is itself a tri-state filter button (v28) — the bare
+   form sits in the species matrix and the target / seen picker rows; the
+   `.labelled` pill form is the species-page chip. Same want/exclude language as
+   the guild-row `.fi`, so a facet icon means the same thing everywhere. */
+.sp-fi-btn { position: relative; display: inline-grid; place-content: center; padding: 5px;
+  min-width: 30px; min-height: 30px; border: 0; background: none; border-radius: 9px;
+  color: var(--dim); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sp-fi-btn svg { display: block; }
+.sp-fi-btn .sp-fi { color: inherit; }
+.sp-fi-btn:active { transform: scale(.9); }
+.sp-fi-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-fi-btn:not(.labelled).wanted { color: var(--facet-want); box-shadow: inset 0 0 0 2px var(--facet-want); }
+.sp-fi-btn:not(.labelled).wanted::before { content: "✓"; position: absolute; top: -1px; right: 1px;
+  font-size: 10px; font-weight: 700; color: var(--facet-want); line-height: 1; }
+.sp-fi-btn:not(.labelled).excluded { color: var(--facet-block); opacity: .8; }
+.sp-fi-btn:not(.labelled).excluded::before { content: ""; position: absolute; left: 6px; right: 6px;
+  top: 50%; height: 2px; background: var(--facet-block); transform: rotate(-45deg); }
+
+/* Pill (labelled) form — icon + label, on the species page. */
+.sp-fi-btn.labelled { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px;
+  min-width: 0; min-height: 0; border-radius: 999px; font-size: 12px; color: var(--ink);
+  background: var(--card2); border: 1px solid var(--line); }
+.sp-fi-btn.labelled .sp-fi { color: var(--dim); }
+.sp-fi-btn.labelled.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
+  color: var(--facet-want); background: var(--accent-wash); }
+.sp-fi-btn.labelled.wanted .sp-fi { color: var(--facet-want); }
+.sp-fi-btn.labelled.excluded { border-color: var(--facet-block); color: var(--facet-block); opacity: .82; }
+.sp-fi-btn.labelled.excluded .sp-fi-txt { text-decoration: line-through; }
 
 /* =============================================================================
    PHOTO-FIRST (v24) — the standing camera chip + the weight-table dialog.
