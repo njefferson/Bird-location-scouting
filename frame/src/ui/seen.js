@@ -11,7 +11,7 @@ import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
 import { STATUS_LABEL } from '../model/inference.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton } from './facetbar.js';
+import { facetBar, facetIconButton, guildBird } from './facetbar.js';
 import {
   isSeen, toggleSeen, addSeen, seenCount, getSeen, clearSeen, setSeen,
   newBirdsOn, setNewBirds, newBirdsActive,
@@ -21,6 +21,7 @@ import {
 // browse list, and every ranked view, to birds like this one).
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
+    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);

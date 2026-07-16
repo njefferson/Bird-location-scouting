@@ -5,7 +5,7 @@
 import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetEntryChip, facetBar, facetIconButton } from './facetbar.js';
+import { facetEntryChip, facetBar, facetIconButton, guildBird } from './facetbar.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -429,11 +429,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     };
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
-      el('td.sp-name-cell', {}, [
-        el('span.bird-ghost', { 'aria-hidden': 'true', html: facetSvg(GUILDS[r.s.guild]?.icon || '', 34) }),
-        speciesLink('', r.s, state, nav),
-        inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null,
-      ]),
+      el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, speciesFacetRow(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
@@ -465,7 +461,10 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
 function speciesFacetRow(s) {
   const parts = speciesFacetIcons(s).map((fi) =>
     fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
-  return el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : '');
+  return el('span.sp-facet-line', {}, [
+    guildBird(s),
+    el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : ''),
+  ]);
 }
 
 // =============================================================================
@@ -541,6 +540,7 @@ function speciesPanel(s, state, nav, onFacetChange) {
   const head = el('div.sp-head', {}, [
     starButton(s),
     seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
+    guildBird(s, 'sp-name-bird', 26),
     el('h2', {}, s.name),
     el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
     ebirdLink(s),

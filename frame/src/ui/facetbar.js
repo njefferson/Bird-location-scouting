@@ -6,11 +6,21 @@
 // one-tap "Show all birds" exit.
 // =============================================================================
 import { el } from './dom.js';
-import { FACETS, facetSvg } from '../data/facets.js';
+import { FACETS, GUILDS, facetSvg } from '../data/facets.js';
 import { facetState, cycleFacet, clearFacets, facetsActive, facetSummary } from '../model/facets.js';
 
 // Funnel glyph shared by the bar mark and the entry chip.
 const FUNNEL = facetSvg('<path d="M3 5h18l-7 8v6l-4-2v-6z"/>', 18);
+
+/**
+ * A dim guild silhouette for a species — the "kind of bird" cue shown alongside
+ * a bird's name/facets wherever it's listed (guild-level; there is no per-species
+ * artwork). Colour/opacity come from CSS (.sp-facet-bird / .sp-name-bird).
+ */
+export function guildBird(s, cls = 'sp-facet-bird', size = 22) {
+  const g = GUILDS[s.guild];
+  return el(`span.${cls}`, { 'aria-hidden': 'true', html: facetSvg(g ? g.icon : '', size) });
+}
 
 function valueLabel(facetKey, valueKey) {
   const f = FACETS.find((x) => x.key === facetKey);

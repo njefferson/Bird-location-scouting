@@ -15,7 +15,7 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton } from './facetbar.js';
+import { facetBar, facetIconButton, guildBird } from './facetbar.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -33,6 +33,7 @@ function primaryHabitat(s) {
 // the browse list below (and every ranked view) to birds like this one.
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
+    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
