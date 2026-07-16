@@ -31,6 +31,10 @@ const nav = {
   setMonth(i) { state.monthIdx = i; render(); },
   setFilter(k) { state.filter = k; render(); },
   rerender() { render(); },
+  // Re-render in place without scrolling to the top — for controls that live
+  // deep in a long view (e.g. tapping a facet icon in the species matrix),
+  // so acting on them doesn't yank the reader back up.
+  rerenderKeep() { render({ scroll: false }); },
 };
 
 // 22px line icons, stroke=currentColor so the tab's colour (--dim / active

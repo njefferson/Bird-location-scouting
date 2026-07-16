@@ -5,7 +5,7 @@
 import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetEntryChip } from './facetbar.js';
+import { facetEntryChip, facetBar, facetIconButton } from './facetbar.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -154,7 +154,23 @@ export function renderCards(root, state, nav) {
   if (!rows.length) {
     list.append(el('p.empty', {}, 'No hotspots match this filter for this month.'));
   }
-  for (const r of rows) list.append(card(r, state, nav));
+  // A full region (Home is ~760 hotspots) is far more cards than anyone scrolls,
+  // and rebuilding them all on every tap-to-filter is what made the ranking feel
+  // slow to resort. Render the top slice — this is a presence-ranked list, so the
+  // spots that matter are at the top — and offer the rest behind one tap. The cap
+  // only bites the "All" filter; the opportunity filters return far fewer.
+  const CARD_CAP = 50;
+  const shown = rows.slice(0, CARD_CAP);
+  for (const r of shown) list.append(card(r, state, nav));
+  if (rows.length > CARD_CAP) {
+    const more = el('button.btn.show-more', {
+      onclick: () => {
+        for (const r of rows.slice(CARD_CAP)) list.insertBefore(card(r, state, nav), more);
+        more.remove();
+      },
+    }, `Show all ${rows.length} hotspots`);
+    list.append(more);
+  }
   root.append(list);
   root.append(dataProvenanceFooter());
 }
@@ -223,16 +239,27 @@ function card(r, state, nav) {
 const GUILD_LOTS = 0.5;   // ≥ one of these on ~every other checklist
 const GUILD_SOME = 0.05;  // ≥ one on ~1 in 20 checklists
 
-/** Summed frequency per guild (over ALL species) + whether any is real eBird. */
+/** Summed frequency per guild (over ALL species) + whether any is real eBird.
+ * Pure in (hotspot, monthIdx) but computed once per card — and the whole card
+ * list rebuilds on every facet tap. Memoized per hotspot object (WeakMap ⇒
+ * auto-dropped when a region switch swaps in fresh hotspot objects). Callers
+ * only read the maps, never mutate them. */
+const _guildPresenceCache = new WeakMap();
 function guildPresence(h, monthIdx) {
-  const sums = {}, realN = {};
-  for (const s of SPECIES) {
-    const f = frequency(s, h, monthIdx);
-    if (f.value <= 0) continue;
-    sums[s.guild] = (sums[s.guild] || 0) + f.value;
-    if (!f.inferred) realN[s.guild] = (realN[s.guild] || 0) + 1;
+  let byMonth = _guildPresenceCache.get(h);
+  if (!byMonth) { byMonth = new Array(12); _guildPresenceCache.set(h, byMonth); }
+  let entry = byMonth[monthIdx];
+  if (!entry) {
+    const sums = {}, realN = {};
+    for (const s of SPECIES) {
+      const f = frequency(s, h, monthIdx);
+      if (f.value <= 0) continue;
+      sums[s.guild] = (sums[s.guild] || 0) + f.value;
+      if (!f.inferred) realN[s.guild] = (realN[s.guild] || 0) + 1;
+    }
+    entry = byMonth[monthIdx] = { sums, realN };
   }
-  return { sums, realN };
+  return entry;
 }
 
 /**
@@ -253,13 +280,18 @@ function guildIconRow(h, monthIdx, nav) {
     const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'none noted';
     const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
     const filt = st === 'wanted' ? ' · wanted — tap to exclude' : st === 'excluded' ? ' · excluded — tap to clear' : ' · tap to want';
-    row.append(el('button.fi', {
-      class: [`fi-${level}`, inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
+    // Present guilds (some/lots this month) carry a caption naming the group;
+    // absent guilds stay bare icons so the row doesn't drown in 12 labels.
+    const present = level !== 'none';
+    const btn = el('button.fi', {
+      class: [`fi-${level}`, present ? 'has-cap' : '', inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
       title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}${filt}`,
       'aria-label': `${gu.label}: ${where}, filter ${st}`,
-      html: facetSvg(gu.icon),
       onclick: () => { cycleFacet('guild', key); nav.rerender(); },
-    }));
+    });
+    btn.append(el('span.fi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon) }));
+    if (present) btn.append(el('span.fi-cap', {}, gu.short || gu.label));
+    row.append(btn);
   }
   return row;
 }
@@ -310,7 +342,7 @@ export function renderMatrix(root, state, nav) {
   const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].vis)) }))
     .sort((a, b) => b.best - a.best);
 
-  for (const { h } of order) {
+  const buildMatrixRow = (h) => {
     const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
     MONTHS.forEach((_, m) => {
       const r = byMonth[m][h.id];
@@ -324,9 +356,19 @@ export function renderMatrix(root, state, nav) {
       }, String(r.diversity));
       tr.append(cell);
     });
-    table.append(tr);
-  }
+    return tr;
+  };
+  // Same cap as the ranking cards: a full region is ~760 rows × 12 cells, which
+  // is slow to build on every month change. Top rows (by peak presence) first,
+  // rest one tap away.
+  const ROW_CAP = 50;
+  for (const { h } of order.slice(0, ROW_CAP)) table.append(buildMatrixRow(h));
   root.append(el('div.matrix-wrap', {}, table));
+  if (order.length > ROW_CAP) {
+    root.append(el('button.btn.show-more', {
+      onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
+    }, `Show all ${order.length} hotspots`));
+  }
   root.append(scoreScale(spec.weigh
     ? 'Fuller colour = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
     : 'Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
@@ -374,7 +416,12 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
 
   const table = el('table.species-table');
   table.append(el('tr', {}, ['', 'Species', 'Facets', `${MONTHS[state.monthIdx]} freq`, '12-mo'].map((t) => el('th', {}, t))));
-  for (const r of rows) {
+  // Build one species row. A busy hotspot lists 100+ present species and each
+  // row carries a sparkline + facet buttons; rebuilding them all on every
+  // tap-to-filter is what made the matrix slow to resort. So cap the table and
+  // reveal the tail on demand — the rows that matter are at the top (sorted by
+  // this month's presence).
+  const buildRow = (r) => {
     const inferredNow = r.fNow.inferred;
     const paint = () => {
       tr.classList.toggle('is-target', isTarget(r.s.name));
@@ -387,9 +434,18 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
-    table.append(tr);
+    return tr;
+  };
+  const ROW_CAP = 40;
+  for (const r of rows.slice(0, ROW_CAP)) table.append(buildRow(r));
+  const tableWrap = el('div.table-wrap', {}, table);
+  root.append(tableWrap);
+  if (rows.length > ROW_CAP) {
+    const more = el('button.btn.show-more', {
+      onclick: () => { for (const r of rows.slice(ROW_CAP)) table.append(buildRow(r)); more.remove(); },
+    }, `Show all ${rows.length} species`);
+    root.append(more);
   }
-  root.append(el('div.table-wrap', {}, table));
   root.append(el('p.legend', {}, [
     '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
     spec.targetsMode ? el('span', {}, ' The count above uses only your target birds.') : null,
@@ -398,10 +454,14 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   ]));
 }
 
-// The four facet icons for one species, informational (title = label + blurb).
+// In the species table the facets are just information — a short italic
+// parenthetical line (type · size · nest · behaviour), lighter than the species
+// name, so the table stays short. Tap-to-filter lives on the card guild row, the
+// picker, the species page and the Target/Seen rows, not here.
 function speciesFacetRow(s) {
-  return el('div.sp-facets', {}, speciesFacetIcons(s).map((fi) =>
-    el('span.sp-fi', { title: `${fi.facetLabel}: ${fi.label} — ${fi.blurb}`, html: facetSvg(fi.icon, 20) })));
+  const parts = speciesFacetIcons(s).map((fi) =>
+    fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
+  return el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : '');
 }
 
 // =============================================================================
@@ -440,6 +500,18 @@ export function renderSpecies(root, state, nav) {
     el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
 
+  // Standing filter bar: this screen isn't a ranked view, so main.js doesn't
+  // prepend one — but tapping a facet chip below sets a filter, and a mode must
+  // always announce itself with a one-tap exit. Managed locally so a tap only
+  // repaints the bar + the panel (never the whole app / any typed input).
+  const facetSlot = el('div.facet-slot');
+  const onFacetChange = () => { repaintFacetBar(); run(); };
+  function repaintFacetBar() {
+    const bar = facetBar(state, nav, onFacetChange);
+    facetSlot.replaceChildren(...(bar ? [bar] : []));
+  }
+  root.append(facetSlot);
+
   const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
   const results = el('div.species-results');
   const list = el('datalist', { id: 'splist' }, SPECIES.map((s) => el('option', { value: s.name })));
@@ -451,15 +523,16 @@ export function renderSpecies(root, state, nav) {
     const q = input.value.trim().toLowerCase();
     const s = SPECIES.find((x) => x.name.toLowerCase() === q) || SPECIES.find((x) => x.name.toLowerCase().includes(q) && q.length >= 2);
     if (!s) { results.append(el('p.dim', {}, q ? 'No match in the curated list.' : 'Type a species name.')); return; }
-    results.append(speciesPanel(s, state, nav));
+    results.append(speciesPanel(s, state, nav, onFacetChange));
   }
   input.addEventListener('input', run);
   root.append(el('div.search-wrap', {}, [input, list]));
   root.append(results);
+  repaintFacetBar();
   run();
 }
 
-function speciesPanel(s, state, nav) {
+function speciesPanel(s, state, nav, onFacetChange) {
   const panel = el('div.sp-panel', { class: isSeen(s.name) ? 'is-seen' : '' });
   const head = el('div.sp-head', {}, [
     starButton(s),
@@ -469,9 +542,10 @@ function speciesPanel(s, state, nav) {
     ebirdLink(s),
   ]);
   panel.append(head);
-  // Facet chips: type · size · nest · behaviour (icon + label).
+  // Facet chips: type · size · nest · behaviour — each a tri-state filter you
+  // can tap to narrow every ranked view (the standing bar above shows the exit).
   panel.append(el('div.sp-facet-chips', {}, speciesFacetIcons(s).map((fi) =>
-    el('span.sp-facet-chip', { title: fi.blurb }, [el('span.sp-fi', { html: facetSvg(fi.icon, 18) }), fi.label]))));
+    facetIconButton(fi.facet, fi.key, { size: 18, label: true, onChange: onFacetChange }))));
   if (photoFirstOn() && !targetsRankActive()) {
     const f = shootFactors(s);
     panel.append(el('p.sp-photo.dim', {}, `Photo-first ranking counts ${xw(f.w)} of its frequency (${f.behavior.label} ${xw(f.behavior.w)} · ${f.size.label} ${xw(f.size.w)}).`));

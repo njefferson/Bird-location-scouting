@@ -63,6 +63,44 @@ export function facetEntryChip(nav) {
   return chip;
 }
 
+/**
+ * A single species-facet icon rendered as a tri-state filter button — the same
+ * control as the card's guild row, but for one specific value a species carries
+ * (its type, size, nest or behaviour). Tapping cycles want → exclude → off and
+ * calls `onChange` so the caller can refresh its list and the standing bar.
+ * This is what makes the facet icons "do things" wherever they appear: the
+ * species matrix, the species page, and the target / seen pickers.
+ *
+ *   opts.size    icon px (default 20)
+ *   opts.label   true → append the value's label beside the icon (chip form)
+ *   opts.onChange called after the state cycles
+ */
+export function facetIconButton(facetKey, valueKey, opts = {}) {
+  const { size = 20, label = false, onChange } = opts;
+  const f = FACETS.find((x) => x.key === facetKey);
+  const v = f?.values[valueKey];
+  if (!v) return null;
+  const btn = el('button.sp-fi-btn' + (label ? '.labelled' : ''), { type: 'button' });
+  const paint = () => {
+    const st = facetState(facetKey, valueKey);
+    btn.className = 'sp-fi-btn' + (label ? ' labelled' : '') + (st !== 'neutral' ? ' ' + st : '');
+    btn.setAttribute('aria-pressed', st !== 'neutral' ? 'true' : 'false');
+    const cue = st === 'wanted' ? 'wanted — tap to exclude'
+      : st === 'excluded' ? 'excluded — tap to clear'
+      : 'tap to filter to this';
+    btn.title = `${f.label}: ${v.label} — ${v.blurb} · ${cue}`;
+    btn.setAttribute('aria-label', `Filter ${f.label.toLowerCase()} ${v.label}: ${st === 'neutral' ? 'off' : st}`);
+  };
+  btn.append(el('span.sp-fi', { 'aria-hidden': 'true', html: facetSvg(v.icon, size) }));
+  if (label) btn.append(el('span.sp-fi-txt', {}, v.label));
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault(); ev.stopPropagation();
+    cycleFacet(facetKey, valueKey); paint(); onChange?.();
+  });
+  paint();
+  return btn;
+}
+
 // One tappable value in the picker grid — icon + label, cycles on tap.
 function pickButton(facetKey, v, onChange) {
   const glyph = el('span.fi-glyph', { 'aria-hidden': 'true', html: facetSvg(v.icon, 24) });

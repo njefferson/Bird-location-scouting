@@ -135,6 +135,7 @@ a { color: var(--accent); }
 
 /* cards */
 .cards { display: flex; flex-direction: column; gap: 12px; }
+.show-more { align-self: center; margin: 4px 0 2px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px;
   box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(60,40,10,.05); }
 .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
@@ -225,6 +226,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star { color: var(--warn); }
 /* Informational facet mini-icons in tables / panels (type·size·nest·behaviour). */
 .sp-facets { display: inline-flex; align-items: center; gap: 5px; }
+/* Labelled variant (icon+word pills): let the pills wrap instead of stretching a
+   table column, and keep them tight so a row shows two-up rather than one wide line. */
+.sp-facets-labelled { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; vertical-align: middle; }
+.sp-facets-labelled .sp-fi-btn.labelled { padding: 2px 8px 2px 6px; font-size: 11px; }
+/* Species-table facets are info only: one short italic line, lighter than the name. */
+.sp-facet-note { font-style: italic; font-size: 11.5px; color: var(--dim); line-height: 1.3; }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
 .spark { display: block; }
@@ -737,6 +744,23 @@ table.species-table tr[onclick] { cursor: pointer; }
 .fi.excluded::before { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 2px;
   background: var(--facet-block); transform: rotate(-45deg); }
 
+/* Present-guild tiles carry a caption under the glyph (absent ones stay bare).
+   The tile grows into a column; captions align to the top so a wrapped label
+   never shoves its neighbours' icons down. */
+.guild-row { align-items: flex-start; gap: 2px 4px; }
+.fi-glyph { display: grid; place-content: center; }
+.fi.has-cap { width: auto; height: auto; min-width: 44px; max-width: none; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 1px; padding: 3px 6px 4px; }
+.fi.has-cap::after { content: none; }            /* the caption + glyph colour carry presence */
+/* The word stays whole (one unit with the icon) — never hyphen-wraps mid-word. */
+.fi-cap { font-size: 9.5px; line-height: 1.05; text-align: center; color: var(--dim);
+  white-space: nowrap; letter-spacing: .1px; }
+.fi.has-cap.fi-lots .fi-cap { color: var(--ink); }
+.fi.has-cap.wanted .fi-cap { color: var(--facet-want); }
+.fi.has-cap.excluded .fi-cap { color: var(--facet-block); text-decoration: line-through; }
+.fi.has-cap.excluded::before { top: 14px; }      /* slash crosses the icon, not the word */
+
 /* Standing filter bar — same shape as the target/new bars, in the park-green
    facet identity so the three modes never read as one another. */
 .facetbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -792,11 +816,36 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-pick.excluded .fi-label { text-decoration: line-through; }
 .facet-pick.excluded .fi-state { color: var(--facet-block); }
 
-/* Species-panel facet chips (icon + label, informational). */
 .sp-facet-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-.sp-facet-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink);
-  background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 7px; }
-.sp-facet-chip .sp-fi { color: var(--dim); }
+
+/* A species-facet icon that is itself a tri-state filter button (v28) — the bare
+   form sits in the species matrix and the target / seen picker rows; the
+   `.labelled` pill form is the species-page chip. Same want/exclude language as
+   the guild-row `.fi`, so a facet icon means the same thing everywhere. */
+.sp-fi-btn { position: relative; display: inline-grid; place-content: center; padding: 5px;
+  min-width: 30px; min-height: 30px; border: 0; background: none; border-radius: 9px;
+  color: var(--dim); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sp-fi-btn svg { display: block; }
+.sp-fi-btn .sp-fi { color: inherit; }
+.sp-fi-btn:active { transform: scale(.9); }
+.sp-fi-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-fi-btn:not(.labelled).wanted { color: var(--facet-want); box-shadow: inset 0 0 0 2px var(--facet-want); }
+.sp-fi-btn:not(.labelled).wanted::before { content: "✓"; position: absolute; top: -1px; right: 1px;
+  font-size: 10px; font-weight: 700; color: var(--facet-want); line-height: 1; }
+.sp-fi-btn:not(.labelled).excluded { color: var(--facet-block); opacity: .8; }
+.sp-fi-btn:not(.labelled).excluded::before { content: ""; position: absolute; left: 6px; right: 6px;
+  top: 50%; height: 2px; background: var(--facet-block); transform: rotate(-45deg); }
+
+/* Pill (labelled) form — icon + label, on the species page. */
+.sp-fi-btn.labelled { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px;
+  min-width: 0; min-height: 0; border-radius: 999px; font-size: 12px; color: var(--ink);
+  background: var(--card2); border: 1px solid var(--line); }
+.sp-fi-btn.labelled .sp-fi { color: var(--dim); }
+.sp-fi-btn.labelled.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
+  color: var(--facet-want); background: var(--accent-wash); }
+.sp-fi-btn.labelled.wanted .sp-fi { color: var(--facet-want); }
+.sp-fi-btn.labelled.excluded { border-color: var(--facet-block); color: var(--facet-block); opacity: .82; }
+.sp-fi-btn.labelled.excluded .sp-fi-txt { text-decoration: line-through; }
 
 /* =============================================================================
    PHOTO-FIRST (v24) — the standing camera chip + the weight-table dialog.
