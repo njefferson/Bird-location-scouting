@@ -916,8 +916,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi-lots .pi-glyph { opacity: 1; }
 .pi-some { color: var(--facet-some); }               /* OFF / maybe — dimmed glyph */
 .pi-some .pi-glyph { opacity: .6; }
-.pi-none { color: var(--facet-ghost); }              /* not expected — glyph stays readable */
-.pi-none .pi-glyph { opacity: .5; }                  /* legible like "maybe", so you can tell the group */
+.pi-none { color: var(--facet-some); }               /* not expected — SAME weight as "maybe", the red ✕ is the only difference */
+.pi-none .pi-glyph { opacity: .6; }                  /* match .pi-some exactly (was ghosted, read too light) */
 .pi-none::after {                                    /* small red ✕ over the centre — a crossed mark, NOT the filter's single slash */
   content: ''; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px;
   background:
