@@ -53,6 +53,13 @@
   --facet-block: #a0472f;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 16%, var(--card));
+  /* Presence traffic-light (card "Here this month" row). Hue carries the state
+     (green here / amber maybe / red not-expected) AND value steps monotonically
+     dark→light so it stays legible in grayscale — colour-blind users read the
+     lightness ramp when the hue is ambiguous. Per-theme so Dawn swaps. */
+  --pi-here: #4e7b41;   /* darkest */
+  --pi-maybe: #b6852b;  /* medium  */
+  --pi-none: #dd9077;   /* lightest */
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -90,6 +97,11 @@
   --facet-block: #e8795a;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 22%, var(--card));
+  /* Presence traffic-light, Dawn: same dark→light value ramp, lifted so all
+     three read on the near-black ground. */
+  --pi-here: #5f9a50;   /* darkest of the three, still bright enough on dark */
+  --pi-maybe: #d49a44;  /* medium  */
+  --pi-none: #f0a68d;   /* lightest */
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -914,12 +926,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
   width: 24px; height: 24px; color: var(--facet-ghost); }
 .pi-glyph, .pi-glyph svg { display: block; }
-/* Semantic traffic-light scale — the colour MEANS the state, not just differs:
-   green = here, amber = maybe, red = not expected. Palette-tuned tints (--park /
-   --warn / --live) so it stays gentle on the warm cream and swaps for Dawn. */
-.pi-lots { color: color-mix(in srgb, var(--park) 70%, #2e5a34); }   /* here — a deeper green than raw --park */
-.pi-some { color: var(--warn); }   /* maybe — amber */
-.pi-none { color: var(--live); }   /* not expected — red (the colour carries it; no ✕ needed) */
+/* Semantic traffic-light scale — colour MEANS the state (green here / amber maybe
+   / red not-expected), and value steps dark→light so it survives grayscale for
+   colour-blind users. Tokens defined per theme above. */
+.pi-lots { color: var(--pi-here); }   /* here — green, darkest */
+.pi-some { color: var(--pi-maybe); }  /* maybe — amber, medium */
+.pi-none { color: var(--pi-none); }   /* not expected — red, lightest */
 .pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
 
 /* === Always-on accordion filter (.ffp) ==================================== */
