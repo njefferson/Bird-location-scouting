@@ -920,6 +920,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi-lots { color: var(--accent); }                                       /* here */
 .pi-some { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }   /* maybe */
 .pi-none { color: color-mix(in srgb, var(--accent) 25%, var(--dim)); }   /* not expected (plus the red ✕) */
+.pi-none .pi-glyph { opacity: .72; }   /* the faintest step — absence recedes, without going ghosted */
 .pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
   content: ''; position: absolute; top: 1px; right: 1px; left: auto; width: 7px; height: 7px;
   background:
