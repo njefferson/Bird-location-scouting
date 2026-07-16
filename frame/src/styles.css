@@ -914,13 +914,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
   width: 24px; height: 24px; color: var(--facet-ghost); }
 .pi-glyph, .pi-glyph svg { display: block; }
-/* The icon itself carries the state — no separate dots/lights. */
-.pi-lots { color: var(--facet-lots); }               /* ON / here — lit */
-.pi-lots .pi-glyph { opacity: 1; }
-.pi-some { color: var(--facet-some); }               /* OFF / maybe — dimmed glyph */
-.pi-some .pi-glyph { opacity: .6; }
-.pi-none { color: color-mix(in srgb, var(--facet-some) 45%, var(--dim)); }  /* not expected — clearly greyer/cooler than warm "maybe" (plus the red ✕) */
-.pi-none .pi-glyph { opacity: .6; }                  /* same weight as .pi-some — separation is tone, not fading */
+/* Three EVEN steps of one warm family (accent → dim) so here / maybe / not-expected
+   read as a scale. Colour carries the step at uniform opacity — no opacity jump to
+   inflate the gap between "here" and the two dimmer states. */
+.pi-lots { color: var(--accent); }                                       /* here */
+.pi-some { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }   /* maybe */
+.pi-none { color: color-mix(in srgb, var(--accent) 25%, var(--dim)); }   /* not expected (plus the red ✕) */
 .pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
   content: ''; position: absolute; top: 1px; right: 1px; left: auto; width: 7px; height: 7px;
   background:
