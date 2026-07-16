@@ -226,6 +226,11 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star { color: var(--warn); }
 /* Informational facet mini-icons in tables / panels (type·size·nest·behaviour). */
 .sp-facets { display: inline-flex; align-items: center; gap: 5px; }
+/* Labelled variant (icon+word pills): let the pills wrap instead of stretching a
+   table column, and keep them tight so a row shows two-up rather than one wide line. */
+.sp-facets-labelled { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; vertical-align: middle; }
+.species-table td .sp-facets-labelled { max-width: 220px; }
+.sp-facets-labelled .sp-fi-btn.labelled { padding: 2px 8px 2px 6px; font-size: 11px; }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
 .spark { display: block; }
@@ -737,6 +742,22 @@ table.species-table tr[onclick] { cursor: pointer; }
 .fi.excluded { color: var(--facet-block); opacity: .75; }
 .fi.excluded::before { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 2px;
   background: var(--facet-block); transform: rotate(-45deg); }
+
+/* Present-guild tiles carry a caption under the glyph (absent ones stay bare).
+   The tile grows into a column; captions align to the top so a wrapped label
+   never shoves its neighbours' icons down. */
+.guild-row { align-items: flex-start; gap: 2px 4px; }
+.fi-glyph { display: grid; place-content: center; }
+.fi.has-cap { width: auto; height: auto; min-width: 44px; max-width: 68px; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 1px; padding: 3px 3px 4px; }
+.fi.has-cap::after { content: none; }            /* the caption + glyph colour carry presence */
+.fi-cap { font-size: 9.5px; line-height: 1.05; text-align: center; color: var(--dim);
+  max-width: 62px; overflow-wrap: anywhere; letter-spacing: .1px; }
+.fi.has-cap.fi-lots .fi-cap { color: var(--ink); }
+.fi.has-cap.wanted .fi-cap { color: var(--facet-want); }
+.fi.has-cap.excluded .fi-cap { color: var(--facet-block); text-decoration: line-through; }
+.fi.has-cap.excluded::before { top: 14px; }      /* slash crosses the icon, not the word */
 
 /* Standing filter bar — same shape as the target/new bars, in the park-green
    facet identity so the three modes never read as one another. */

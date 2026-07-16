@@ -20,9 +20,9 @@ import {
 // Size + behaviour facet icons — each a tri-state filter (tap to narrow the
 // browse list, and every ranked view, to birds like this one).
 function sizeBehaviorIcons(s, onChange) {
-  return el('span.sp-facets', {}, [
-    facetIconButton('size', s.size, { size: 18, onChange }),
-    facetIconButton('behavior', s.behavior, { size: 18, onChange }),
+  return el('span.sp-facets.sp-facets-labelled', {}, [
+    facetIconButton('size', s.size, { size: 16, label: true, onChange }),
+    facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
 }
 

@@ -280,13 +280,18 @@ function guildIconRow(h, monthIdx, nav) {
     const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'none noted';
     const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
     const filt = st === 'wanted' ? ' · wanted — tap to exclude' : st === 'excluded' ? ' · excluded — tap to clear' : ' · tap to want';
-    row.append(el('button.fi', {
-      class: [`fi-${level}`, inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
+    // Present guilds (some/lots this month) carry a caption naming the group;
+    // absent guilds stay bare icons so the row doesn't drown in 12 labels.
+    const present = level !== 'none';
+    const btn = el('button.fi', {
+      class: [`fi-${level}`, present ? 'has-cap' : '', inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
       title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}${filt}`,
       'aria-label': `${gu.label}: ${where}, filter ${st}`,
-      html: facetSvg(gu.icon),
       onclick: () => { cycleFacet('guild', key); nav.rerender(); },
-    }));
+    });
+    btn.append(el('span.fi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon) }));
+    if (present) btn.append(el('span.fi-cap', {}, gu.short || gu.label));
+    row.append(btn);
   }
   return row;
 }
@@ -454,8 +459,8 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
 // the standing filter bar (prepended here as this is a ranked view) shows the
 // exit. Re-render keeps the scroll so a tap deep in the table doesn't jump.
 function speciesFacetRow(s, nav) {
-  return el('div.sp-facets', {}, speciesFacetIcons(s).map((fi) =>
-    facetIconButton(fi.facet, fi.key, { size: 20, onChange: () => nav.rerenderKeep() })));
+  return el('div.sp-facets.sp-facets-labelled', {}, speciesFacetIcons(s).map((fi) =>
+    facetIconButton(fi.facet, fi.key, { size: 18, label: true, onChange: () => nav.rerenderKeep() })));
 }
 
 // =============================================================================
