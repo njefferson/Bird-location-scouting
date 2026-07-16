@@ -255,6 +255,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* In the species table the NAME is the headline each row supports — bigger,
    bolder, full ink, so the facet line / freq / marks read as secondary data. */
 .species-table td .bird-link { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+/* Right-justify the name so it sits against its data (the guild bird + facets). */
+.species-table th:nth-child(2), .species-table td.name-cell { text-align: right; }
 .species-table td.freq-cell { color: var(--dim); }
 /* external eBird link, shown on the species page */
 .ebird-link { font-size: 11px; color: var(--accent); text-decoration: none;
