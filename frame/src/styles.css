@@ -918,8 +918,7 @@ table.species-table tr[onclick] { cursor: pointer; }
    read as a scale. Colour carries the step at uniform opacity — no opacity jump to
    inflate the gap between "here" and the two dimmer states. */
 .pi-lots { color: var(--accent); }                                       /* here */
-.pi-some { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }   /* maybe */
-.pi-some .pi-glyph { opacity: .87; }   /* a touch lighter than "here", still above "not expected" */
+.pi-some { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }   /* maybe — solid, full weight */
 .pi-none { color: color-mix(in srgb, var(--accent) 25%, var(--dim)); }   /* not expected (plus the red ✕) */
 .pi-none .pi-glyph { opacity: .72; }   /* the faintest step — absence recedes, without going ghosted */
 .pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
