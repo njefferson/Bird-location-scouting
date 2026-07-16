@@ -917,7 +917,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Semantic traffic-light scale — the colour MEANS the state, not just differs:
    green = here, amber = maybe, red = not expected. Palette-tuned tints (--park /
    --warn / --live) so it stays gentle on the warm cream and swaps for Dawn. */
-.pi-lots { color: var(--park); }   /* here — green */
+.pi-lots { color: color-mix(in srgb, var(--park) 70%, #2e5a34); }   /* here — a deeper green than raw --park */
 .pi-some { color: var(--warn); }   /* maybe — amber */
 .pi-none { color: var(--live); }   /* not expected — red (the colour carries it; no ✕ needed) */
 .pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
