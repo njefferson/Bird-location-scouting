@@ -430,7 +430,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
-      el('td', {}, speciesFacetRow(r.s, nav)),
+      el('td', {}, speciesFacetRow(r.s)),
       el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
@@ -454,13 +454,14 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   ]));
 }
 
-// The four facet icons for one species — each a tri-state filter button (type ·
-// size · nest · behaviour). Tapping narrows every ranked view to that facet;
-// the standing filter bar (prepended here as this is a ranked view) shows the
-// exit. Re-render keeps the scroll so a tap deep in the table doesn't jump.
-function speciesFacetRow(s, nav) {
-  return el('div.sp-facets.sp-facets-labelled', {}, speciesFacetIcons(s).map((fi) =>
-    facetIconButton(fi.facet, fi.key, { size: 18, label: true, onChange: () => nav.rerenderKeep() })));
+// In the species table the facets are just information — a short italic
+// parenthetical line (type · size · nest · behaviour), lighter than the species
+// name, so the table stays short. Tap-to-filter lives on the card guild row, the
+// picker, the species page and the Target/Seen rows, not here.
+function speciesFacetRow(s) {
+  const parts = speciesFacetIcons(s).map((fi) =>
+    fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
+  return el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : '');
 }
 
 // =============================================================================
