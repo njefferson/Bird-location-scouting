@@ -921,13 +921,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi-some .pi-glyph { opacity: .6; }
 .pi-none { color: var(--facet-some); }               /* not expected — SAME weight as "maybe", the red ✕ is the only difference */
 .pi-none .pi-glyph { opacity: .6; }                  /* match .pi-some exactly (was ghosted, read too light) */
-.pi-none::after {                                    /* small thin red ✕, nudged low so the head/body silhouette stays readable */
-  content: ''; position: absolute; left: 50%; top: 58%; width: 6px; height: 6px;
-  transform: translate(-50%, -50%);
+.pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
+  content: ''; position: absolute; top: 1px; right: 1px; left: auto; width: 7px; height: 7px;
   background:
     linear-gradient(45deg, transparent 45%, var(--danger) 45%, var(--danger) 55%, transparent 55%),
     linear-gradient(-45deg, transparent 45%, var(--danger) 45%, var(--danger) 55%, transparent 55%);
-  filter: drop-shadow(0 0 1px var(--card)) drop-shadow(0 0 1px var(--card)); }  /* halo keeps it off the silhouette */
+  filter: drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1px var(--card)); }  /* stronger card halo separates it on any silhouette */
 .pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
 
 /* === Always-on accordion filter (.ffp) ==================================== */
