@@ -5,7 +5,7 @@
 import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetEntryChip, facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -139,8 +139,8 @@ export function renderCards(root, state, nav) {
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
     filterBar(state, (k) => nav.setFilter(k)),
-    facetEntryChip(nav),
     photoChip(nav),
+    facetFilterPanel(nav),
   ]));
 
   // Dead-end guard: a region with no built hotspot data shouldn't leave the
@@ -213,10 +213,8 @@ function card(r, state, nav) {
     ]),
   ]);
 
-  // The tappable guild icon row: which KINDS of birds are here this month, and
-  // the filter control in one. Computed over ALL species so brightness is
-  // honest even when a guild is filtered out.
-  const guildRow = guildIconRow(h, state.monthIdx, nav);
+  // Which KINDS of birds are here this month (info only — the filter is up top).
+  const guildRow = guildPresenceRow(h, state.monthIdx);
 
   const habs = el('div.habs', {}, (h.habitats || []).map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
 
@@ -274,32 +272,34 @@ function guildPresence(h, monthIdx) {
  * carries the guild's filter state (wanted ✓ / excluded ✕). Tapping cycles the
  * filter and re-renders.
  */
-function guildIconRow(h, monthIdx, nav) {
+// The per-hotspot presence row: which KINDS of birds are here THIS month, purely
+// informational (NOT the filter — that lives in the always-on panel up top). All
+// 12 guilds show in a fixed order for quick recognition; a present guild is lit
+// with a small corner dot ("here"), an absent one is ghosted with no dot ("not
+// expected"). Deliberately uses no ✓/✗ or ring/slash, so it never reads as the
+// tappable filter that shares these glyphs.
+function guildPresenceRow(h, monthIdx) {
   const { sums, realN } = guildPresence(h, monthIdx);
-  const row = el('div.facet-row.guild-row', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
+  const icons = el('div.presence-icons', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
   for (const key of GUILD_KEYS) {
     const g = sums[key] || 0;
     const level = g >= GUILD_LOTS ? 'lots' : g >= GUILD_SOME ? 'some' : 'none';
     const inferred = level !== 'none' && !realN[key];
-    const st = facetState('guild', key); // neutral | wanted | excluded
     const gu = GUILDS[key];
-    const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'none noted';
+    const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'not expected';
     const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
-    const filt = st === 'wanted' ? ' · wanted — tap to exclude' : st === 'excluded' ? ' · excluded — tap to clear' : ' · tap to want';
-    // Present guilds (some/lots this month) carry a caption naming the group;
-    // absent guilds stay bare icons so the row doesn't drown in 12 labels.
-    const present = level !== 'none';
-    const btn = el('button.fi', {
-      class: [`fi-${level}`, present ? 'has-cap' : '', inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
-      title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}${filt}`,
-      'aria-label': `${gu.label}: ${where}, filter ${st}`,
-      onclick: () => { cycleFacet('guild', key); nav.rerender(); },
-    });
-    btn.append(el('span.fi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon) }));
-    if (present) btn.append(el('span.fi-cap', {}, gu.short || gu.label));
-    row.append(btn);
+    const cell = el('span.pi', {
+      class: [`pi-${level}`, inferred ? 'pi-modeled' : ''].filter(Boolean).join(' '),
+      title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}`,
+      'aria-label': `${gu.label}: ${where}`,
+    }, [el('span.pi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon, 20) })]);
+    if (level !== 'none') cell.append(el('span.pi-dot', { 'aria-hidden': 'true' }));
+    icons.append(cell);
   }
-  return row;
+  return el('div.presence-row', {}, [
+    el('span.presence-label', {}, 'Here this month'),
+    icons,
+  ]);
 }
 
 function toggleNotes(_, h) {
@@ -400,7 +400,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
         onclick: () => openIconInfo(ranked, MONTHS[state.monthIdx]),
       }, [`${MONTHS[state.monthIdx]} · ${ranked.diversity} species likely`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]),
       trustBadge(ranked.trust), nBadge(ranked.n)]),
-    guildIconRow(h, state.monthIdx, nav),
+    guildPresenceRow(h, state.monthIdx),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 

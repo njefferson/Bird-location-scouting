@@ -882,6 +882,71 @@ table.species-table tr[onclick] { cursor: pointer; }
 .photo-entry.photo-on .facet-entry-mark, .photo-entry.photo-on .facet-entry-go { color: var(--accent); }
 .photo-entry.photo-on .facet-entry-main { color: var(--accent-ink); }
 
+/* === Photo-first: a REAL toggle (not a menu) ============================== */
+.photo-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.photo-toggle { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 8px 12px; border-radius: 999px; cursor: pointer; color: var(--ink);
+  border: 1px solid var(--line); background: var(--card2); }
+.photo-toggle-mark { flex: 0 0 auto; color: var(--dim); display: inline-grid; place-content: center; }
+.photo-toggle-mark svg { width: 20px; height: 20px; display: block; }
+.photo-toggle-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.photo-toggle-main strong { font-size: 13px; }
+.photo-toggle-sub { font-size: 11px; color: var(--dim); }
+.photo-toggle-state { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .6px;
+  padding: 3px 9px; border-radius: 999px; background: var(--line); color: var(--dim); }
+.photo-toggle:active { transform: scale(.99); }
+.photo-toggle.on { border-color: var(--accent); background: var(--accent-wash); }
+.photo-toggle.on .photo-toggle-mark { color: var(--accent); }
+.photo-toggle.on .photo-toggle-main strong { color: var(--accent-ink); }
+.photo-toggle.on .photo-toggle-state { background: var(--accent); color: var(--card); }
+.photo-toggle-info { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--dim); font-size: 15px;
+  display: grid; place-content: center; }
+
+/* === Card presence row — INFO ONLY (not the filter) ======================= */
+.presence-row { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }
+.presence-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.presence-icons { display: flex; align-items: center; gap: 1px; flex-wrap: nowrap; width: 100%;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
+  width: 24px; height: 24px; color: var(--facet-ghost); }
+.pi-glyph, .pi-glyph svg { display: block; }
+.pi-some { color: var(--facet-some); }
+.pi-lots { color: var(--facet-lots); }
+.pi-none { opacity: .5; }                       /* not-expected: ghosted, no dot */
+.pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
+.pi-dot { position: absolute; top: 2px; right: 1px; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--facet-lots); box-shadow: 0 0 0 1.5px var(--card); }   /* "here" */
+.pi-some .pi-dot { width: 4px; height: 4px; background: var(--facet-some); }
+
+/* === Always-on accordion filter (.ffp) ==================================== */
+.ffp { margin-top: 8px; padding: 8px 10px 10px; border-radius: var(--r);
+  border: 1px solid var(--facet-mode); background: var(--facet-mode-wash); }
+.ffp-cats { display: flex; gap: 6px; }
+.ffp-cat { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; padding: 8px 4px 11px; border: 1px solid transparent;
+  border-radius: 10px; background: var(--card); color: var(--dim); cursor: pointer; }
+.ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
+.ffp-cat-ico svg { width: 23px; height: 23px; display: block; transition: width .1s, height .1s; }
+.ffp-cat-label { font-size: 11px; color: var(--ink); }
+.ffp-cat-count { position: absolute; top: 3px; left: 3px; min-width: 15px; height: 15px; padding: 0 3px;
+  border-radius: 8px; background: var(--facet-mode); color: var(--card); font-size: 9px; font-weight: 700;
+  display: grid; place-content: center; }
+.ffp-cat-chev { position: absolute; right: 5px; bottom: 3px; font-size: 10px; line-height: 1; color: var(--facet-mode); }
+.ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
+.ffp-cat.open .ffp-cat-ico svg { width: 27px; height: 27px; }
+.ffp-vals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ffp-help { font-size: 11px; color: var(--dim); margin: 6px 2px 0; }
+.ffp-lights { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px;
+  padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--facet-mode) 30%, transparent); }
+.ffp-lights-empty { font-size: 11px; color: var(--dim); }
+.ffp-light { display: inline-grid; place-content: center; width: 22px; height: 22px; border-radius: 6px; }
+.ffp-light-ico svg { width: 15px; height: 15px; display: block; }
+.ffp-light.want { color: var(--facet-want); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--facet-want); }
+.ffp-light.exclude { color: var(--facet-block); background: color-mix(in srgb, var(--facet-block) 12%, transparent); box-shadow: inset 0 0 0 1px var(--facet-block); }
+.ffp-clear { margin-left: auto; font-size: 11px; color: var(--facet-mode); background: none; border: 0;
+  cursor: pointer; text-decoration: underline; padding: 2px 4px; }
+
 .pw-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .pw-row { display: flex; align-items: center; gap: 10px; }
 .pw-icon { flex: 0 0 auto; color: var(--ink); display: inline-grid; place-content: center; }

@@ -12,6 +12,20 @@ import { facetState, cycleFacet, clearFacets, facetsActive, facetSummary } from 
 // Funnel glyph shared by the bar mark and the entry chip.
 const FUNNEL = facetSvg('<path d="M3 5h18l-7 8v6l-4-2v-6z"/>', 18);
 
+// One glyph per facet CATEGORY (the accordion head). Nest & Behaviour reuse a
+// representative value glyph; Type & Size get simple purpose-built marks.
+const _vals = (k) => FACETS.find((f) => f.key === k).values;
+const CAT_ICON = {
+  guild: '<path d="M3.5 12.6c0-2.5 2-4.6 4.6-4.6 1.5 0 2.8.7 3.7 1.7L20 8l-3.7 3.6c.3.6.4 1.3.4 2 0 2.9-2.6 4.9-6.6 4.9s-6.6-2.4-6.6-4.9z"/><circle cx="8" cy="11.4" r="1" fill="currentColor" stroke="none"/>',
+  size: '<circle cx="7" cy="15" r="2.6"/><circle cx="16" cy="11" r="5.4"/>',
+  nest: _vals('nest').bowl.icon,
+  behavior: _vals('behavior').open.icon,
+};
+
+// Which accordion category is expanded. Module-level so it survives nav.rerender()
+// (a facet tap re-ranks the whole view, which rebuilds this panel).
+let OPEN_CAT = null;
+
 /**
  * A dim guild silhouette for a species — the "kind of bird" cue shown alongside
  * a bird's name/facets wherever it's listed (guild-level; there is no per-species
@@ -71,6 +85,71 @@ export function facetEntryChip(nav) {
     el('span.facet-entry-go', { 'aria-hidden': 'true' }, on ? '⋯' : '+'),
   ]);
   return chip;
+}
+
+/**
+ * The always-on filter for the Ranking header. A horizontal accordion: four
+ * category buttons (Type / Size / Nest / Behaviour), each with a corner chevron
+ * that signals it expands. Tapping one opens its value pills (tri-state: tap to
+ * want, again to exclude, again to clear) and collapses the others. A small
+ * three-tap explainer sits under the open values, and a compact always-visible
+ * "lights" row below summarises what's currently filtered. Replaces the old
+ * "Filter by bird" chip + modal picker, and never shares the card's presence look.
+ */
+export function facetFilterPanel(nav) {
+  const panel = el('div.ffp');
+  const cats = el('div.ffp-cats');
+  FACETS.forEach((f) => {
+    const open = OPEN_CAT === f.key;
+    const sub = facetSummary().find((s) => s.facet === f.key);
+    const n = sub ? sub.wanted.length + sub.excluded.length : 0;
+    cats.append(el('button.ffp-cat' + (open ? '.open' : ''), {
+      'aria-expanded': open ? 'true' : 'false',
+      title: open ? `Hide ${f.label.toLowerCase()} options` : `Filter by ${f.label.toLowerCase()}`,
+      onclick: () => { OPEN_CAT = open ? null : f.key; nav.rerender(); },
+    }, [
+      el('span.ffp-cat-ico', { 'aria-hidden': 'true', html: facetSvg(CAT_ICON[f.key], 22) }),
+      el('span.ffp-cat-label', {}, f.label),
+      n ? el('span.ffp-cat-count', { title: `${n} set` }, String(n)) : null,
+      el('span.ffp-cat-chev', { 'aria-hidden': 'true' }, open ? '▾' : '▸'),
+    ]));
+  });
+  panel.append(cats);
+
+  if (OPEN_CAT) {
+    const f = FACETS.find((x) => x.key === OPEN_CAT);
+    const vals = el('div.ffp-vals', {}, Object.values(f.values).map((v) =>
+      facetIconButton(f.key, v.key, { size: 18, label: true, onChange: () => nav.rerender() })));
+    panel.append(vals);
+    panel.append(el('p.ffp-help', {}, 'Tap once to want it · twice to exclude · again to clear.'));
+  }
+
+  panel.append(statusLights(nav));
+  return panel;
+}
+
+// Compact, always-visible summary of what's filtered — a small "light" per set
+// value (accent = wanted, red = excluded); neutral values are simply absent.
+function statusLights(nav) {
+  const active = facetSummary();
+  const wrap = el('div.ffp-lights');
+  if (!active.length) {
+    wrap.append(el('span.ffp-lights-empty', {}, 'Showing all birds — open a category to filter.'));
+    return wrap;
+  }
+  active.forEach((fs) => {
+    const f = FACETS.find((x) => x.key === fs.facet);
+    fs.wanted.forEach((k) => wrap.append(statusLight(f, k, 'want')));
+    fs.excluded.forEach((k) => wrap.append(statusLight(f, k, 'exclude')));
+  });
+  wrap.append(el('button.ffp-clear', { title: 'Clear all filters', onclick: () => { clearFacets(); nav.rerender(); } }, 'Clear'));
+  return wrap;
+}
+function statusLight(f, valueKey, kind) {
+  const v = f.values[valueKey];
+  return el(`span.ffp-light.${kind}`, {
+    title: `${f.label}: ${v.label} — ${kind === 'want' ? 'wanted' : 'excluded'}`,
+  }, el('span.ffp-light-ico', { 'aria-hidden': 'true', html: facetSvg(v.icon, 15) }));
 }
 
 /**
