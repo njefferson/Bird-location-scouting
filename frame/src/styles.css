@@ -914,19 +914,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
   width: 24px; height: 24px; color: var(--facet-ghost); }
 .pi-glyph, .pi-glyph svg { display: block; }
-/* Three EVEN steps of one warm family (accent → dim) so here / maybe / not-expected
-   read as a scale. Colour carries the step at uniform opacity — no opacity jump to
-   inflate the gap between "here" and the two dimmer states. */
-.pi-lots { color: var(--accent); }                                       /* here */
-.pi-some { color: color-mix(in srgb, var(--accent) 60%, var(--dim)); }   /* maybe — solid, full weight */
-.pi-none { color: color-mix(in srgb, var(--accent) 25%, var(--dim)); }   /* not expected (plus the red ✕) */
-.pi-none .pi-glyph { opacity: .72; }   /* the faintest step — absence recedes, without going ghosted */
-.pi-none::after {                                    /* small thin red ✕ at the icon's top-right — over the emptier corner so it reads on dark birds, still clearly on this icon */
-  content: ''; position: absolute; top: 1px; right: 1px; left: auto; width: 7px; height: 7px;
-  background:
-    linear-gradient(45deg, transparent 45%, var(--danger) 45%, var(--danger) 55%, transparent 55%),
-    linear-gradient(-45deg, transparent 45%, var(--danger) 45%, var(--danger) 55%, transparent 55%);
-  filter: drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1px var(--card)); }  /* stronger card halo separates it on any silhouette */
+/* Semantic traffic-light scale — the colour MEANS the state, not just differs:
+   green = here, amber = maybe, red = not expected. Palette-tuned tints (--park /
+   --warn / --live) so it stays gentle on the warm cream and swaps for Dawn. */
+.pi-lots { color: var(--park); }   /* here — green */
+.pi-some { color: var(--warn); }   /* maybe — amber */
+.pi-none { color: var(--live); }   /* not expected — red (the colour carries it; no ✕ needed) */
 .pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
 
 /* === Always-on accordion filter (.ffp) ==================================== */
