@@ -911,13 +911,19 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
   width: 24px; height: 24px; color: var(--facet-ghost); }
 .pi-glyph, .pi-glyph svg { display: block; }
-.pi-some { color: var(--facet-some); }
-.pi-lots { color: var(--facet-lots); }
-.pi-none { opacity: .5; }                       /* not-expected: ghosted, no dot */
+/* The icon itself carries the state — no separate dots/lights. */
+.pi-lots { color: var(--facet-lots); }               /* ON / here — lit */
+.pi-lots .pi-glyph { opacity: 1; }
+.pi-some { color: var(--facet-some); }               /* OFF / maybe — dimmed glyph */
+.pi-some .pi-glyph { opacity: .6; }
+.pi-none { color: var(--facet-ghost); }              /* ✕ / not expected */
+.pi-none .pi-glyph { opacity: .32; }                 /* glyph fades back so the ✕ reads */
+.pi-none::after {                                    /* small centred ✕ in a neutral dim — NOT the filter's red slash */
+  content: ''; position: absolute; inset: 0; margin: auto; width: 9px; height: 9px; opacity: .7;
+  background:
+    linear-gradient(45deg, transparent 43%, var(--dim) 43%, var(--dim) 57%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, var(--dim) 43%, var(--dim) 57%, transparent 57%); }
 .pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
-.pi-dot { position: absolute; top: 2px; right: 1px; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--facet-lots); box-shadow: 0 0 0 1.5px var(--card); }   /* "here" */
-.pi-some .pi-dot { width: 4px; height: 4px; background: var(--facet-some); }
 
 /* === Always-on accordion filter (.ffp) ==================================== */
 .ffp { margin-top: 8px; padding: 8px 10px 10px; border-radius: var(--r);

@@ -274,10 +274,10 @@ function guildPresence(h, monthIdx) {
  */
 // The per-hotspot presence row: which KINDS of birds are here THIS month, purely
 // informational (NOT the filter — that lives in the always-on panel up top). All
-// 12 guilds show in a fixed order for quick recognition; a present guild is lit
-// with a small corner dot ("here"), an absent one is ghosted with no dot ("not
-// expected"). Deliberately uses no ✓/✗ or ring/slash, so it never reads as the
-// tappable filter that shares these glyphs.
+// 12 guilds show in a fixed order for quick recognition; the icon itself carries
+// the state — lit ("here"/lots), dimmed ("maybe"/some), or wearing a small ✕
+// ("not expected"/none). Deliberately uses no ✓/✗ or ring/slash, so it never
+// reads as the tappable filter that shares these glyphs.
 function guildPresenceRow(h, monthIdx) {
   const { sums, realN } = guildPresence(h, monthIdx);
   const icons = el('div.presence-icons', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
@@ -293,7 +293,6 @@ function guildPresenceRow(h, monthIdx) {
       title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}`,
       'aria-label': `${gu.label}: ${where}`,
     }, [el('span.pi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon, 20) })]);
-    if (level !== 'none') cell.append(el('span.pi-dot', { 'aria-hidden': 'true' }));
     icons.append(cell);
   }
   return el('div.presence-row', {}, [
