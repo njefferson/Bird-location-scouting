@@ -6,7 +6,7 @@ tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
 ## v27 — 2026-07-15
-- The bottom tab bar is now its own surface. In bright light the floating bar used to be the brightest thing on screen and would blend into the pale cards behind it — so it was easy to lose the very control you navigate with. It’s now a distinct, slightly deeper tone than the cards (like the board of a field notebook under its pages), with a firmer edge and a clearer shadow, so it always stands out as a solid control — in both the light and Dawn themes.
+- The bottom tab bar is now its own surface. In bright light the floating bar used to blend into the pale cards and the warm background behind it — so it was easy to lose the very control you navigate with. It now sits on a distinct, neutral slate-taupe bar with light icons that stands clear of the warm cream of the rest of the app, with a firmer edge and a clearer shadow — so it always reads as a solid control, in both the light and Dawn themes.
 
 ## v26 — 2026-07-15
 - Frame now tells you how old its data is — and stays useful as it ages. The app runs on eBird histograms that refresh every quarter, but those describe which birds turn up in which months: seasonal patterns that stay reliable for years. So if a refresh is ever missed for a long stretch, Frame doesn’t pretend to be current. Once the data passes about a year and a half old, a calm notice appears at the top of the screen telling you the month it was last updated and reassuring you the seasonal patterns still hold; past three years it honestly calls itself an archive. You can dismiss the notice, and the exact build date always lives in Settings.

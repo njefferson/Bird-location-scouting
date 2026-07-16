@@ -31,16 +31,19 @@
   /* County boundaries: near-black and dashed — a man-made line should read as
      one, distinct from red roads and blue rivers. */
   --boundary: #2e2618;
-  /* Tab dock (v27) — the nav is its OWN surface, not the brightest cream of all.
-     A brighter-than-the-cards dock disappeared into them in bright light; the
-     fix is a tonal shift, not just an outline. Think of the Field Notebook:
-     the dock is the board/cover, a step DEEPER and warmer than the cream pages,
-     so it always reads as a distinct control. Plus a firm border, a layered
-     warm shadow (alive, not crushed), and a soft top sheen. Recompute per theme. */
-  --dock: #e5d7b6;
-  --dock-line: #bfa875;
-  --dock-shadow: 0 1px 2px rgba(60,40,10,.18), 0 8px 18px rgba(60,40,10,.16), 0 22px 44px rgba(60,40,10,.22);
-  --dock-lip: inset 0 1px 0 rgba(255,255,255,.55);
+  /* Tab dock (v27) — the nav is its OWN surface. Everything else in the app is
+     warm cream (bright cards, tan page): any warm-and-light dock blended into
+     one or the other in bright light. So the dock breaks from the palette
+     entirely — a neutral, desaturated deep taupe with LIGHT icons, a bar that
+     can't be mistaken for either the cards or the background, in either theme.
+     --tab-ink / --tab-ink-active relight the tab glyphs for the dark surface
+     (kept separate from the app-wide --dim / --accent). Recompute per theme. */
+  --dock: #8f7f66;
+  --dock-line: #6b5d45;
+  --dock-shadow: 0 1px 2px rgba(40,30,10,.22), 0 8px 18px rgba(40,30,10,.18), 0 22px 44px rgba(40,30,10,.24);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.16);
+  --tab-ink: #efe6d4;
+  --tab-ink-active: #f6b45c;
   /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
      for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
   --facet-lots: var(--accent);
@@ -72,10 +75,14 @@
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
-  --dock: #3b3220; /* lifted + warmer than the cards so the nav reads as its own raised bar */
-  --dock-line: #5f4e37;
+  /* Same neutral-taupe bar, tuned for low light: a deep taupe clearly lifted
+     off the near-black warm cards, with light glyphs. */
+  --dock: #4a4436;
+  --dock-line: #6a6047;
   --dock-shadow: 0 1px 2px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.5), 0 22px 46px rgba(0,0,0,.55);
-  --dock-lip: inset 0 1px 0 rgba(255,255,255,.07);
+  --dock-lip: inset 0 1px 0 rgba(255,255,255,.09);
+  --tab-ink: #d8ccb5;
+  --tab-ink-active: #f0a94e;
   --facet-lots: var(--accent);
   --facet-some: color-mix(in srgb, var(--accent) 52%, var(--dim));
   --facet-ghost: color-mix(in srgb, var(--dim) 40%, transparent);
@@ -434,9 +441,9 @@ table.species-table tr[onclick] { cursor: pointer; }
   border: 1px solid var(--dock-line); border-radius: var(--r); overflow: hidden;
   box-shadow: var(--dock-shadow), var(--dock-lip);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
-.tab { background: none; border: 0; color: var(--dim); display: flex; flex-direction: column;
+.tab { background: none; border: 0; color: var(--tab-ink); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }
-.tab.active { color: var(--accent); }
+.tab.active { color: var(--tab-ink-active); }
 .tab-icon { display: flex; align-items: center; justify-content: center; line-height: 0; }
 
 /* Floating corner buttons hug the content column on wide screens (the .view
