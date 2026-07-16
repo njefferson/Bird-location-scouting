@@ -160,7 +160,10 @@ function render(opts = {}) {
   if (rankedView) {
     const tb = targetBar(state, nav, render); if (tb) app.prepend(tb);
     const nb = newBirdsBar(state, nav, render); if (nb) app.prepend(nb);
-    const fb = facetBar(state, nav, render); if (fb) app.prepend(fb);
+    // The Ranking view (#/) carries the always-on filter panel in its header, so
+    // its standing facet bar would be redundant; the other ranked views (Planner,
+    // Map, hotspot detail) still get it to show + clear an active filter.
+    const fb = h === '#/' ? null : facetBar(state, nav, render); if (fb) app.prepend(fb);
   }
   // Honest-aging notice — a truth about the whole dataset, so it rides every
   // main view (just under the region pills), not only the ranked ones. Null

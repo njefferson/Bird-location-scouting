@@ -15,7 +15,7 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton } from './facetbar.js';
+import { facetBar, facetIconButton, guildBird } from './facetbar.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -33,6 +33,7 @@ function primaryHabitat(s) {
 // the browse list below (and every ranked view) to birds like this one.
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
+    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
@@ -42,16 +43,27 @@ function sizeBehaviorIcons(s, onChange) {
  * A star toggle for one species. `onToggle(nowTarget)` lets the caller update
  * its own surrounding UI (counts, banners) without a full re-render.
  */
+// The target ("shot list") mark is a CAMERA — this is a photographer's want-list.
+// Same body as the photo-first camera (ui/photo.js) so the app keeps one camera
+// silhouette. OFF = outline; ON = filled with the lens knocked out (evenodd) so
+// it reads as a solid, gold camera. Size comes from CSS.
+const CAM_BODY = 'M4 8h3.2l1.9-2.5h5.8L16.8 8H20a1.5 1.5 0 0 1 1.5 1.5V18a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9.5A1.5 1.5 0 0 1 4 8z';
+export function cameraMark(on) {
+  return on
+    ? `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="${CAM_BODY}M12 10.7a2.7 2.7 0 1 0 0 5.4 2.7 2.7 0 0 0 0-5.4z"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${CAM_BODY}"/><circle cx="12" cy="13.4" r="3.1"/></svg>`;
+}
+
 export function starButton(s, onToggle) {
   const btn = el('button.star-btn', {
-    'aria-label': isTarget(s.name) ? `Remove ${s.name} from your targets` : `Add ${s.name} to your targets`,
-    title: isTarget(s.name) ? 'In your targets — tap to remove' : 'Add to your targets',
+    'aria-label': isTarget(s.name) ? `Remove ${s.name} from your shot list` : `Add ${s.name} to your shot list`,
+    title: isTarget(s.name) ? 'On your shot list — tap to remove' : 'Add to your shot list',
   });
   const paint = () => {
     const on = isTarget(s.name);
     btn.classList.toggle('on', on);
-    btn.textContent = on ? '★' : '☆';
-    btn.title = on ? 'In your targets — tap to remove' : 'Add to your targets';
+    btn.innerHTML = cameraMark(on);
+    btn.title = on ? 'On your shot list — tap to remove' : 'Add to your shot list';
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   };
   btn.addEventListener('click', (ev) => {
@@ -74,7 +86,7 @@ export function targetBar(state, nav, rerender) {
   if (!targetsRankActive()) return null;
   const n = targetCount();
   const bar = el('div.targetbar.engaged');
-  bar.append(el('span.tb-mark', { 'aria-hidden': 'true' }, '★'));
+  bar.append(el('span.tb-mark', { 'aria-hidden': 'true', html: cameraMark(true) }));
   bar.append(el('span.tb-label', {}, [
     el('strong', {}, `Ranking by presence of your ${n} target bird${n === 1 ? '' : 's'}`),
     ' — how often they’re here.',

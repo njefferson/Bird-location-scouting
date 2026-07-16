@@ -5,7 +5,7 @@
 import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetEntryChip, facetBar, facetIconButton } from './facetbar.js';
+import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -18,7 +18,7 @@ import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.j
 import { rankingSpec } from '../model/lists.js';
 import { isTarget, targetCount, targetsRankOn, setTargetsRank, targetsRankActive } from '../model/targets.js';
 import { isSeen, seenCount, newBirdsOn, setNewBirds, newBirdsActive } from '../model/seen.js';
-import { starButton } from './targets.js';
+import { starButton, cameraMark } from './targets.js';
 import { seenButton } from './seen.js';
 import { getHotspots, regionMeta, regions, savedRegions, canAddRegion, activeRegion, regionCenter } from '../model/regions.js';
 import { autoSwitchEnabled, setAutoSwitch } from '../model/geo.js';
@@ -41,6 +41,12 @@ function speciesLink(cls, s, state, nav) {
     title: `See ${s.name} in the planner`,
     onclick: (ev) => { ev.preventDefault(); state.speciesQuery = s.name; nav.go('#/species'); },
   }, s.name);
+}
+
+// Filled check-circle for the "Birds I've seen" entry — a bird you've ticked off
+// (the disc is currentColor/slate, the check knocked out via evenodd).
+function seenMark() {
+  return '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM10.6 16.2 6.4 12 8 10.4 10.6 13 16 7.6 17.6 9.2Z"/></svg>';
 }
 
 // External link to a species' full eBird page (kept available from the Species view).
@@ -133,8 +139,8 @@ export function renderCards(root, state, nav) {
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
     filterBar(state, (k) => nav.setFilter(k)),
-    facetEntryChip(nav),
     photoChip(nav),
+    facetFilterPanel(nav),
   ]));
 
   // Dead-end guard: a region with no built hotspot data shouldn't leave the
@@ -207,10 +213,8 @@ function card(r, state, nav) {
     ]),
   ]);
 
-  // The tappable guild icon row: which KINDS of birds are here this month, and
-  // the filter control in one. Computed over ALL species so brightness is
-  // honest even when a guild is filtered out.
-  const guildRow = guildIconRow(h, state.monthIdx, nav);
+  // Which KINDS of birds are here this month (info only — the filter is up top).
+  const guildRow = guildPresenceRow(h, state.monthIdx);
 
   const habs = el('div.habs', {}, (h.habitats || []).map((k) => el('span.hab', { title: HABITATS[k]?.blurb }, HABITATS[k]?.label || k)));
 
@@ -268,32 +272,33 @@ function guildPresence(h, monthIdx) {
  * carries the guild's filter state (wanted ✓ / excluded ✕). Tapping cycles the
  * filter and re-renders.
  */
-function guildIconRow(h, monthIdx, nav) {
+// The per-hotspot presence row: which KINDS of birds are here THIS month, purely
+// informational (NOT the filter — that lives in the always-on panel up top). All
+// 12 guilds show in a fixed order for quick recognition; the icon itself carries
+// the state — lit ("here"/lots), dimmed ("maybe"/some), or wearing a small ✕
+// ("not expected"/none). Deliberately uses no ✓/✗ or ring/slash, so it never
+// reads as the tappable filter that shares these glyphs.
+function guildPresenceRow(h, monthIdx) {
   const { sums, realN } = guildPresence(h, monthIdx);
-  const row = el('div.facet-row.guild-row', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
+  const icons = el('div.presence-icons', { role: 'group', 'aria-label': `Bird groups at ${h.name} in ${MONTHS[monthIdx]}` });
   for (const key of GUILD_KEYS) {
     const g = sums[key] || 0;
     const level = g >= GUILD_LOTS ? 'lots' : g >= GUILD_SOME ? 'some' : 'none';
     const inferred = level !== 'none' && !realN[key];
-    const st = facetState('guild', key); // neutral | wanted | excluded
     const gu = GUILDS[key];
-    const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'none noted';
+    const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'not expected';
     const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
-    const filt = st === 'wanted' ? ' · wanted — tap to exclude' : st === 'excluded' ? ' · excluded — tap to clear' : ' · tap to want';
-    // Present guilds (some/lots this month) carry a caption naming the group;
-    // absent guilds stay bare icons so the row doesn't drown in 12 labels.
-    const present = level !== 'none';
-    const btn = el('button.fi', {
-      class: [`fi-${level}`, present ? 'has-cap' : '', inferred ? 'inferred' : '', st !== 'neutral' ? st : ''].filter(Boolean).join(' '),
-      title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}${filt}`,
-      'aria-label': `${gu.label}: ${where}, filter ${st}`,
-      onclick: () => { cycleFacet('guild', key); nav.rerender(); },
-    });
-    btn.append(el('span.fi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon) }));
-    if (present) btn.append(el('span.fi-cap', {}, gu.short || gu.label));
-    row.append(btn);
+    const cell = el('span.pi', {
+      class: [`pi-${level}`, inferred ? 'pi-modeled' : ''].filter(Boolean).join(' '),
+      title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}`,
+      'aria-label': `${gu.label}: ${where}`,
+    }, [el('span.pi-glyph', { 'aria-hidden': 'true', html: facetSvg(gu.icon, 20) })]);
+    icons.append(cell);
   }
-  return row;
+  return el('div.presence-row', {}, [
+    el('span.presence-label', {}, 'Here this month'),
+    icons,
+  ]);
 }
 
 function toggleNotes(_, h) {
@@ -394,7 +399,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
         onclick: () => openIconInfo(ranked, MONTHS[state.monthIdx]),
       }, [`${MONTHS[state.monthIdx]} · ${ranked.diversity} species likely`, el('span.score-q', { 'aria-hidden': 'true' }, '?')]),
       trustBadge(ranked.trust), nBadge(ranked.n)]),
-    guildIconRow(h, state.monthIdx, nav),
+    guildPresenceRow(h, state.monthIdx),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
@@ -429,9 +434,9 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     };
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
-      el('td', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
+      el('td.name-cell', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
       el('td', {}, speciesFacetRow(r.s)),
-      el('td', { title: r.fNow.rule }, pct(r.fNow.value)),
+      el('td.freq-cell', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
     return tr;
@@ -447,7 +452,8 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     root.append(more);
   }
   root.append(el('p.legend', {}, [
-    '★ = target (see where & when on your list). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
+    el('span.leg-ico', { 'aria-hidden': 'true', html: cameraMark(true) }),
+    ' = your shot list (see where & when to find it). ✓ = seen (dimmed here, kept in every count). * = inferred from the habitat/season model (hover for the rule). Facet icons are type · size · nest · behaviour — behavioural likelihood, not promises.',
     spec.targetsMode ? el('span', {}, ' The count above uses only your target birds.') : null,
     spec.newMode ? el('span', {}, ' The count above counts only birds you haven’t got yet.') : null,
     spec.facetsMode ? el('span', {}, ' The count above uses only birds matching your icon filters.') : null,
@@ -461,7 +467,10 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
 function speciesFacetRow(s) {
   const parts = speciesFacetIcons(s).map((fi) =>
     fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
-  return el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : '');
+  return el('span.sp-facet-line', {}, [
+    guildBird(s),
+    el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : ''),
+  ]);
 }
 
 // =============================================================================
@@ -474,23 +483,24 @@ export function renderSpecies(root, state, nav) {
     el('span.subtitle', {}, 'Where in your region, and which month, to photograph one bird.'),
   ]));
 
-  // Target-birds entry: star birds to see where & when to find them.
+  // Target-birds entry: add birds to your shot list to see where & when.
   const n = targetCount();
   root.append(el('button.tg-entry', { onclick: () => nav.go('#/targets') }, [
-    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '★'),
+    el('span.tg-entry-mark', { 'aria-hidden': 'true', html: cameraMark(true) }),
     el('span.tg-entry-main', {}, [
       el('strong', {}, n ? `Your ${n} target bird${n === 1 ? '' : 's'}` : 'Pick your target birds'),
       el('span.dim', {}, n
         ? (targetsRankActive() ? 'ranking spots by their presence — tap to edit' : 'tap to see where & when, or edit')
-        : 'star the birds you want — see where and when to find each one'),
+        : 'pick the birds you want to photograph — see where and when to find each one'),
     ]),
     el('span.tg-entry-go', { 'aria-hidden': 'true' }, '›'),
   ]));
 
-  // Seen / life-list entry: track what you've got, focus on what's new.
+  // Seen / life-list entry: track what you've got, focus on what's new. The mark
+  // is a check — a bird you've already got, ticked off (parallels the seen ✓).
   const sn = seenCount();
   root.append(el('button.tg-entry.seen-entry', { onclick: () => nav.go('#/seen') }, [
-    el('span.tg-entry-mark', { 'aria-hidden': 'true' }, '✦'),
+    el('span.tg-entry-mark', { 'aria-hidden': 'true', html: seenMark() }),
     el('span.tg-entry-main', {}, [
       el('strong', {}, sn ? `${sn} bird${sn === 1 ? '' : 's'} on your life list` : 'Birds I’ve seen'),
       el('span.dim', {}, sn

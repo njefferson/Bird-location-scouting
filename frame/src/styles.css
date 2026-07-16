@@ -53,6 +53,13 @@
   --facet-block: #a0472f;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 16%, var(--card));
+  /* Presence traffic-light (card "Here this month" row). Hue carries the state
+     (green here / amber maybe / red not-expected) AND value steps monotonically
+     dark→light so it stays legible in grayscale — colour-blind users read the
+     lightness ramp when the hue is ambiguous. Per-theme so Dawn swaps. */
+  --pi-here: #4e7b41;   /* darkest */
+  --pi-maybe: #b6852b;  /* medium  */
+  --pi-none: #dd9077;   /* lightest */
   /* Type superfamily — IBM Plex (serif = wordmark/names/titles, sans = chrome,
      mono = every number). */
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -90,6 +97,11 @@
   --facet-block: #e8795a;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 22%, var(--card));
+  /* Presence traffic-light, Dawn: same dark→light value ramp, lifted so all
+     three read on the near-black ground. */
+  --pi-here: #5f9a50;   /* darkest of the three, still bright enough on dark */
+  --pi-maybe: #d49a44;  /* medium  */
+  --pi-none: #f0a68d;   /* lightest */
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -230,7 +242,14 @@ table.species-table tr[onclick] { cursor: pointer; }
    table column, and keep them tight so a row shows two-up rather than one wide line. */
 .sp-facets-labelled { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; vertical-align: middle; }
 .sp-facets-labelled .sp-fi-btn.labelled { padding: 2px 8px 2px 6px; font-size: 11px; }
-/* Species-table facets are info only: one short italic line, lighter than the name. */
+/* Species facets: a guild silhouette leads the row (in front of the text, a
+   clear "kind of bird" cue — dim so it stays quieter than the species name),
+   then a short italic info line. Same bird leads the Target/Seen pill rows and
+   sits by the name on a species' own page. */
+.sp-facet-line { display: inline-flex; align-items: flex-start; gap: 6px; }
+.sp-facet-bird { flex: 0 0 auto; color: var(--dim); opacity: .7; }
+.sp-facet-bird svg { display: block; }
+.sp-facet-line .sp-facet-bird { margin-top: 1px; }
 .sp-facet-note { font-style: italic; font-size: 11.5px; color: var(--dim); line-height: 1.3; }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
@@ -243,6 +262,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* clickable bird names -> open that species inside the planner (subtle until hovered) */
 .bird-link { color: inherit; text-decoration: none; cursor: pointer; }
 .bird-link:hover, .bird-link:focus-visible { color: var(--accent); text-decoration: underline; outline: none; }
+/* In the species table the NAME is the headline each row supports — bigger,
+   bolder, full ink, so the facet line / freq / marks read as secondary data. */
+.species-table td .bird-link { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+/* Right-justify the name so it sits against its data (the guild bird + facets). */
+.species-table th:nth-child(2), .species-table td.name-cell { text-align: right; }
+.species-table td.freq-cell { color: var(--dim); }
 /* external eBird link, shown on the species page */
 .ebird-link { font-size: 11px; color: var(--accent); text-decoration: none;
   border: 1px solid var(--line); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
@@ -563,6 +588,14 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn:hover, .star-btn:focus-visible { color: var(--accent); outline: none; }
 .star-btn.on { color: var(--accent); }
 .star-btn:active { transform: scale(.86); }
+/* The target mark is now a camera (a photographer's shot list). Size the SVG per
+   context; on = solid accent (from .star-btn.on), off = the faint outline. */
+.star-btn svg { width: 19px; height: 19px; display: block; }
+.species-table td.mark-cell .star-btn svg { width: 16px; height: 16px; }
+.tb-mark svg { width: 16px; height: 16px; display: block; }
+.tg-entry-mark svg { width: 20px; height: 20px; display: block; }
+.legend .leg-ico { display: inline-grid; place-content: center; color: var(--accent); vertical-align: -3px; }
+.legend .leg-ico svg { width: 14px; height: 14px; display: block; }
 
 /* Standing mode indicator on the ranked views. Engaged = accent-washed so the
    "your birds are driving this" state is unmistakable; disengaged = quiet. */
@@ -664,8 +697,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Star + seen stacked in one narrow matrix cell. */
 .species-table td.mark-cell { padding: 0 2px; width: 34px; }
 .species-table td.mark-cell { display: table-cell; }
+/* Marks are supporting affordances, not the focus — small and faint when off,
+   still gold/slate when the bird is on your list/seen. */
 .species-table td.mark-cell .star-btn,
-.species-table td.mark-cell .seen-btn { width: 30px; height: 28px; font-size: 16px; }
+.species-table td.mark-cell .seen-btn { width: 24px; height: 22px; font-size: 13px; }
+.species-table td.mark-cell .star-btn:not(.on),
+.species-table td.mark-cell .seen-btn:not(.on) { color: var(--dim); opacity: .5; }
 
 /* Seen-list picker rows check off in slate (targets star on in gold). */
 .tg-row.seen-row.on { background: var(--slate-wash); }
@@ -841,10 +878,13 @@ table.species-table tr[onclick] { cursor: pointer; }
   min-width: 0; min-height: 0; border-radius: 999px; font-size: 12px; color: var(--ink);
   background: var(--card2); border: 1px solid var(--line); }
 .sp-fi-btn.labelled .sp-fi { color: var(--dim); }
-.sp-fi-btn.labelled.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
+/* Selected (wanted) = strong DARK-INK outline so the kept pills read as chosen.
+   Excluded (filtered out) = LIGHT outline so removed pills recede (red struck
+   label still marks them). This emphasis used to be reversed. */
+.sp-fi-btn.labelled.wanted { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink);
   color: var(--facet-want); background: var(--accent-wash); }
 .sp-fi-btn.labelled.wanted .sp-fi { color: var(--facet-want); }
-.sp-fi-btn.labelled.excluded { border-color: var(--facet-block); color: var(--facet-block); opacity: .82; }
+.sp-fi-btn.labelled.excluded { border-color: var(--line); color: var(--facet-block); opacity: .7; }
 .sp-fi-btn.labelled.excluded .sp-fi-txt { text-decoration: line-through; }
 
 /* =============================================================================
@@ -856,6 +896,71 @@ table.species-table tr[onclick] { cursor: pointer; }
 .photo-entry .facet-entry-mark, .photo-entry .facet-entry-go { color: var(--dim); }
 .photo-entry.photo-on .facet-entry-mark, .photo-entry.photo-on .facet-entry-go { color: var(--accent); }
 .photo-entry.photo-on .facet-entry-main { color: var(--accent-ink); }
+
+/* === Photo-first: a REAL toggle (not a menu) ============================== */
+.photo-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.photo-toggle { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 8px 12px; border-radius: 999px; cursor: pointer; color: var(--ink);
+  border: 1px solid var(--line); background: var(--card2); }
+.photo-toggle-mark { flex: 0 0 auto; color: var(--dim); display: inline-grid; place-content: center; }
+.photo-toggle-mark svg { width: 20px; height: 20px; display: block; }
+.photo-toggle-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.photo-toggle-main strong { font-size: 13px; }
+.photo-toggle-sub { font-size: 11px; color: var(--dim); }
+.photo-toggle-state { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .6px;
+  padding: 3px 9px; border-radius: 999px; background: var(--line); color: var(--dim); }
+.photo-toggle:active { transform: scale(.99); }
+.photo-toggle.on { border-color: var(--accent); background: var(--accent-wash); }
+.photo-toggle.on .photo-toggle-mark { color: var(--accent); }
+.photo-toggle.on .photo-toggle-main strong { color: var(--accent-ink); }
+.photo-toggle.on .photo-toggle-state { background: var(--accent); color: var(--card); }
+.photo-toggle-info { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--dim); font-size: 15px;
+  display: grid; place-content: center; }
+
+/* === Card presence row — INFO ONLY (not the filter) ======================= */
+.presence-row { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }
+.presence-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.presence-icons { display: flex; align-items: center; gap: 1px; flex-wrap: nowrap; width: 100%;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
+  width: 24px; height: 24px; color: var(--facet-ghost); }
+.pi-glyph, .pi-glyph svg { display: block; }
+/* Semantic traffic-light scale — colour MEANS the state (green here / amber maybe
+   / red not-expected), and value steps dark→light so it survives grayscale for
+   colour-blind users. Tokens defined per theme above. */
+.pi-lots { color: var(--pi-here); }   /* here — green, darkest */
+.pi-some { color: var(--pi-maybe); }  /* maybe — amber, medium */
+.pi-none { color: var(--pi-none); }   /* not expected — red, lightest */
+.pi-modeled .pi-glyph { opacity: .55; }         /* modeled-only: fainter */
+
+/* === Always-on accordion filter (.ffp) ==================================== */
+.ffp { margin-top: 8px; padding: 8px 10px 10px; border-radius: var(--r);
+  border: 1px solid var(--facet-mode); background: var(--facet-mode-wash); }
+.ffp-cats { display: flex; gap: 5px; }
+.ffp-cat { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 2px; padding: 5px 4px 7px; border: 1px solid transparent;
+  border-radius: 9px; background: var(--card); color: var(--dim); cursor: pointer; }
+.ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
+.ffp-cat-ico svg { width: 18px; height: 18px; display: block; transition: width .1s, height .1s; }
+.ffp-cat-label { font-size: 10.5px; color: var(--ink); }
+.ffp-cat-count { position: absolute; top: 2px; left: 2px; min-width: 13px; height: 13px; padding: 0 3px;
+  border-radius: 7px; background: var(--facet-mode); color: var(--card); font-size: 8.5px; font-weight: 700;
+  display: grid; place-content: center; }
+.ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode); }
+.ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
+.ffp-cat.open .ffp-cat-ico svg { width: 21px; height: 21px; }
+.ffp-vals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ffp-help { font-size: 11px; color: var(--dim); margin: 6px 2px 0; }
+.ffp-lights { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px;
+  padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--facet-mode) 30%, transparent); }
+.ffp-lights-empty { font-size: 11px; color: var(--dim); }
+.ffp-light { display: inline-grid; place-content: center; width: 22px; height: 22px; border-radius: 6px; }
+.ffp-light-ico svg { width: 15px; height: 15px; display: block; }
+.ffp-light.want { color: var(--facet-want); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--facet-want); }
+.ffp-light.exclude { color: var(--facet-block); background: color-mix(in srgb, var(--facet-block) 12%, transparent); box-shadow: inset 0 0 0 1px var(--facet-block); }
+.ffp-clear { margin-left: auto; font-size: 11px; color: var(--facet-mode); background: none; border: 0;
+  cursor: pointer; text-decoration: underline; padding: 2px 4px; }
 
 .pw-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .pw-row { display: flex; align-items: center; gap: 10px; }
