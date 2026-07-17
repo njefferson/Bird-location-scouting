@@ -4,6 +4,9 @@
   --bg: #ebe1cf; --bg2: #f2ead9; --card: #faf4e8; --card2: #f2ead9;
   --ink: #2c2318; --dim: #8a7b64; --line: #e2d6bf; --track: #e6dcc7;
   --accent: #cf7f22; --accent-ink: #7a4a10; --accent-wash: #f4e6cd; --accent2: #b56a15;
+  /* Map/planner SCORE colour — a hotter, more luminous orange than the muddy
+     UI accent, so the best spots read as bright highlights, not brown shadows. */
+  --score-hot: #ff6a00;
   --slate: #3f77a4; --slate-wash: #dbe7f0; --warn: #a9781f; --live: #c0563a;
   /* Trust badge palette — mirrors the labels in model/scoring.js. Light-theme
      thin/inferred/exploratory are darkened from the reference hexes so the white
@@ -14,9 +17,6 @@
   /* Destructive-action colour (Delete region): themed so the label clears
      contrast in BOTH modes — the pale-pink reference hex was invisible on cream. */
   --danger: #9c3320; --danger-dim: #7a2e2e;
-  /* Planner cell ink: dark by default; low-intensity cells get a theme ink so
-     near-empty months stay legible on the dark Dawn-Mode cell background. */
-  --cell-ink: #06160f; --cell-ink-lo: #06160f;
   /* Distant (out-of-region) counties on the hotspot map: a lifted floor so
      they read as present-but-quiet instead of dissolving into the --bg2 map
      background. Kept below the active region's --card2 so the region still
@@ -73,15 +73,20 @@
   --bg: #141210; --bg2: #2a2318; --card: #211b14; --card2: #2a2318;
   --ink: #f2e9da; --dim: #a3957c; --line: #352c20; --track: #2f2718;
   --accent: #f0a94e; --accent-ink: #f0d9b0; --accent-wash: #3a2c15; --accent2: #e0a94e;
+  /* Dawn Mode: on the dark map a bright hot orange glows against the ground. */
+  --score-hot: #ff8321;
   --slate: #7fb0da; --slate-wash: #1e2c38; --warn: #e0a94e; --live: #e8795a;
   --trust-documented: #5fae79; --trust-opportunity: #7fb0da; --trust-exploratory: #b492d8;
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
   --badge-ink: var(--bg); /* dark ink on the lightened dark-theme badge tokens */
   --danger: #e58b8b; --danger-dim: #7a2e2e;
-  --cell-ink-lo: var(--ink); /* light ink for low-intensity cells over dark --card */
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
+  /* --far derives from --card2/--bg2 via var(), which resolve where --far is
+     DECLARED — so the :root copy bakes in the light values. Redeclare it here so
+     the dark map (and the forced-dark hotspot map in light mode) dims correctly. */
+  --far: color-mix(in srgb, var(--card2) 55%, var(--bg2));
   /* Same neutral-taupe bar, tuned for low light: a deep taupe clearly lifted
      off the near-black warm cards, with light glyphs. */
   --dock: #4a4436;
@@ -207,28 +212,39 @@ a { color: var(--accent); }
 .matrix-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
 table.matrix th, table.matrix td { padding: 6px 4px; text-align: center; }
+/* Month headers sort their column; the corner restores the default order. */
+table.matrix th.mth, table.matrix .corner { cursor: pointer; }
+table.matrix th.mth.sorted { color: var(--accent-ink); }
+table.matrix th.mth.sorted::after { content: ' ▾'; }
 table.matrix .rowhead { text-align: left; white-space: nowrap; color: var(--ink); cursor: pointer;
   position: sticky; left: 0; background: var(--bg); padding-right: 8px; }
 table.matrix .corner { text-align: left; }
-.cell { --s: 0; color: var(--cell-ink); font-weight: 700; cursor: pointer; border: 1px solid var(--bg);
-  background: color-mix(in srgb, var(--accent) calc(var(--s) * 1%), var(--card)); }
-/* Low-intensity cells: near-empty months whose background stays close to --card.
-   In Dawn Mode --card is near-black, so these need light ink to be readable. */
-.cell.lo { color: var(--cell-ink-lo); }
+/* Two states only — an ordinary month is a plain quiet cell; a month in the
+   hotspot's HOT tier (the natural top of that month's ranking) is solid
+   --score-hot with dark ink. No in-between shades, no scale to read. */
+.cell { color: var(--ink); font-weight: 700; cursor: pointer; border: 1px solid var(--bg);
+  background: var(--card); }
+.cell.hot { background: var(--score-hot); color: #2a1503; }
 .col-active { outline: 2px solid var(--accent); }
 .legend { color: var(--dim); font-size: 12px; margin-top: 10px; }
+/* Map caption + the ⓘ that jumps to the Planner's report-count view. */
+.legend-row { display: flex; align-items: flex-start; gap: 8px; }
+.legend-row .legend { flex: 1 1 auto; }
+.stats-info { flex: 0 0 auto; width: 30px; height: 30px; margin-top: 8px; border-radius: 50%;
+  cursor: pointer; border: 1px solid var(--line); background: var(--card); color: var(--dim);
+  font-size: 15px; display: grid; place-content: center; }
+
+/* Planner numbers toggle: which number fills the cells (species likely /
+   reports). A standing, self-announcing control — never a hidden mode. */
+.num-toggle { display: flex; gap: 6px; margin: 2px 0 10px; }
+.num-btn { padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 12.5px;
+  border: 1px solid var(--line); background: var(--card); color: var(--dim); }
+.num-btn.on { border-color: var(--accent); background: var(--accent-wash);
+  color: var(--accent-ink); font-weight: 700; }
 
 /* Score colour key — the bar uses the SAME accent→card mix the pins and planner
    cells use, so the map matches the key. One direction everywhere: more colour
    = higher score. */
-.score-scale { margin-top: 10px; }
-.scale-row { display: flex; align-items: center; gap: 8px; }
-.scale-bar { flex: 1 1 auto; height: 10px; border-radius: 5px; border: 1px solid var(--line);
-  background: linear-gradient(to right,
-    color-mix(in srgb, var(--accent) 0%, var(--card)),
-    color-mix(in srgb, var(--accent) 100%, var(--card))); }
-.scale-end { font-family: var(--mono); font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
-.scale-cap { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
 
 /* species tables */
 table.species-table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -281,6 +297,20 @@ table.species-table tr[onclick] { cursor: pointer; }
 .search-wrap { margin-bottom: 12px; }
 .search { width: 100%; padding: 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--line);
   background: var(--card); color: var(--ink); }
+
+/* Species combobox: an in-app suggestion list that overlays the results, so it
+   never shoves the page and behaves the same on every device (unlike a native
+   <datalist>). Anchored to the search field. */
+.sp-search { position: relative; }
+.sp-suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
+  max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .22); padding: 4px; }
+.sp-suggest[hidden] { display: none; }
+.sp-suggest-row { display: block; width: 100%; text-align: left; padding: 11px 12px;
+  background: none; border: none; border-radius: 8px; font-size: 15px; color: var(--ink);
+  cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sp-suggest-row:active { background: var(--accent-wash); }
 .sp-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; }
 .sp-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sp-note { color: var(--dim); font-size: 13px; }
@@ -306,7 +336,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* county picker map */
 .map-wrap { position: relative; width: 100%; margin: 4px 0 10px; border: 1px solid var(--line);
   border-radius: var(--r); overflow: hidden; background: var(--bg2);
-  touch-action: none; -webkit-user-select: none; user-select: none; }
+  /* pan-y = cooperative gestures: one finger scrolls the PAGE (on small screens
+     the map fills the viewport, and touch-action:none left nowhere to scroll
+     from), two fingers pan/pinch the MAP (panzoom.js ignores one-touch pans). */
+  touch-action: pan-y; -webkit-user-select: none; user-select: none; }
 .county-map { display: block; width: 100%; height: auto; }
 .county-map .county { fill: var(--card2); stroke: var(--boundary); stroke-width: 1;
   stroke-opacity: .55; /* dashed = man-made boundary; roads solid red, rivers solid blue; dash counter-scales so 256x zoom doesn't make monsters */
@@ -407,8 +440,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .county-outline.sel { fill: none; stroke: var(--accent2); stroke-width: 2.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .county-outline.region { fill: none; stroke: var(--accent2); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 
-.hotspot-map .pin { --s: 0; cursor: pointer; stroke: #06160f; stroke-width: .5;
-  fill: color-mix(in srgb, var(--accent) calc(16% + var(--s) * 0.84%), var(--card)); }
+/* Two states only: ordinary spots are quiet uniform dots; the month's HOT tier
+   is a solid --score-hot dot, a third larger, drawn on top of its neighbours. */
+.hotspot-map .pin { cursor: pointer; stroke: #06160f; stroke-width: .5;
+  fill: var(--card); }
+.hotspot-map .pin.hot { fill: var(--score-hot);
+  r: calc(var(--pr, 3) * 1.35px * var(--fp, 1)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
 
@@ -653,6 +690,36 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tg-row.on { background: var(--accent-wash); border-radius: 8px; border-bottom-color: transparent; }
 .tg-row-main { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .tg-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+
+/* Collapsible habitat sections in the browse list (v31): the picker opens as a
+   short index; tap a section header to unfold its birds. Header reuses the
+   .tg-group typography (accent, uppercase) and adds a chevron + count badges. */
+.tg-browsehead { display: flex; align-items: center; gap: 10px; margin: 16px 0 2px; }
+.tg-browselabel { font-family: var(--sans); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.tg-foldall { margin-left: auto; }
+.tg-fold { display: flex; align-items: center; gap: 9px; width: 100%;
+  margin: 0; padding: 11px 6px; background: none; border: none;
+  border-bottom: 1px solid var(--line); cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent; }
+.tg-fold:active { background: var(--accent-wash); }
+.tg-fold.open { border-bottom-color: transparent; }
+.tg-fold-chev { flex: none; width: 12px; font-size: 11px; color: var(--accent); }
+.tg-fold-label { flex: 1 1 auto; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.tg-fold-counts { flex: none; display: flex; align-items: center; gap: 6px; }
+.tg-fold-count { font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; color: var(--dim);
+  background: var(--card2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px; }
+.tg-fold-starred { display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  letter-spacing: 0; text-transform: none; color: var(--accent-ink);
+  background: var(--accent-wash); border: 1px solid var(--accent);
+  border-radius: 999px; padding: 1px 7px 1px 5px; }
+.tg-fold-starred svg { width: 12px; height: 12px; }
+.tg-group-body { display: flex; flex-direction: column; }
+.tg-group-body[hidden] { display: none; }
 
 /* Star column in the hotspot species matrix + a target row highlight. */
 .species-table td.star-cell { padding: 0 2px; width: 34px; }
@@ -944,9 +1011,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .ffp-cat-ico svg { width: 18px; height: 18px; display: block; transition: width .1s, height .1s; }
 .ffp-cat-label { font-size: 10.5px; color: var(--ink); }
-.ffp-cat-count { position: absolute; top: 2px; left: 2px; min-width: 13px; height: 13px; padding: 0 3px;
-  border-radius: 7px; background: var(--facet-mode); color: var(--card); font-size: 8.5px; font-weight: 700;
+.ffp-cat-counts { position: absolute; top: 2px; left: 2px; display: flex; gap: 2px; }
+.ffp-cat-count { min-width: 13px; height: 13px; padding: 0 3px;
+  border-radius: 7px; color: var(--card); font-size: 8.5px; font-weight: 700;
   display: grid; place-content: center; }
+.ffp-cat-count.want { background: var(--facet-mode); }   /* green — must-include */
+.ffp-cat-count.block { background: var(--facet-block); }  /* red — exclude */
 .ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode); }
 .ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
 .ffp-cat.open .ffp-cat-ico svg { width: 21px; height: 21px; }

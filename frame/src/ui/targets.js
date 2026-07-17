@@ -15,7 +15,7 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetIconButton, guildBird } from './facetbar.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -27,6 +27,23 @@ function primaryHabitat(s) {
   if (!entries.length) return { key: 'other', label: 'Other' };
   const [key] = entries.sort((a, b) => b[1] - a[1])[0];
   return { key, label: HABITATS[key]?.label || key };
+}
+
+// Which habitat sections are unfolded in the browse list. Stored on-device so a
+// fold survives leaving and coming back (like every other Frame preference).
+// DEFAULT is all-collapsed — the picker opens as a short, scannable index of
+// habitats instead of one long scroll; tap a section to unfold its birds.
+const FOLD_KEY = 'frame.targetGroupsOpen';
+function openGroups() {
+  try {
+    const a = JSON.parse(localStorage.getItem(FOLD_KEY) || '[]');
+    return new Set(Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []);
+  } catch { return new Set(); }
+}
+function setGroupOpen(key, open) {
+  const s = openGroups();
+  if (open) s.add(key); else s.delete(key);
+  try { localStorage.setItem(FOLD_KEY, JSON.stringify([...s])); } catch { /* private mode */ }
 }
 
 // Size + behaviour facet icons — each a tri-state filter you can tap to narrow
@@ -116,16 +133,13 @@ export function renderTargets(root, state, nav) {
   const yourList = el('div.tg-yourlist');
   const listWrap = el('div.tg-list');
 
-  // Standing facet-filter bar for this screen. Tapping a size/behaviour icon on
-  // a browse row sets the shared filter; the bar announces it with a one-tap
-  // exit and (below) narrows the browse list to matching birds. Managed locally
-  // so a tap never re-renders the whole app or clears the import textarea.
-  const facetSlot = el('div.facet-slot');
-  const onFacetChange = () => { repaintFacetBar(); repaintList(); };
-  function repaintFacetBar() {
-    const bar = facetBar(state, nav, onFacetChange);
-    facetSlot.replaceChildren(...(bar ? [bar] : []));
-  }
+  // The Targets screen carries the SAME always-on filter as Ranking — the
+  // facetFilterPanel accordion (Type / Size / Nest / Behaviour, tri-state) — so
+  // the browse list below narrows the same way it does everywhere else. A facet
+  // tap re-renders the screen (the search text is state-backed, so it's kept),
+  // which rebuilds the panel with fresh green/red counts; the panel's own
+  // status-lights row is the standing "what's filtered" indicator + Clear.
+  const onFacetChange = () => nav.rerender();
 
   function repaintSummary() {
     clear(summary);
@@ -218,8 +232,13 @@ export function renderTargets(root, state, nav) {
       return;
     }
 
+    // When you're actively narrowing — typing a search or tapping a facet icon —
+    // show the matches open and flat, never folded away behind a chevron. Only
+    // the plain, full browse gets the collapsible habitat index.
+    const narrowing = !!q || facetsActive();
+
     // Group by dominant habitat; within a group, commoner birds first, then
-    // alphabetical. A live filter flattens to a single "Matches" group so
+    // alphabetical. A live search flattens to a single "Matches" group so
     // results aren't buried.
     const groups = new Map();
     for (const s of match) {
@@ -227,11 +246,67 @@ export function renderTargets(root, state, nav) {
       if (!groups.has(g.key)) groups.set(g.key, { label: g.label, items: [] });
       groups.get(g.key).items.push(s);
     }
-    for (const { label, items } of groups.values()) {
+
+    // A one-tap "expand all / collapse all" above the folded sections, so the
+    // whole list is never more than a tap away and folding is easy to undo.
+    if (!narrowing && groups.size > 1) listWrap.append(browseHeader([...groups.keys()]));
+
+    for (const [key, { label, items }] of groups) {
       items.sort((a, b) => (b.abundance ?? 0) - (a.abundance ?? 0) || a.name.localeCompare(b.name));
-      listWrap.append(el('h2.tg-group', {}, label));
-      for (const s of items) listWrap.append(row(s));
+      const body = el('div.tg-group-body', { id: `tg-body-${key}` });
+      for (const s of items) body.append(row(s));
+      if (narrowing) {
+        listWrap.append(el('h2.tg-group', {}, label));
+        listWrap.append(body);
+      } else {
+        const starred = items.filter((s) => isTarget(s.name)).length;
+        const open = openGroups().has(key);
+        listWrap.append(groupHead(key, label, items.length, starred, body));
+        body.hidden = !open;
+        listWrap.append(body);
+      }
     }
+  }
+
+  // The "Browse by habitat" heading plus an expand-all / collapse-all button
+  // (its label reflects the current state).
+  function browseHeader(keys) {
+    const allOpen = keys.every((k) => openGroups().has(k));
+    return el('div.tg-browsehead', {}, [
+      el('span.tg-browselabel', {}, 'Browse by habitat'),
+      el('button.btn.ghost.small.tg-foldall', {
+        onclick: () => { keys.forEach((k) => setGroupOpen(k, !allOpen)); repaintList(); },
+      }, allOpen ? 'Collapse all' : 'Expand all'),
+    ]);
+  }
+
+  // A folding section header: chevron · habitat name · species count · (if any
+  // are already on your shot list) a small camera tally. Tapping folds just this
+  // section — a light, always-reversible disclosure, not a mode.
+  function groupHead(key, label, count, starred, body) {
+    const open = openGroups().has(key);
+    const chev = el('span.tg-fold-chev', { 'aria-hidden': 'true' }, open ? '▾' : '▸');
+    const counts = el('span.tg-fold-counts', {}, [
+      el('span.tg-fold-count', { title: `${count} species` }, String(count)),
+      starred ? el('span.tg-fold-starred', {
+        title: `${starred} on your shot list`,
+        html: cameraMark(true) + `<b>${starred}</b>`,
+      }) : null,
+    ]);
+    const head = el('button.tg-group.tg-fold' + (open ? '.open' : ''), {
+      type: 'button',
+      'aria-expanded': open ? 'true' : 'false',
+      'aria-controls': `tg-body-${key}`,
+      onclick: () => {
+        const now = !head.classList.contains('open');
+        setGroupOpen(key, now);
+        head.classList.toggle('open', now);
+        head.setAttribute('aria-expanded', now ? 'true' : 'false');
+        chev.textContent = now ? '▾' : '▸';
+        body.hidden = !now;
+      },
+    }, [chev, el('span.tg-fold-label', {}, label), counts]);
+    return head;
   }
 
   function row(s) {
@@ -248,11 +323,11 @@ export function renderTargets(root, state, nav) {
 
   repaintSummary();
   repaintYourList();
-  repaintFacetBar();
   repaintList();
   root.append(summary);
   root.append(yourList);
-  root.append(facetSlot);
+  root.append(el('h2.tg-group', {}, 'Filter the species list'));
+  root.append(facetFilterPanel(nav));
   root.append(el('div.search-wrap', {}, search));
   root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear.'));
   root.append(listWrap);

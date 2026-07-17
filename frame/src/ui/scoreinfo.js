@@ -6,7 +6,7 @@
 // presence behind the icons and the coverage-trust discount, and says plainly
 // that the icons are behavioural likelihood, not promises.
 // =============================================================================
-import { el, pct } from './dom.js';
+import { el } from './dom.js';
 import { trustBadge } from './badges.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, facetSvg } from '../data/facets.js';
@@ -35,6 +35,10 @@ export function openIconInfo(row, monthName) {
   const lit = GUILD_KEYS.filter((k) => (sums[k] || 0) >= SOME).sort((a, b) => sums[b] - sums[a]);
   const maxSum = Math.max(1e-9, ...lit.map((k) => sums[k]));
 
+  // The sum of the group's per-species report rates IS the expected number of
+  // its species on one checklist — say that, never a "%". (Summed rates blew
+  // past 100% when printed as a percentage: Songbirds at 13.26 read "1326%".)
+  const perVisit = (g) => (g >= 10 ? String(Math.round(g)) : g.toFixed(1));
   const guildRows = lit.map((k) => {
     const g = sums[k];
     const level = g >= LOTS ? 'lots' : 'some';
@@ -43,7 +47,7 @@ export function openIconInfo(row, monthName) {
       el('span.si-icon', { class: `fi fi-${level}${inferred ? ' inferred' : ''}`, html: facetSvg(GUILDS[k].icon, 20) }),
       el('span.si-sp', {}, GUILDS[k].label),
       el('span.si-bar', {}, el('i', { style: `width:${Math.round((g / maxSum) * 100)}%` })),
-      el('span.si-vals', {}, `${pct(g)}${inferred ? ' *' : ''} · ${level}`),
+      el('span.si-vals', {}, `≈${perVisit(g)}/visit${inferred ? ' *' : ''} · ${level}`),
     ]);
   });
 
@@ -75,10 +79,12 @@ export function openIconInfo(row, monthName) {
 
     el('h3.si-h', {}, 'How bright an icon gets'),
     el('p.si-note', {}, [
-      'A group lights up by how often its birds are reported here this month. ',
-      el('strong', {}, 'Bright'), ' means its species together clear ', el('strong', {}, '50%'),
-      ' of checklists — you’d expect one on roughly every other visit. ',
-      el('strong', {}, 'Subdued'), ' means at least ', el('strong', {}, '5%'), '. Faint means barely noted.',
+      'A group lights up by how often its birds are reported here this month — its species’ report rates, added up, give roughly ',
+      el('strong', {}, 'how many of the group you’d record on one visit'),
+      '. ', el('strong', {}, 'Bright'), ' means at least ', el('strong', {}, '0.5/visit'),
+      ' — one of its birds on roughly every other visit (a rich group like songbirds can reach 10+/visit). ',
+      el('strong', {}, 'Subdued'), ' means at least ', el('strong', {}, '0.05/visit'),
+      ' — one on about every 20th. Faint means barely noted.',
     ]),
     el('p.si-note', {}, [
       'A ', el('strong', {}, 'dashed'), ' icon means the numbers behind it are still the habitat/season ',
@@ -87,7 +93,7 @@ export function openIconInfo(row, monthName) {
 
     lit.length ? el('h3.si-h', {}, `Groups here in ${monthName}`) : null,
     lit.length ? el('div.si-contribs', {}, guildRows) : null,
-    lit.length ? el('p.si-legend', {}, 'Σ frequency of the group’s species · longer bar = more present. * = still on the habitat/season model.') : null,
+    lit.length ? el('p.si-legend', {}, '≈/visit = about how many of the group’s species you’d record on one visit (their report rates added up) · longer bar = more present. * = still on the habitat/season model.') : null,
 
     el('h3.si-h', {}, 'Coverage & trust'),
     el('p.si-trust', {}, [trustBadge(row.trust), ' ', row.trust.blurb]),

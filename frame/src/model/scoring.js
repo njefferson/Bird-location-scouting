@@ -123,6 +123,28 @@ export function rankHotspots(hotspots, monthIdx, opts = {}) {
   return rows;
 }
 
+/**
+ * The "hot tier": how many of the top ranked rows count as this month's
+ * standout spots. There is no fixed number — the scores decay smoothly with a
+ * secondary break somewhere in the top ranks (measured on Home: rank ~12 in
+ * Jan, ~16 in Apr, ~13 in Oct). This finds that break: the largest relative
+ * drop between consecutive scores, searched in ranks 8–40 so the tier is never
+ * absurdly small or half the region. Rows must be rankHotspots output (sorted).
+ */
+export function hotTierCount(rows) {
+  const vals = rows.map((r) => r.shrunk).filter((v) => v > 0);
+  const n = vals.length;
+  if (!n) return 0;
+  if (n < 12) return Math.max(1, Math.round(n / 4)); // tiny region: top quarter
+  let k = 15, best = 0;
+  const hi = Math.min(40, n - 1);
+  for (let i = 8; i <= hi; i++) {
+    const ratio = vals[i - 1] / vals[i];
+    if (ratio > best) { best = ratio; k = i; }
+  }
+  return k;
+}
+
 /** Keeper-species count over the FULL curated set (coverage, for trust).
  * Pure in (hotspot, monthIdx) and independent of the working set, but called
  * for every hotspot on every narrowed rank — and a facet/target tap re-ranks.

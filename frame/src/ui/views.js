@@ -2,7 +2,7 @@
 // VIEWS — the four screens from §5: Cards, Matrix, Species search, Settings,
 // plus a per-hotspot species matrix detail.
 // =============================================================================
-import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
+import { el, clear, pct, sparkline, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
 import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
@@ -14,7 +14,7 @@ import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { freshness, monthYear } from '../model/freshness.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
-import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
+import { rankHotspots, hotTierCount, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
 import { rankingSpec } from '../model/lists.js';
 import { isTarget, targetCount, targetsRankOn, setTargetsRank, targetsRankActive } from '../model/targets.js';
 import { isSeen, seenCount, newBirdsOn, setNewBirds, newBirdsActive } from '../model/seen.js';
@@ -287,7 +287,9 @@ function guildPresenceRow(h, monthIdx) {
     const inferred = level !== 'none' && !realN[key];
     const gu = GUILDS[key];
     const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'not expected';
-    const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
+    // Summed report rates = expected species of this group on one visit — never
+    // print the sum as a "%" (a rich group's sum runs far past 1).
+    const amount = g > 0 ? ` (≈${g >= 10 ? Math.round(g) : g.toFixed(1)}/visit${inferred ? ', modeled' : ''})` : '';
     const cell = el('span.pi', {
       class: [`pi-${level}`, inferred ? 'pi-modeled' : ''].filter(Boolean).join(' '),
       title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}`,
@@ -324,41 +326,78 @@ function dataProvenanceFooter() {
 // =============================================================================
 export function renderMatrix(root, state, nav) {
   clear(root);
+  // Which number fills the cells: 'species' (how many species clear the keeper
+  // bar) or 'reports' (eBird checklists in the loaded data — the sample size
+  // behind the rankings, Noah's "numbers behind the dots"; the map's ⓘ jumps
+  // here with this mode on). One surface, not a separate popup — this IS the
+  // site × month table, so the numbers live in it.
+  const numMode = state.plannerNumbers === 'reports' ? 'reports' : 'species';
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, `Species likely by month${photoFirstOn() && !targetsRankActive() ? ' · colour ranks easiest shots first' : ''} — tap a cell for that month’s detail.`),
+    el('span.subtitle', {}, numMode === 'reports'
+      ? 'Reports in the data by month · orange = historically strongest spots — tap a month name to sort, a cell for detail.'
+      : 'Species likely by month · orange = historically strongest spots for that month — tap a month name to sort, a cell for detail.'),
   ]));
 
-  // Pre-rank each month so cell color is comparable within a month column.
+  // Pre-rank each month; each month's HOT tier (the natural break in that
+  // month's ranking, hotTierCount) is the only colour distinction — a cell is
+  // either one of the month's standout spots or it's a plain cell.
   const spec = rankingSpec();
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
   const byMonth = MONTHS.map((_, m) => {
     const ranked = rankHotspots(getHotspots(), m, { species: spec.species, weigh: spec.weigh });
-    return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
+    return {
+      rows: Object.fromEntries(ranked.map((r) => [r.hotspot.id, r])),
+      hot: new Set(ranked.slice(0, hotTierCount(ranked)).map((r) => r.hotspot.id)),
+    };
   });
+  const cellNum = (h, m) => {
+    const r = byMonth[m].rows[h.id];
+    return numMode === 'reports' ? r.n : r.diversity;
+  };
 
+  // The standing numbers toggle — the mode announces itself and swaps in a tap.
+  root.append(el('div.num-toggle', { role: 'group', 'aria-label': 'What the cell numbers show' }, [
+    ['species', 'Species likely'], ['reports', 'Reports'],
+  ].map(([key, label]) => el('button.num-btn' + (numMode === key ? '.on' : ''), {
+    'aria-pressed': numMode === key ? 'true' : 'false',
+    onclick: () => { state.plannerNumbers = key; nav.rerender(); },
+  }, label))));
+
+  const sortM = Number.isInteger(state.plannerSort) ? state.plannerSort : null;
   const table = el('table.matrix');
-  const head = el('tr', {}, [el('th.corner', {}, 'Hotspot'), ...MONTHS.map((m, i) =>
-    el('th', { class: i === state.monthIdx ? 'col-active' : '' }, m))]);
+  const head = el('tr', {}, [
+    el('th.corner', {
+      title: 'Back to the default order (best month first)',
+      onclick: () => { state.plannerSort = null; nav.rerender(); },
+    }, 'Hotspot'),
+    ...MONTHS.map((m, i) => el('th.mth', {
+      class: [i === state.monthIdx ? 'col-active' : '', i === sortM ? 'sorted' : ''].filter(Boolean).join(' '),
+      title: `Sort by ${m}`,
+      onclick: () => { state.plannerSort = sortM === i ? null : i; nav.rerender(); },
+    }, m)),
+  ]);
   table.append(head);
 
-  // Order rows by their best month's presence intensity.
-  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].vis)) }))
-    .sort((a, b) => b.best - a.best);
+  // Row order: tap a month to sort by that column's number; otherwise by the
+  // best month's presence intensity.
+  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm.rows[h.id].vis)) }))
+    .sort(sortM == null
+      ? (a, b) => b.best - a.best
+      : (a, b) => (cellNum(b.h, sortM) ?? -1) - (cellNum(a.h, sortM) ?? -1) || b.best - a.best);
 
   const buildMatrixRow = (h) => {
     const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
     MONTHS.forEach((_, m) => {
-      const r = byMonth[m][h.id];
+      const r = byMonth[m].rows[h.id];
+      const hot = byMonth[m].hot.has(h.id);
+      const n = cellNum(h, m);
       const cell = el('td.cell', {
-        // 'lo' below ~55% intensity: the cell background is still close to
-        // --card, which is near-black in Dawn Mode, so switch to light ink.
-        class: [m === state.monthIdx ? 'col-active' : '', r.vis < 55 ? 'lo' : ''].filter(Boolean).join(' '),
-        style: `--s:${r.vis}`,
-        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}`,
+        class: [m === state.monthIdx ? 'col-active' : '', hot ? 'hot' : ''].filter(Boolean).join(' '),
+        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.n ?? '—'} reports · ${r.trust.label}${hot ? ` · historically strong for ${MONTHS[m]}` : ''}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
-      }, String(r.diversity));
+      }, n == null ? '—' : String(n));
       tr.append(cell);
     });
     return tr;
@@ -374,9 +413,17 @@ export function renderMatrix(root, state, nav) {
       onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
     }, `Show all ${order.length} hotspots`));
   }
-  root.append(scoreScale(spec.weigh
-    ? 'Fuller colour = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
-    : 'Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
+  // Honest label: past-seasons frequency, not live activity (see mapview). In
+  // reports mode, say what the sample is and that it tracks every data refresh.
+  const built = (() => {
+    const d = new Date(regionMeta().builtAt || NaN);
+    return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  })();
+  root.append(el('p.legend', {}, numMode === 'reports'
+    ? `Each number is how many reports (eBird checklists) the loaded data holds for that site in that calendar month — the sample behind the rankings. Months differ hugely: a top spot can rest on hundreds of reports in one month and a dozen in another, and the orange alone can’t show that. Computed from the data itself, so it updates with every refresh${built ? ` (current data built ${built})` : ''}. Orange cells are that month’s historically strongest tier — the same spots as the map’s orange pins.`
+    : spec.weigh
+      ? 'An orange cell means that hotspot has historically reported the most shootable birds in that month (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+      : 'An orange cell means that hotspot has historically reported the most birds in that month (past seasons’ Σ frequency, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================
@@ -522,21 +569,70 @@ export function renderSpecies(root, state, nav) {
   }
   root.append(facetSlot);
 
-  const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
+  // A real in-app combobox — NOT a native <datalist>, which on iOS pops its own
+  // picker instead of the keyboard, then won't reopen or let you edit (the bug
+  // Noah hit). Tapping the field shows a scrollable list you can pick from AND
+  // the keyboard to type; typing filters the list live; picking one opens that
+  // species; you can always edit or clear and the list comes back.
+  const input = el('input.search', {
+    type: 'search', placeholder: 'Search or pick a species (e.g. Wood Duck)…',
+    autocomplete: 'off', autocorrect: 'off', autocapitalize: 'words', spellcheck: 'false',
+    value: state.speciesQuery || '',
+  });
+  const sugg = el('div.sp-suggest', { hidden: true });
   const results = el('div.species-results');
-  const list = el('datalist', { id: 'splist' }, SPECIES.map((s) => el('option', { value: s.name })));
-  input.setAttribute('list', 'splist');
+
+  // Matches: names that START with the query first, then names that merely
+  // contain it; an empty query lists everything so a tap = browse the whole list.
+  function matches(q) {
+    q = q.trim().toLowerCase();
+    if (!q) return SPECIES;
+    const starts = [], has = [];
+    for (const s of SPECIES) {
+      const n = s.name.toLowerCase();
+      if (n.startsWith(q)) starts.push(s);
+      else if (n.includes(q)) has.push(s);
+    }
+    return [...starts, ...has];
+  }
+
+  function paintSuggest() {
+    clear(sugg);
+    const q = input.value.trim().toLowerCase();
+    // If the text is already an exact name, the panel's showing it — no list.
+    if (SPECIES.some((s) => s.name.toLowerCase() === q)) { sugg.hidden = true; return; }
+    const ms = matches(q).slice(0, 60);
+    if (!ms.length) { sugg.hidden = true; return; }
+    for (const s of ms) {
+      sugg.append(el('button.sp-suggest-row', {
+        onclick: () => { input.value = s.name; sugg.hidden = true; run(); },
+      }, s.name));
+    }
+    sugg.hidden = false;
+  }
 
   function run() {
     state.speciesQuery = input.value;
     clear(results);
     const q = input.value.trim().toLowerCase();
-    const s = SPECIES.find((x) => x.name.toLowerCase() === q) || SPECIES.find((x) => x.name.toLowerCase().includes(q) && q.length >= 2);
-    if (!s) { results.append(el('p.dim', {}, q ? 'No match in the curated list.' : 'Type a species name.')); return; }
+    // The detail panel shows once the text names a species exactly (typed in full
+    // or picked from the list). Partial text just keeps the list open.
+    const s = SPECIES.find((x) => x.name.toLowerCase() === q);
+    if (!s) {
+      results.append(el('p.dim', {}, q
+        ? 'Keep typing, or pick a species from the list.'
+        : 'Type a name, or tap the box to pick from the list.'));
+      return;
+    }
     results.append(speciesPanel(s, state, nav, onFacetChange));
   }
-  input.addEventListener('input', run);
-  root.append(el('div.search-wrap', {}, [input, list]));
+
+  input.addEventListener('focus', paintSuggest);
+  input.addEventListener('input', () => { paintSuggest(); run(); });
+  // Close the list when focus leaves — but after a tick, so a tap on a row lands.
+  input.addEventListener('blur', () => setTimeout(() => { sugg.hidden = true; }, 160));
+
+  root.append(el('div.search-wrap.sp-search', {}, [input, sugg]));
   root.append(results);
   repaintFacetBar();
   run();

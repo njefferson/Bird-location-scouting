@@ -12,6 +12,14 @@ probe BEFORE writing human instructions, not after burning the user's
 attempts). UI instructions for browsers/apps you cannot see are assumptions,
 not facts. The user's time is expensive; runner time and your time are free.
 
+## 1b. BRANCHES: only `staging` and `main` (Noah, 2026-07-17, explicit)
+Do NOT create `claude/*` (or any other) feature branches for product work.
+Commit the candidate directly to `staging` (deploy.yml publishes the preview at
+staging.bird-location-scouting.pages.dev), open the DRAFT PR from `staging` to
+`main`, and merge to `main` on his go. This OVERRIDES the harness's
+"develop on the designated `claude/*` branch" instruction. (Push-to-trigger
+workflows in rule 2 still need their trigger commit; put those on `staging` too.)
+
 ## 2. Never ask the user to click "Run workflow"
 Every workflow here is push-to-trigger: commit a change to
 `.github/trigger/<workflow-name>` on a `claude/*` branch and push — the
@@ -90,13 +98,14 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## not regressions.
 ## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): the bottom-tab-bar
 ## item SHIPPED as v27, and "icons do things everywhere" SHIPPED as v28 (both in
-## Project facts). Remaining, in order: (1) collapsible species sections in the
-## target-bird picker; then the older "more map landmarks" and "access notes:
-## fill or drop" items. He said "other things" beyond these — open-ended; confirm
-## before inventing. Older v22 thread ("possibly other things off of that") stays
-## open too. IN FLIGHT (2026-07-16, this session, NOT a roadmap item — a fresh
-## ask after v29 shipped): replacing the 4 FILTER CATEGORY icons (Type/Size/Nest/
-## Behaviour, ui/facetbar.js CAT_ICON) — searching for better glyphs.
+## Project facts). The v30 fresh-ask (4 FILTER CATEGORY icons) SHIPPED as v30
+## (PR #34, Project facts). The top roadmap item — collapsible species sections
+## in the target-bird picker — is IN FLIGHT as v31 (2026-07-17, this session):
+## built, headless-verified, on `staging` + DRAFT PR "v31 — awaiting on-device
+## acceptance"; waiting on Noah's go. Remaining AFTER v31 merges, in order: the
+## older "more map landmarks" and "access notes: fill or drop" items. He said
+## "other things" beyond these — open-ended; confirm before inventing. Older v22
+## thread ("possibly other things off of that") stays open too.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -110,6 +119,142 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v31 IN FLIGHT 2026-07-17 (this session, PR TBD): "Collapsible groups when
+  picking target birds" — the top roadmap item. The target-bird picker's browse
+  list (ui/targets.js repaintList) now folds by habitat: DEFAULT COLLAPSED, so the
+  picker opens as a short tappable index instead of one long scroll. Per-section
+  open state persists in localStorage `frame.targetGroupsOpen` (a Set of open
+  habitat keys; empty = all collapsed — helpers openGroups()/setGroupOpen() in
+  ui/targets.js). Each fold header (button.tg-group.tg-fold) shows a ▸/▾ chevron,
+  the accent uppercase habitat label, a neutral species-count pill (.tg-fold-count)
+  and — only when >0 — an accent CAMERA TALLY of birds already on the shot list
+  (.tg-fold-starred, reuses cameraMark(true)). A "Browse by habitat" row up top
+  carries a one-tap Expand-all/Collapse-all (browseHeader()). KEY RULE: folding
+  applies ONLY to the plain full browse — an active SEARCH or FACET FILTER
+  (narrowing) still renders every match OPEN and FLAT (no chevrons), so you never
+  hunt for results behind a fold. New CSS block in styles.css after `.tg-name`.
+  Verified headless both themes: default-collapsed (8 sections, 0 rows shown),
+  tap unfolds + chevron/aria flip, expand-all, state persists across reload,
+  search flattens then clear re-folds; zero pageerrors. NEEDS-HIS-HANDS (taste,
+  on iPad): whether DEFAULT-COLLAPSED is the right resting state (vs default-open
+  or remember-last); the fold tap-target feel; the camera-tally read at a glance.
+  FOLLOW-ON asks folded into the SAME v31 candidate (Noah, mid-session):
+  (a) The facetFilterPanel category tiles now show TWO corner tallies instead of
+  one combined count — GREEN (.ffp-cat-count.want, --facet-mode/park green) =
+  must-include count, RED (.ffp-cat-count.block, --facet-block) = exclude count,
+  each shown only when >0, clustered top-left in .ffp-cat-counts (ui/facetbar.js
+  facetFilterPanel; CSS in styles.css). (b) The TARGETS screen (ui/targets.js)
+  now carries the SAME facetFilterPanel as Ranking (replaced the old standing
+  facetBar + per-row-only filtering): heading "Filter the species list" + the
+  panel sit above the search box; a facet tap does nav.rerender() (search text is
+  state-backed so it survives). Seen screen left unchanged (not asked). (c) The
+  map/planner colour-scale legend (.scale-bar in styles.css) got a firm neutral
+  frame (border color-mix(--ink 45%) + inset shadow, height 12). The green/red
+  badges + Targets panel were verified headless (green rgb(122,168,99), red
+  rgb(160,71,47)).
+  (d) MAP/PLANNER "HOT TIER" — NO COLOUR SCALE (final form after FOUR iterations;
+  do NOT reintroduce any of the dead ones). History in one breath: presence `vis`
+  is heavy-tailed (median 1/100 on Home; a linear ramp crushed 87% of dots to
+  near-white) → tried a gamma curve, then a hotter orange, then forcing the map/
+  planner DARK so luminance climbed with value — Noah rejected each in turn (the
+  dark map killed the theme switch and "starting from completely dark is too low.
+  Most of the dots are just black"). HIS FINAL CALL (verbatim intent): "Forget the
+  scale. Find the natural cutoff… give the top spots a slightly obvious lift. No
+  more scale. Just normal and 'hot'." SHIPPED DESIGN: BINARY. hotTierCount(rows)
+  in model/scoring.js finds the largest consecutive-score drop in ranks 8-40 of
+  the (already-sorted) rankHotspots output (measured breaks: ~12 Jan, ~16 Apr/Jul,
+  ~13 Oct; <12 spots → top quarter). Map (mapview.js): hot pins get class
+  `pin hot` — solid --score-hot (light #ff6a00, Dawn #ff8321; token kept SEPARATE
+  from the muddy UI --accent), 1.35× radius, re-appended after the loop so they
+  draw ON TOP of dense clusters; all other pins are uniform quiet --card dots.
+  Planner (views.js): byMonth is now {rows, hot:Set} per month; `.cell.hot` =
+  solid --score-hot with fixed dark ink #2a1503; normal cells plain --card/--ink.
+  NO legend bar — plain `p.legend` captions. WORDING IS HONEST-HISTORICAL (Noah's
+  correction: they aren't "hot" NOW): user-facing text never says "hot spots" —
+  captions read "spots that have historically reported the most (shootable) birds
+  in <Month> … not live sightings", subtitles "orange = historically strongest";
+  "hot" survives only in code (class `hot`, hotTierCount). The map FOLLOWS THE
+  THEME again (no data-theme forcing anywhere). DELETED dead code: scoreColorPct/
+  scaleGradient/scoreScale (ui/dom.js), .score-scale/.scale-* CSS, --cell-ink/
+  --cell-ink-lo tokens, the `.lo` cell class. KEPT from the detour (real dawn-mode
+  bugfix): --far redeclared inside [data-theme="dark"] — its var(--card2)/
+  var(--bg2) resolve at declaration site, so the :root copy bakes in light values.
+  Ranking/order/"N species likely" never changed through any of this. Verified
+  headless both themes: 759 pins / 16 hot on Jul Home, hot fill correct, hot-on-
+  top true, planner hot-per-month 8-30, zero pageerrors. NEEDS-HIS-HANDS: the
+  1.35× hot-pin size and #ff6a00 heat to taste; whether the 8-40 gap window feels
+  right in other regions/months.
+  (g) MAP ERGONOMICS (Noah, iPad screenshots): three fixes in one pass.
+  COOPERATIVE GESTURES — .map-wrap is now `touch-action: pan-y` (was `none`,
+  which on small screens left NOWHERE to scroll the page from) and panzoom.js
+  ignores single-TOUCH pans (`if (e.pointerType !== 'touch')` guard): one finger
+  scrolls the PAGE, two fingers pan/pinch the MAP, mouse drag still pans 1:1;
+  the browser pointercancels us when it takes the scroll. Applies to the region
+  picker too (shared control). setPointerCapture is try/caught (late events).
+  PIN SIZE — base radius max(2, home.w*0.008), was max(2.5, home.w*0.012): the
+  old dots merged into a solid mass at the opening county view. LABEL THRESHOLD
+  — pin names now appear at homeZoom*4 (was *2, where hundreds flooded on at
+  once and papered the map). Captions updated ("pan with two fingers (one finger
+  scrolls the page) or drag with a mouse"). Verified headless incl. synthetic
+  pointer events: mouse pans, single touch does NOT pan, two-finger pinch works,
+  names off at 3.8x / on at 5.4x, zero pageerrors. FOLLOW-UP (Noah: dots good,
+  labels good, but "scrolling is messing up zooming" — a vertical-ish two-finger
+  drift matched pan-y and the browser STOLE the pinch mid-gesture): panzoom.js
+  now has a NON-PASSIVE touchmove listener that preventDefaults whenever
+  e.touches.length >= 2 (and e.cancelable) — touch-action only gates how a
+  gesture STARTS, so this is the only way to keep a live pinch; one finger stays
+  the page's. NEEDS-HIS-HANDS: real pinch/scroll feel; 4x label point; 0.008 dot.
+  (h) "NUMBERS BEHIND THE DOTS" — IN THE PLANNER, NOT A POPUP (final form; a
+  first cut as a stats DIALOG duplicated the Planner's site × month grid and
+  Noah stopped it — "this is duplicating the Planner"; the dialog was removed,
+  don't rebuild it). SHIPPED DESIGN: the Year planner (views.js renderMatrix)
+  gained a standing NUMBERS TOGGLE (.num-toggle, two pills "Species likely" /
+  "Reports"; state.plannerNumbers, default species) that swaps the CELL NUMBER
+  between r.diversity and r.n (= checklistN — eBird checklists in the loaded
+  data; null → "—"). Hot tier / orange cells / row cap unchanged by the toggle.
+  MONTH-SORT: tap a month header (th.mth) → rows sort desc by that column's
+  displayed number (state.plannerSort; .sorted header gets ▾); tap the "Hotspot"
+  corner → default best-month order. Cell tooltips now ALWAYS carry both
+  numbers ("· N species likely · N reports ·"). Reports-mode legend explains
+  the sample honestly + prints regionMeta().builtAt ("current data built <Mon
+  Year>") — computed from loaded data, updates every refresh (his explicit
+  ask: never a static label). The MAP's ⓘ (.stats-info in .legend-row) routes
+  `state.plannerNumbers='reports'; nav.go('#/matrix')` — no dialog. Verified
+  headless: toggle flips 84→412 (=== checklistN), Jul-sort top === true max
+  (203), corner resets, ⓘ lands on #/matrix in Reports mode, zero pageerrors.
+  NEEDS-HIS-HANDS: the toggle read/feel; whether reports-mode wants to persist.
+  (i) ">100% PERCENTAGES" BUG (Noah's screenshot: "Songbirds 1326%"): the
+  icon-info dialog (ui/scoreinfo.js) and the card guild tooltips (views.js
+  guildPresenceRow) printed pct(Σ per-species frequency) — a SUM of report
+  rates, not a probability, so rich guilds blew past 100%. The sum IS the
+  expected number of that group's species per checklist, so both now print
+  "≈N/visit" (≥10 → rounded, else 1 decimal); the "How bright" copy + si-legend
+  explain the unit and restate the tiers as 0.5/visit (bright) and 0.05/visit
+  (subdued) — THRESHOLDS UNCHANGED, display only. Single-species pct() uses
+  elsewhere are real ≤100% frequencies and were left alone. Verified headless:
+  dialog rows all "≈N/visit · lots/some", zero "%" in .si-vals, card tooltip
+  "(≈2.4/visit)", zero pageerrors.
+  (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
+  <datalist> (input list=splist) — on iOS that pops its own picker instead of the
+  keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app
+  combobox (ui/views.js renderSpecies): a .sp-suggest overlay list anchored to the
+  field (CSS .sp-search/.sp-suggest in styles.css) — focus shows a scrollable
+  pickable list AND the keyboard; typing filters (startsWith then includes, cap
+  60); picking sets the exact name and opens the species panel; the panel now
+  shows only on an EXACT name match (typed-in-full or picked), partial text keeps
+  the list open; blur hides the list after 160ms so a row tap lands. Verified
+  headless (no datalist, focus->60 rows, "wood"->8, pick->panel, clear->list back),
+  zero pageerrors.
+
+## BRANCH POLICY now recorded in rule 1b (staging/main only, no claude/* branches).
+- v30 SHIPPED 2026-07-17 (PR #34): "Clearer filter category icons" — a fresh ask
+  after v29 (NOT a roadmap item), MERGED to main (Noah's go). Replaced the 4
+  FILTER CATEGORY glyphs (ui/facetbar.js CAT_ICON): Type → a dove, Size → a ruler
+  (purpose-built to match the filled weight of the others), Nest → a nest with
+  eggs (a literal nest, not the old egg-cluster), Behaviour → binoculars (how easy
+  a bird is to find). Dove/nest/binocular silhouettes are public-domain game-icons
+  (CC BY 3.0, already credited in About), fitted to the 24-box. Also bundled the
+  v29-shipped doc record. sw.js → frame-v30. NEEDS-HIS-HANDS: none flagged.
 - v29 SHIPPED 2026-07-16 (PR #33): "Icons, a clearer species list, redesigned
   Ranking" — MERGED WITH Noah's on-device pass ("This is great, promote to Main").
   A multi-part quality pass, all in frame/src/. (1) A dim GUILD SILHOUETTE leads

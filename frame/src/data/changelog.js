@@ -9,6 +9,20 @@
 
 export const CHANGELOG = [
   {
+    version: 'v31',
+    date: '2026-07-17',
+    changes: [
+      'The target-bird picker no longer opens as one long scroll. The habitat sections now fold: the browse list starts as a short, tappable index — each habitat shows how many birds it holds (and, if you’ve already starred any, a small camera tally) — and you unfold just the one you want. A “Browse by habitat” row up top expands or collapses everything in a tap, and each section remembers whether you left it open. Searching or tapping a facet icon still shows every match open and flat, as before.',
+      'The filter now says what each category is doing at a glance: every category button carries a green circle counting the groups you’re requiring and a red circle counting the ones you’re excluding, so you can read “two required, one excluded” without opening it.',
+      'That same filter is now on the Target birds screen. The Type / Size / Nest / Behaviour panel you know from Ranking sits above the species list there too, so you can narrow which birds you’re browsing the same way everywhere.',
+      'The map and the year planner dropped the colour scale entirely. Reading a smooth ramp of shades never worked — most dots crushed together and the best spots didn’t stand out. Now there are just two kinds of spot: the places that have historically reported the most birds in the chosen month — the natural top tier of that month’s ranking, usually the top dozen or so, found where the scores actually break — wear a vivid orange dot (a little bigger, drawn on top), and every other spot is a quiet plain dot. The planner works the same way: an orange cell means that hotspot is historically among the strongest for that month. It’s past seasons’ reporting, not live sightings — the captions say so plainly. One glance, no key to study, and the map follows the light and Dawn themes again.',
+      'The species search is fixed. Tapping the field now reliably shows a list you can pick from and lets you type to filter it — and you can always edit or clear the text and the list comes right back. It used to open a native picker that could leave you unable to delete or reopen it.',
+      'The map is easier to handle on a small screen. One finger now scrolls the page (the map used to swallow every touch, leaving nowhere to scroll from); pan the map with two fingers, pinch to zoom, and the caption says so. Once a second finger is down the gesture belongs to the map — a pinch can no longer be stolen mid-zoom and turned into a page scroll. The dots are smaller at the opening county view so dense clusters read as dots instead of a solid mass, and hotspot names hold off until you’re zoomed in about twice as far as before, so they no longer flood the map the moment you start zooming.',
+      'The bird-group explainer no longer shows impossible percentages like “1326%”. That number was the group’s species report-rates added together — a sum, not a percentage — so it’s now shown as what it really is: about how many of that group’s species you’d record on one visit (“≈13/visit” for songbirds in a rich month). The explainer text and the group tooltips on hotspot cards use the same honest unit.',
+      'The numbers behind the dots are now visible — in the Year planner, which was already the site-by-month table. A new switch above it flips the cell numbers between “Species likely” (as before) and “Reports” — the actual count of eBird checklists the data holds for that site and month. Tap a month name to sort by that month; tap “Hotspot” to restore the usual order. It makes the invisible scale plain: a month’s top spot can rest on 400 reports where another month’s rests on a dozen. The ⓘ beside the map’s caption jumps straight there with Reports showing. Every cell’s tooltip now carries both numbers, and it’s all computed from the loaded data, so it updates itself with every data refresh.',
+    ],
+  },
+  {
     version: 'v30',
     date: '2026-07-17',
     changes: [
