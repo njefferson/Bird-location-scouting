@@ -123,7 +123,7 @@ export function facetFilterPanel(nav) {
     const vals = el('div.ffp-vals', {}, Object.values(f.values).map((v) =>
       facetIconButton(f.key, v.key, { size: 18, label: true, onChange: () => nav.rerender() })));
     panel.append(vals);
-    panel.append(el('p.ffp-help', {}, 'Tap to include it · tap again to exclude it · again to clear.'));
+    panel.append(el('p.ffp-help', {}, 'All show by default · tap to require it · again to exclude it · again to clear.'));
   }
 
   panel.append(statusLights(nav));
