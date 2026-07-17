@@ -51,18 +51,19 @@ gap. **S3** = opportunity. Status moves to ✅ with the fixing PR number.
 
 | # | Sev | Finding | Fix |
 |---|-----|---------|-----|
-| A1 | S1 | Filter category count badges (v31): green "must-include" vs red "exclude" circles differ by **hue only** (2.2:1 between the hues) — the named fail state, in a fresh feature | Add symbol redundancy: green badge reads `+N`, red reads `−N`; keep the hues |
-| A2 | S1 | Filter status-lights row: wanted vs excluded tiles differ by ring/wash hue only | Slash overlay on excluded lights (same language as the facet pills) |
-| A3 | S1 | Badge number contrast: white-on-green 2.52:1 (light) / 4.27:1 (dark) | Darken the green badge ground (or switch to dark ink) to ≥ 4.5:1 both themes |
-| A4 | S1 | `--dim` text on `--bg` 3.18:1 and on `--card` 3.76:1 in light theme — legends, captions, subtitles all run at 12–13px | Darken light-theme `--dim` until both pairs ≥ 4.5:1, keeping the warm hue |
-| A5 | S1 | Accent-coloured text (section headers `.tg-group`, `.facet-sec h3`, etc.) 2.86:1 on card | Use `--accent-ink` for accent *text*; keep `--accent` for marks/fills |
-| A6 | S2 | Focus rings suppressed: six `:focus-visible` rules end in `outline: none` with colour-only replacement | New `--focus` ring token; visible 2px ring on every interactive element, both themes |
-| A7 | S2 | Keyboard gaps: planner month-sort headers / rowheads / cells are `th`/`td` with `onclick`; map pins are pointer-only SVG circles | Buttons inside sortable `th`; rowheads become buttons; pins get `tabindex="0"` + Enter (planner remains the keyboard-equivalent path and is documented as such) |
-| A8 | S2 | No `prefers-reduced-motion` handling (pan/zoom limit pulses, transitions) | Global `@media (prefers-reduced-motion: reduce)` kill-switch |
-| A9 | S3 | Hot pin fill vs plain pin fill 2.62:1 (non-text 3:1) — size + stroke + on-top currently carry it | Deepen hot-pin stroke or size on light theme; re-measure |
+| A1 | S1 | Filter category count badges (v31): green "must-include" vs red "exclude" circles differ by **hue only** (2.2:1 between the hues) — the named fail state, in a fresh feature | ✅ v32: badges read `+N`/`−N`; grounds re-measured (see A3) |
+| A2 | S1 | Filter status-lights row: wanted vs excluded tiles differ by ring/wash hue only | ✅ v32: `.ffp-light.exclude::after` slash |
+| A3 | S1 | Badge number contrast: white-on-green 2.52:1 (light) / 4.27:1 (dark) | ✅ v32: `--count-want` #55793f light (4.57) / #6f9a63 dark (5.26) |
+| A4 | S1 | `--dim` text on `--bg` 3.18:1 and on `--card` 3.76:1 in light theme — legends, captions, subtitles all run at 12–13px | ✅ v32: `--dim` #6d5f49 (4.79 on bg, 5.67 on card) |
+| A5 | S1 | Accent-coloured text (section headers `.tg-group`, `.facet-sec h3`, etc.) 2.86:1 on card | ✅ v32: links, headers, chevrons, `.rel-ver` etc. → `--accent-ink`; green text → new `--facet-mode-ink` |
+| A6 | S2 | Focus rings suppressed: six `:focus-visible` rules end in `outline: none` with colour-only replacement | ✅ v32: global `:focus-visible` slate ring; all six `outline: none` removed |
+| A7 | S2 | Keyboard gaps: planner month-sort headers / rowheads / cells are `th`/`td` with `onclick`; map pins are pointer-only SVG circles | ✅ v32: sort headers + rowheads are real buttons (`.th-btn`); pins stay pointer-only by design (759 tab stops would be unusable) — the Planner is the keyboard path and the map `aria-label` says so |
+| A8 | S2 | No `prefers-reduced-motion` handling (pan/zoom limit pulses, transitions) | ✅ v32: global kill-switch shipped |
+| A9 | S3 | Hot pin fill vs plain pin fill 2.62:1 (non-text 3:1) — size + stroke + on-top currently carry it | ✅ v32: hot-pin stroke 2×; `--score-hot` light nudged #ff6a00→#f25c00 (cells 3.04:1) |
 | A10 | S3 | Informational tiny text: 7px sparkline month letters, 8px count caption, 9–10px state words | Bump informational ones to ≥ 11px; leave decorative caps |
-| A11 | S3 | Toasts: confirm they announce (`role="status"`/`aria-live`) for screen readers | Add if missing |
+| A11 | S3 | Toasts: confirm they announce (`role="status"`/`aria-live`) for screen readers | ✅ v32: toasts carry `role="status"` |
 | A12 | S3 | No skip-to-content; heading order sweep; sparkline SVGs lack text alternatives where they carry data | Sweep + fix in the same pass |
+| A13 | S1 | Active tab distinguished from inactive by hue alone; active gold also 3.3:1 on the old dock | ✅ v32: active tab carries a bar under its icon; dock deepened to #695c47 (inks 5.26/4.54) |
 
 ## Prevention — how this stays true
 

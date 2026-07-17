@@ -50,7 +50,8 @@ export function toast(msg, opts = {}) {
   const action = opts.action || null;
   const ms = opts.ms ?? (action ? 6500 : 3500);
   document.querySelector('.toast')?.remove();
-  const t = el('div.toast', {}, [el('span.toast-msg', {}, msg)]);
+  // role=status: screen readers announce the toast without stealing focus.
+  const t = el('div.toast', { role: 'status' }, [el('span.toast-msg', {}, msg)]);
   let done = false;
   const dismiss = () => {
     if (done) return; done = true;

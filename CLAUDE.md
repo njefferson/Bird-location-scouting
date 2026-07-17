@@ -132,7 +132,38 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   `.far` counties lifted off the map background; dead-end rescue for empty
   regions and broken import links.
 
+## SETTLED, don't re-offer (Noah, 2026-07-17):
+- LICENSE: he chose PROPRIETARY / all-rights-reserved — NO LICENSE file, do not
+  add one or re-suggest open-sourcing. (Map-data credits — Natural Earth PD,
+  OSM ODbL, game-icons CC-BY — live in ui/about.js and are unaffected.)
+- GitHub REPO METADATA (description, homepage, topics, social preview) CANNOT be
+  written by the session's GitHub token: it authenticates as njefferson but is a
+  scoped App integration — a real PUT /topics returned "Resource not accessible
+  by integration". These are Noah's manual Settings tasks (exact copy-paste
+  values + a generated 1280×640 social-preview.png were handed over 2026-07-17).
+  Do NOT keep offering to do them from here; the wall is proven, not assumed.
+
 ## Project facts (verified, don't rediscover)
+- v32 IN FLIGHT 2026-07-17 (this session): the ACCESSIBILITY PASS — fixes for
+  register items A1-A9, A11, A13 in /ACCESSIBILITY.md (A10/A12 stay open). On
+  `staging` + draft PR awaiting Noah's on-device go. KEY FACTS: badges read
+  +N/−N (symbol carries meaning); .ffp-light.exclude::after slash; NEW tokens
+  --count-want (badge green ground), --facet-mode-ink (green-as-text),
+  --focus (= --slate) with a GLOBAL `:focus-visible` ring (all six
+  `outline:none` suppressions removed — never reintroduce); light --dim
+  darkened #8a7b64→#6d5f49; accent-as-TEXT switched to --accent-ink app-wide
+  (accent stays for marks/fills); DOCK deepened #8f7f66→#695c47 with active
+  ink #ffd08a + an active-tab BAR (.tab.active .tab-icon::after — active was
+  hue-only, A13); --score-hot light nudged #ff6a00→#f25c00 (3:1 vs plain
+  cells); planner sort headers + rowheads are real buttons (.th-btn); map svg
+  aria-label names the Planner as the keyboard path (pins deliberately NOT
+  tabbable); toasts role=status; global prefers-reduced-motion kill-switch.
+  scripts/contrast-check.mjs is now a GATE (exit 1 on FAIL; 28 pairs, all
+  pass). Verified per the contract: grayscale panel render (symbols/slash/
+  ring/strikethrough all survive), keyboard Jul-sort via focus+Enter, visible
+  slate ring, toast role, reduced-motion collapses transitions; zero
+  pageerrors. NEEDS-HIS-HANDS: the deeper dock + darker dim/captions read
+  (AA-driven, taste-adjacent); the hot-orange nudge; the active-tab bar.
 - v31 SHIPPED 2026-07-17 (PR #35, squash 8d4563a): "Collapsible groups when
   picking target birds" (the top roadmap item) PLUS a large batch of Noah's
   mid-review asks — MERGED to main on his explicit "Promote to main" (his gate,

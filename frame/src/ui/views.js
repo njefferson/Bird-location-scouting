@@ -367,16 +367,20 @@ export function renderMatrix(root, state, nav) {
 
   const sortM = Number.isInteger(state.plannerSort) ? state.plannerSort : null;
   const table = el('table.matrix');
+  // Sort controls are real buttons inside the th cells so the keyboard reaches
+  // them (Tab + Enter), with the global focus ring (/ACCESSIBILITY.md A7).
   const head = el('tr', {}, [
-    el('th.corner', {
+    el('th.corner', {}, el('button.th-btn', {
       title: 'Back to the default order (best month first)',
       onclick: () => { state.plannerSort = null; nav.rerender(); },
-    }, 'Hotspot'),
+    }, 'Hotspot')),
     ...MONTHS.map((m, i) => el('th.mth', {
       class: [i === state.monthIdx ? 'col-active' : '', i === sortM ? 'sorted' : ''].filter(Boolean).join(' '),
+    }, el('button.th-btn', {
       title: `Sort by ${m}`,
+      'aria-pressed': i === sortM ? 'true' : 'false',
       onclick: () => { state.plannerSort = sortM === i ? null : i; nav.rerender(); },
-    }, m)),
+    }, m))),
   ]);
   table.append(head);
 
@@ -388,7 +392,8 @@ export function renderMatrix(root, state, nav) {
       : (a, b) => (cellNum(b.h, sortM) ?? -1) - (cellNum(a.h, sortM) ?? -1) || b.best - a.best);
 
   const buildMatrixRow = (h) => {
-    const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
+    const tr = el('tr', {}, [el('th.rowhead', {},
+      el('button.th-btn', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name))]);
     MONTHS.forEach((_, m) => {
       const r = byMonth[m].rows[h.id];
       const hot = byMonth[m].hot.has(h.id);

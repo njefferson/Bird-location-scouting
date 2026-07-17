@@ -113,12 +113,12 @@ export function facetFilterPanel(nav) {
     }, [
       el('span.ffp-cat-ico', { 'aria-hidden': 'true', html: facetSvg(CAT_ICON[f.key], 22) }),
       el('span.ffp-cat-label', {}, f.label),
-      // Two corner tallies: GREEN = must-include (wanted), RED = exclude. Each
-      // shows only when it has a count, so a one-direction filter reads as a
-      // single circle and a mixed one as green + red side by side.
+      // Two corner tallies: GREEN +N = must-include, RED −N = exclude. The
+      // symbol carries the meaning (colour-blind-safe — /ACCESSIBILITY.md A1);
+      // the hue is reinforcement. Each shows only when it has a count.
       (wanted || excluded) ? el('span.ffp-cat-counts', { 'aria-hidden': 'true' }, [
-        wanted ? el('span.ffp-cat-count.want', { title: `${wanted} must-include` }, String(wanted)) : null,
-        excluded ? el('span.ffp-cat-count.block', { title: `${excluded} excluded` }, String(excluded)) : null,
+        wanted ? el('span.ffp-cat-count.want', { title: `${wanted} must-include` }, `+${wanted}`) : null,
+        excluded ? el('span.ffp-cat-count.block', { title: `${excluded} excluded` }, `−${excluded}`) : null,
       ]) : null,
       el('span.ffp-cat-chev', { 'aria-hidden': 'true' }, open ? '▾' : '▸'),
     ]));
