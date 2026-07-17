@@ -72,6 +72,8 @@ export function toast(msg, opts = {}) {
 
 
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */
+const SPARK_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
 export function sparkline(series, { w = 96, h = 22, inferred = false, months = true } = {}) {
   const max = Math.max(0.0001, ...series.map((s) => (typeof s === 'number' ? s : s.value)));
   const pts = series.map((s, i) => {
@@ -100,6 +102,24 @@ export function sparkline(series, { w = 96, h = 22, inferred = false, months = t
   poly.setAttribute('points', pts.join(' '));
   poly.setAttribute('fill', 'none');
   svg.append(poly);
+  // Text alternative (A12): the sparkline carries the 12-month trend, so give it
+  // role=img + a spoken description (peak month + rough shape). role=img makes AT
+  // read this label instead of the decorative gridlines and month initials.
+  const vals = series.map((sv) => (typeof sv === 'number' ? sv : sv.value));
+  const maxv = Math.max(...vals);
+  let desc;
+  if (maxv <= 0.001) {
+    desc = 'Twelve-month trend: not reported here';
+  } else {
+    const peak = vals.indexOf(maxv);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    desc = maxv < mean * 1.6
+      ? `Twelve-month presence: fairly steady, highest in ${SPARK_MONTHS[peak]}`
+      : `Twelve-month presence: peaks in ${SPARK_MONTHS[peak]}`;
+  }
+  if (inferred) desc += ' (modeled, not from eBird data)';
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', desc);
   // Month-initial axis (J F M A M J J A S O N D) along the bottom.
   if (months) {
     const INIT = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
