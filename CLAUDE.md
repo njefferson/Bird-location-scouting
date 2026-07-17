@@ -204,22 +204,25 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   e.touches.length >= 2 (and e.cancelable) — touch-action only gates how a
   gesture STARTS, so this is the only way to keep a live pinch; one finger stays
   the page's. NEEDS-HIS-HANDS: real pinch/scroll feel; 4x label point; 0.008 dot.
-  (h) "NUMBERS BEHIND THE DOTS" STATS DIALOG (Noah's ask, same message): the map
-  legend row (.legend-row) carries a ⓘ (.stats-info) → openStatsDialog() in
-  mapview.js — a .facet-dialog.stats-dialog with a SITE × MONTH table
-  (.stats-table) of REPORT COUNTS (checklistN(h,m), i.e. eBird checklists in the
-  loaded data; null → "—"). Sortable: tap a month header = sort desc by that
-  month (default = current month), tap "Hotspot" = alpha; .sorted header gets ▾.
-  Cells in that month's hot tier (same hotTierCount sets as the pins) are
-  .st-hot orange, tying table to dots. Top 80 rows + "Show all N sites"
-  (.st-more). Copy states it's computed FROM THE LOADED DATA and shows
-  regionMeta().builtAt as "current data built <Mon Year>" — updates itself every
-  refresh, per his explicit ask (never a static label). Body sits inside
-  .facet-sections (the v26 dialog rule); .st-wrap scrolls both axes with sticky
-  header row + sticky site column. Verified headless: default Jul-desc order,
-  Jan sort's top value === true max checklistN (412), 175 hot cells, show-all
-  759 rows, Done closes, zero pageerrors. NEEDS-HIS-HANDS: table density/read
-  on iPad; whether he wants the same ⓘ on the Planner.
+  (h) "NUMBERS BEHIND THE DOTS" — IN THE PLANNER, NOT A POPUP (final form; a
+  first cut as a stats DIALOG duplicated the Planner's site × month grid and
+  Noah stopped it — "this is duplicating the Planner"; the dialog was removed,
+  don't rebuild it). SHIPPED DESIGN: the Year planner (views.js renderMatrix)
+  gained a standing NUMBERS TOGGLE (.num-toggle, two pills "Species likely" /
+  "Reports"; state.plannerNumbers, default species) that swaps the CELL NUMBER
+  between r.diversity and r.n (= checklistN — eBird checklists in the loaded
+  data; null → "—"). Hot tier / orange cells / row cap unchanged by the toggle.
+  MONTH-SORT: tap a month header (th.mth) → rows sort desc by that column's
+  displayed number (state.plannerSort; .sorted header gets ▾); tap the "Hotspot"
+  corner → default best-month order. Cell tooltips now ALWAYS carry both
+  numbers ("· N species likely · N reports ·"). Reports-mode legend explains
+  the sample honestly + prints regionMeta().builtAt ("current data built <Mon
+  Year>") — computed from loaded data, updates every refresh (his explicit
+  ask: never a static label). The MAP's ⓘ (.stats-info in .legend-row) routes
+  `state.plannerNumbers='reports'; nav.go('#/matrix')` — no dialog. Verified
+  headless: toggle flips 84→412 (=== checklistN), Jul-sort top === true max
+  (203), corner resets, ⓘ lands on #/matrix in Reports mode, zero pageerrors.
+  NEEDS-HIS-HANDS: the toggle read/feel; whether reports-mode wants to persist.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app

@@ -324,9 +324,17 @@ function dataProvenanceFooter() {
 // =============================================================================
 export function renderMatrix(root, state, nav) {
   clear(root);
+  // Which number fills the cells: 'species' (how many species clear the keeper
+  // bar) or 'reports' (eBird checklists in the loaded data — the sample size
+  // behind the rankings, Noah's "numbers behind the dots"; the map's ⓘ jumps
+  // here with this mode on). One surface, not a separate popup — this IS the
+  // site × month table, so the numbers live in it.
+  const numMode = state.plannerNumbers === 'reports' ? 'reports' : 'species';
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, `Species likely by month · orange = historically strongest spots for that month — tap a cell for detail.`),
+    el('span.subtitle', {}, numMode === 'reports'
+      ? 'Reports in the data by month · orange = historically strongest spots — tap a month name to sort, a cell for detail.'
+      : 'Species likely by month · orange = historically strongest spots for that month — tap a month name to sort, a cell for detail.'),
   ]));
 
   // Pre-rank each month; each month's HOT tier (the natural break in that
@@ -342,26 +350,52 @@ export function renderMatrix(root, state, nav) {
       hot: new Set(ranked.slice(0, hotTierCount(ranked)).map((r) => r.hotspot.id)),
     };
   });
+  const cellNum = (h, m) => {
+    const r = byMonth[m].rows[h.id];
+    return numMode === 'reports' ? r.n : r.diversity;
+  };
 
+  // The standing numbers toggle — the mode announces itself and swaps in a tap.
+  root.append(el('div.num-toggle', { role: 'group', 'aria-label': 'What the cell numbers show' }, [
+    ['species', 'Species likely'], ['reports', 'Reports'],
+  ].map(([key, label]) => el('button.num-btn' + (numMode === key ? '.on' : ''), {
+    'aria-pressed': numMode === key ? 'true' : 'false',
+    onclick: () => { state.plannerNumbers = key; nav.rerender(); },
+  }, label))));
+
+  const sortM = Number.isInteger(state.plannerSort) ? state.plannerSort : null;
   const table = el('table.matrix');
-  const head = el('tr', {}, [el('th.corner', {}, 'Hotspot'), ...MONTHS.map((m, i) =>
-    el('th', { class: i === state.monthIdx ? 'col-active' : '' }, m))]);
+  const head = el('tr', {}, [
+    el('th.corner', {
+      title: 'Back to the default order (best month first)',
+      onclick: () => { state.plannerSort = null; nav.rerender(); },
+    }, 'Hotspot'),
+    ...MONTHS.map((m, i) => el('th.mth', {
+      class: [i === state.monthIdx ? 'col-active' : '', i === sortM ? 'sorted' : ''].filter(Boolean).join(' '),
+      title: `Sort by ${m}`,
+      onclick: () => { state.plannerSort = sortM === i ? null : i; nav.rerender(); },
+    }, m)),
+  ]);
   table.append(head);
 
-  // Order rows by their best month's presence intensity.
+  // Row order: tap a month to sort by that column's number; otherwise by the
+  // best month's presence intensity.
   const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm.rows[h.id].vis)) }))
-    .sort((a, b) => b.best - a.best);
+    .sort(sortM == null
+      ? (a, b) => b.best - a.best
+      : (a, b) => (cellNum(b.h, sortM) ?? -1) - (cellNum(a.h, sortM) ?? -1) || b.best - a.best);
 
   const buildMatrixRow = (h) => {
     const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
     MONTHS.forEach((_, m) => {
       const r = byMonth[m].rows[h.id];
       const hot = byMonth[m].hot.has(h.id);
+      const n = cellNum(h, m);
       const cell = el('td.cell', {
         class: [m === state.monthIdx ? 'col-active' : '', hot ? 'hot' : ''].filter(Boolean).join(' '),
-        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}${hot ? ` · historically strong for ${MONTHS[m]}` : ''}`,
+        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.n ?? '—'} reports · ${r.trust.label}${hot ? ` · historically strong for ${MONTHS[m]}` : ''}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
-      }, String(r.diversity));
+      }, n == null ? '—' : String(n));
       tr.append(cell);
     });
     return tr;
@@ -377,10 +411,17 @@ export function renderMatrix(root, state, nav) {
       onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
     }, `Show all ${order.length} hotspots`));
   }
-  // Honest label: past-seasons frequency, not live activity (see mapview).
-  root.append(el('p.legend', {}, spec.weigh
-    ? 'An orange cell means that hotspot has historically reported the most shootable birds in that month (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
-    : 'An orange cell means that hotspot has historically reported the most birds in that month (past seasons’ Σ frequency, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
+  // Honest label: past-seasons frequency, not live activity (see mapview). In
+  // reports mode, say what the sample is and that it tracks every data refresh.
+  const built = (() => {
+    const d = new Date(regionMeta().builtAt || NaN);
+    return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  })();
+  root.append(el('p.legend', {}, numMode === 'reports'
+    ? `Each number is how many reports (eBird checklists) the loaded data holds for that site in that calendar month — the sample behind the rankings. Months differ hugely: a top spot can rest on hundreds of reports in one month and a dozen in another, and the orange alone can’t show that. Computed from the data itself, so it updates with every refresh${built ? ` (current data built ${built})` : ''}. Orange cells are that month’s historically strongest tier — the same spots as the map’s orange pins.`
+    : spec.weigh
+      ? 'An orange cell means that hotspot has historically reported the most shootable birds in that month (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+      : 'An orange cell means that hotspot has historically reported the most birds in that month (past seasons’ Σ frequency, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================
