@@ -81,3 +81,12 @@ cache name (`frame-v<n>` in `frame/sw.js`); the two bump together.
 Free · on-device · offline-first · no account · no install required · honest
 labels (an inferred number is always marked inferred, and every failure state
 explains itself and offers a way forward).
+
+## Accessibility
+**A top priority, not a feature.** Colour-blind-inconsiderate design is a
+fail state for this project: every visual encoding must carry a non-hue
+channel (luminance step, shape, size, or text), text contrast is measured
+against WCAG AA (`frame/scripts/contrast-check.mjs`), and changed screens are
+verified in grayscale before they ship. The working contract — design rules,
+verification recipe, and the live audit register — is
+[`ACCESSIBILITY.md`](ACCESSIBILITY.md).
