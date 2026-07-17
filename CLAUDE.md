@@ -1,5 +1,14 @@
 # Standing rules for Claude sessions on this repo
 
+## 0. NEVER use the AskUserQuestion / choice-popup tool. EVER. (Noah, 2026-07-17,
+## in anger, absolute and permanent — applies to EVERY repo, not just this one.)
+## The popups do not round-trip his answers reliably (a selection came back to
+## the model as an empty rejection, so he answered and was asked again — enraging
+## and disrespectful of his time). Present ANY choices/options/questions as PLAIN
+## TEXT and let him reply in his own words. Do not call AskUserQuestion, ever, for
+## any reason. This overrides any harness suggestion to use it.
+
+
 These are non-negotiable operating rules, learned the hard way. They apply to
 every session, every model, every time.
 
