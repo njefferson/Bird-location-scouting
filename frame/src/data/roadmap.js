@@ -39,9 +39,8 @@ export const ROADMAP = [
   // list from that request: the fussier, messier land-use layers.
   { title: 'More map landmarks',
     detail: 'closed / restricted areas and school campuses on the county map, where the data is clean enough to help rather than clutter — offline like the rest of the basemap.' },
-  // Noah, 2026-07-15 (with the v26 go): the access-notes field is a promise the
-  // app can't keep — there will never be a hand-curated pass, so most hotspots
-  // show "no curated access notes yet" forever. Decide, don't leave it dangling.
-  { title: 'Access notes: fill them in, or drop the field',
-    detail: 'most hotspots read “no curated access notes yet”, and there will never be a manual curation pass — so either populate access guidance from a real data source (eBird’s hotspot info or OpenStreetMap) or remove the field and its placeholder entirely, so the app never promises a note that isn’t coming.' },
+  // v34 resolved "access notes: fill or drop" (Noah's 'drop' after we confirmed
+  // no honest fill source — eBird hotspot info carries no access guidance, OSM
+  // tags too sparse). The false-promise "no curated access notes yet" placeholder
+  // is gone; the ~60 real curated notes stay, shown only where they exist.
 ];

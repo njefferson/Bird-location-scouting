@@ -231,7 +231,11 @@ function card(r, state, nav) {
     el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Apple Maps` }, 'Apple Maps'),
     el('a.btn', { href: links.google, target: '_blank', rel: 'noopener', title: `Open ${h.name} in Google Maps` }, 'Google Maps'),
     el('button.btn', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, 'Species matrix'),
-    el('button.btn.ghost', { onclick: () => toggleNotes(card, h) }, 'Access'),
+    // The Access button appears ONLY where a real curated note exists (the ~60
+    // seed hotspots). The data-built hotspots have no note and there's no honest
+    // source to fill one, so we don't offer a button that promises nothing —
+    // the Maps buttons cover getting there. (Roadmap "access notes: fill/drop".)
+    h.access ? el('button.btn.ghost', { onclick: () => toggleNotes(card, h) }, 'Access') : null,
   ]);
 
   const node = el('div.card', {}, [head, guildRow, habs, species, actions]);
@@ -304,11 +308,12 @@ function guildPresenceRow(h, monthIdx) {
 }
 
 function toggleNotes(_, h) {
-  // Lightweight expandable access note (imported from the location file later).
+  // Expandable curated access note. Only wired up when h.access exists (see the
+  // Access button guard), so there's no "no note yet" placeholder to show.
   const existing = document.querySelector(`.card-notes[data-h="${h.id}"]`);
   if (existing) { existing.remove(); return; }
   const all = [...document.querySelectorAll('.card')].find((c) => c._hotspot === h);
-  if (all) all.append(el('div.card-notes', { dataset: { h: h.id } }, h.access || 'No curated access notes for this hotspot yet — use the 🗺 Maps button.'));
+  if (all && h.access) all.append(el('div.card-notes', { dataset: { h: h.id } }, h.access));
 }
 
 function dataProvenanceFooter() {
@@ -456,11 +461,15 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
   ]));
 
   const links = hotspotMapLinks(h);
-  root.append(el('div.access-box', {}, [el('strong', {}, 'Access: '), h.access,
+  // The curated "Access:" note shows only when one actually exists; the Maps
+  // links are always here (that's how you get there). No empty-promise line.
+  root.append(el('div.access-box', {}, [
+    h.access ? el('p.access-note', {}, [el('strong', {}, 'Access: '), h.access]) : null,
     el('div.access-links', {}, [
       el('a.btn', { href: links.apple, target: '_blank', rel: 'noopener' }, 'Apple Maps'),
       el('a.btn', { href: links.google, target: '_blank', rel: 'noopener' }, 'Google Maps'),
-    ])]));
+    ]),
+  ]));
 
   // Species table: name · facet icons · this-month freq · sparkline. Sorted by
   // how present the bird is here this month.
