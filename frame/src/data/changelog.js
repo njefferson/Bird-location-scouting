@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v30',
+    date: '2026-07-17',
+    changes: [
+      'The filter’s four category buttons have clearer icons: a dove for Type, a ruler for Size, a proper nest for Nest, and binoculars for Behaviour (how easy a bird is to find). Small thing, but the row reads at a glance now.',
+    ],
+  },
+  {
     version: 'v29',
     date: '2026-07-16',
     changes: [

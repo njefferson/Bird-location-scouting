@@ -89,12 +89,14 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## point, badge hue nudges, two-finger pan feel) are UNCHECKED taste follow-up,
 ## not regressions.
 ## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): the bottom-tab-bar
-## item SHIPPED as v27 (see Project facts) — remaining, in order: (1) icons do
-## things everywhere — tap-to-filter wherever facet icons appear and it makes
-## sense; (2) collapsible species sections in the target-bird picker; then the
-## older "more map landmarks" and "access notes: fill or drop" items. He said
-## "other things" beyond these — open-ended; confirm before inventing. Older
-## v22 thread ("possibly other things off of that") stays open too.
+## item SHIPPED as v27, and "icons do things everywhere" SHIPPED as v28 (both in
+## Project facts). Remaining, in order: (1) collapsible species sections in the
+## target-bird picker; then the older "more map landmarks" and "access notes:
+## fill or drop" items. He said "other things" beyond these — open-ended; confirm
+## before inventing. Older v22 thread ("possibly other things off of that") stays
+## open too. IN FLIGHT (2026-07-16, this session, NOT a roadmap item — a fresh
+## ask after v29 shipped): replacing the 4 FILTER CATEGORY icons (Type/Size/Nest/
+## Behaviour, ui/facetbar.js CAT_ICON) — searching for better glyphs.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -108,6 +110,34 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v29 SHIPPED 2026-07-16 (PR #33): "Icons, a clearer species list, redesigned
+  Ranking" — MERGED WITH Noah's on-device pass ("This is great, promote to Main").
+  A multi-part quality pass, all in frame/src/. (1) A dim GUILD SILHOUETTE leads
+  each species — guildBird() in ui/facetbar.js (reuses GUILDS[k].icon), placed on
+  the hotspot species facet line and Target/Seen rows; group-level only, no
+  per-species art. (2) SPECIES-TABLE ROW: the name is the headline (bigger/bolder,
+  right-justified via .name-cell), ☆/＋ marks smaller/quieter; the facet glyphs
+  became a single italic .sp-facet-line. (3) Target mark ☆→CAMERA (cameraMark() in
+  ui/targets.js — it's a shot list); Seen mark →CHECK (seenMark() in ui/views.js);
+  dropped the misleading guild bird before the species-PAGE name. (4) PHOTO-FIRST
+  is a real toggle again (ui/photo.js photoChip → .photo-toggle: tap flips
+  setPhotoFirst + rerender, shows ON/OFF; separate ⓘ opens the weight explainer) —
+  no more fake-toggle-opens-a-menu. (5) RANKING FILTER redesigned: always-visible
+  accordion facetFilterPanel(nav) (ui/facetbar.js) replacing the old facetEntryChip
+  — 4 compact category tiles (Type/Size/Nest/Behaviour) with a corner ▸ chevron +
+  count badge; tap opens ONE category's tri-state pills (module-level OPEN_CAT
+  survives rerender), a 3-tap explainer, and a status-lights row. (6) CARD PRESENCE
+  ROW split out as INFO-ONLY (guildPresenceRow in ui/views.js) — NOT the filter.
+  Its final form (many taste iterations): a GREEN/AMBER/RED TRAFFIC LIGHT — green
+  = here, amber = maybe, red = not-expected — via NEW per-theme tokens
+  --pi-here/--pi-maybe/--pi-none (styles.css), which ALSO step monotonically
+  dark→light so the state survives GRAYSCALE for colour-blind users (Noah's
+  explicit ask; verified with a grayscale render). NB: earlier iterations used a
+  small red ✕ then a warm-saturation ramp — both REPLACED by the traffic light;
+  don't reintroduce the ✕. FILTER category tiles were shrunk (~46px). NEEDS-HIS-
+  HANDS (taste, not regressions): amber "maybe" temperature; the exact green depth;
+  whether the filter tiles want to go smaller still (inline icon+label). The 4
+  FILTER CATEGORY icons are the NEXT task (he asked for replacements).
 - v28 SHIPPED 2026-07-16 (PR #32): "Icons that do things, everywhere" — roadmap
   item #1 (Noah's top ask), MERGED WITH his on-device pass ("I like it, promote
   to main"). Three things landed together on one candidate (two sessions):
