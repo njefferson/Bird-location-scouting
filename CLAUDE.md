@@ -132,6 +132,17 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   `.far` counties lifted off the map background; dead-end rescue for empty
   regions and broken import links.
 
+## SETTLED, don't re-offer (Noah, 2026-07-17):
+- LICENSE: he chose PROPRIETARY / all-rights-reserved — NO LICENSE file, do not
+  add one or re-suggest open-sourcing. (Map-data credits — Natural Earth PD,
+  OSM ODbL, game-icons CC-BY — live in ui/about.js and are unaffected.)
+- GitHub REPO METADATA (description, homepage, topics, social preview) CANNOT be
+  written by the session's GitHub token: it authenticates as njefferson but is a
+  scoped App integration — a real PUT /topics returned "Resource not accessible
+  by integration". These are Noah's manual Settings tasks (exact copy-paste
+  values + a generated 1280×640 social-preview.png were handed over 2026-07-17).
+  Do NOT keep offering to do them from here; the wall is proven, not assumed.
+
 ## Project facts (verified, don't rediscover)
 - v32 IN FLIGHT 2026-07-17 (this session): the ACCESSIBILITY PASS — fixes for
   register items A1-A9, A11, A13 in /ACCESSIBILITY.md (A10/A12 stay open). On
