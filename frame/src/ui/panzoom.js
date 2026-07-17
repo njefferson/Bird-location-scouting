@@ -193,6 +193,16 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
     syncPinch();
     if (pts.size === 0) multi = false;
   });
+  // TWO fingers always belong to the MAP. touch-action only gates how a gesture
+  // STARTS — mid-pinch, two fingers drifting the same vertical-ish way still
+  // matched pan-y, so the browser would steal the gesture into a page scroll
+  // and pointercancel the zoom (Noah: "moving your fingers the wrong way stops
+  // the zoom"). Cancelling every multi-touch move keeps the pinch ours; a
+  // single finger is untouched and still scrolls the page.
+  svg.addEventListener('touchmove', (e) => {
+    if (e.touches.length >= 2 && e.cancelable) e.preventDefault();
+  }, { passive: false });
+
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
     zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);

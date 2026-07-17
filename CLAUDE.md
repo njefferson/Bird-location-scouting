@@ -197,8 +197,29 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   once and papered the map). Captions updated ("pan with two fingers (one finger
   scrolls the page) or drag with a mouse"). Verified headless incl. synthetic
   pointer events: mouse pans, single touch does NOT pan, two-finger pinch works,
-  names off at 3.8x / on at 5.4x, zero pageerrors. NEEDS-HIS-HANDS: real pinch/
-  scroll feel; whether 4x label point and 0.008 dot size sit right.
+  names off at 3.8x / on at 5.4x, zero pageerrors. FOLLOW-UP (Noah: dots good,
+  labels good, but "scrolling is messing up zooming" — a vertical-ish two-finger
+  drift matched pan-y and the browser STOLE the pinch mid-gesture): panzoom.js
+  now has a NON-PASSIVE touchmove listener that preventDefaults whenever
+  e.touches.length >= 2 (and e.cancelable) — touch-action only gates how a
+  gesture STARTS, so this is the only way to keep a live pinch; one finger stays
+  the page's. NEEDS-HIS-HANDS: real pinch/scroll feel; 4x label point; 0.008 dot.
+  (h) "NUMBERS BEHIND THE DOTS" STATS DIALOG (Noah's ask, same message): the map
+  legend row (.legend-row) carries a ⓘ (.stats-info) → openStatsDialog() in
+  mapview.js — a .facet-dialog.stats-dialog with a SITE × MONTH table
+  (.stats-table) of REPORT COUNTS (checklistN(h,m), i.e. eBird checklists in the
+  loaded data; null → "—"). Sortable: tap a month header = sort desc by that
+  month (default = current month), tap "Hotspot" = alpha; .sorted header gets ▾.
+  Cells in that month's hot tier (same hotTierCount sets as the pins) are
+  .st-hot orange, tying table to dots. Top 80 rows + "Show all N sites"
+  (.st-more). Copy states it's computed FROM THE LOADED DATA and shows
+  regionMeta().builtAt as "current data built <Mon Year>" — updates itself every
+  refresh, per his explicit ask (never a static label). Body sits inside
+  .facet-sections (the v26 dialog rule); .st-wrap scrolls both axes with sticky
+  header row + sticky site column. Verified headless: default Jul-desc order,
+  Jan sort's top value === true max checklistN (412), 175 hot cells, show-all
+  759 rows, Done closes, zero pageerrors. NEEDS-HIS-HANDS: table density/read
+  on iPad; whether he wants the same ⓘ on the Planner.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app

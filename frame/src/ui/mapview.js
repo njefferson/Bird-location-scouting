@@ -12,8 +12,8 @@ import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
 import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
-import { getHotspots, activeRegion } from '../model/regions.js';
-import { rankHotspots, hotTierCount } from '../model/scoring.js';
+import { getHotspots, activeRegion, regionMeta } from '../model/regions.js';
+import { rankHotspots, hotTierCount, checklistN } from '../model/scoring.js';
 import { rankingSpec } from '../model/lists.js';
 import { MONTHS } from '../model/inference.js';
 import { monthSelector, regionDeadEnd, emptyModeNote } from './views.js';
@@ -174,10 +174,19 @@ export function renderMapView(root, state, nav) {
 
   // Honest label: this is PAST-SEASONS frequency, not live activity — these
   // spots aren't "hot right now", they've historically reported the most in
-  // this month. Say exactly that.
-  root.append(el('p.legend', {}, spec.weigh
-    ? `Orange pins mark the spots that have historically reported the most shootable birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`
-    : `Orange pins mark the spots that have historically reported the most birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`));
+  // this month. Say exactly that. The ⓘ opens the numbers behind the dots —
+  // per-site, per-month report counts, computed from the LOADED data so every
+  // quarterly refresh updates it (never a static label).
+  root.append(el('div.legend-row', {}, [
+    el('p.legend', {}, spec.weigh
+      ? `Orange pins mark the spots that have historically reported the most shootable birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`
+      : `Orange pins mark the spots that have historically reported the most birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`),
+    el('button.stats-info', {
+      'aria-label': 'The numbers behind the dots — reports per site, per month',
+      title: 'The numbers behind the dots',
+      onclick: () => openStatsDialog(state, spec, hotspots),
+    }, 'ⓘ'),
+  ]));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {
@@ -194,4 +203,87 @@ export function renderMapView(root, state, nav) {
       svg.append(me);
     }, () => {}, { maximumAge: 300000, timeout: 5000 });
   }).catch(() => {});
+}
+
+// =============================================================================
+// THE NUMBERS BEHIND THE DOTS — a per-site × per-month table of REPORT COUNTS
+// (eBird checklists in the loaded data), opened from the ⓘ by the map caption.
+// The point (Noah's ask): the dots only show rank WITHIN a month — nothing
+// showed that July's top spot rests on 700 reports while January's rests on 11.
+// Everything here is computed from the loaded county data at open time, so a
+// quarterly refresh updates it automatically; nothing is a static label.
+// Orange cells = that month's historically-strongest tier (the orange pins).
+// =============================================================================
+function openStatsDialog(state, spec, hotspots) {
+  const dialog = el('dialog.facet-dialog.stats-dialog');
+  const rows = hotspots.map((h) => ({ h, n: MONTHS.map((_, m) => checklistN(h, m)) }));
+  const hotByMonth = MONTHS.map((_, m) => {
+    const ranked = rankHotspots(hotspots, m, { species: spec.species, weigh: spec.weigh });
+    return new Set(ranked.slice(0, hotTierCount(ranked)).map((r) => r.hotspot.id));
+  });
+
+  let sortM = state.monthIdx; // which month column sorts the rows; -1 = by name
+  let showAll = false;
+  const CAP = 80;
+
+  const built = (() => {
+    const d = new Date(regionMeta().builtAt || NaN);
+    return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  })();
+
+  function paint() {
+    const order = rows.slice().sort((a, b) => (sortM < 0
+      ? a.h.name.localeCompare(b.h.name)
+      : (b.n[sortM] ?? -1) - (a.n[sortM] ?? -1) || a.h.name.localeCompare(b.h.name)));
+    const shown = showAll ? order : order.slice(0, CAP);
+
+    const table = el('table.stats-table');
+    table.append(el('thead', {}, el('tr', {}, [
+      el('th.st-site' + (sortM < 0 ? '.sorted' : ''), {
+        title: 'Sort by name', onclick: () => { sortM = -1; paint(); },
+      }, 'Hotspot'),
+      ...MONTHS.map((mo, m) => el('th.st-m' + (sortM === m ? '.sorted' : ''), {
+        title: `Sort by ${mo} reports`, onclick: () => { sortM = m; paint(); },
+      }, mo)),
+    ])));
+    const body = el('tbody');
+    for (const rw of shown) {
+      body.append(el('tr', {}, [
+        el('th.st-site', {}, rw.h.name),
+        ...rw.n.map((n, m) => el('td' + (hotByMonth[m].has(rw.h.id) ? '.st-hot' : ''), {},
+          n == null ? '—' : String(n))),
+      ]));
+    }
+    table.append(body);
+
+    dialog.replaceChildren(
+      el('button.si-close', { 'aria-label': 'Close', onclick: () => dialog.close() }, '×'),
+      el('div.facet-dialog-head', {}, [
+        el('h2', {}, 'The numbers behind the dots'),
+      ]),
+      // RULE: all body content lives inside .facet-sections (it carries the
+      // dialog's padding + scroll — see the v26 photo-dialog lesson).
+      el('div.facet-sections', {}, [
+        el('p.st-note', {}, [
+          'Each number is how many reports (eBird checklists) the loaded data holds for that site in that calendar month. It’s the sample behind the dots: months differ hugely — a top spot can rest on 700 reports in one month and 11 in another, and the dots alone can’t show that. ',
+          el('strong', {}, 'Orange cells are that month’s historically-strongest tier — the same spots as the orange pins.'),
+          ' Tap a month to sort by it. This table is computed from the data itself, so it updates with every data refresh',
+          built ? ` (current data built ${built}).` : '.',
+        ]),
+        el('div.table-wrap.st-wrap', {}, table),
+        (!showAll && order.length > CAP) ? el('button.btn.small.st-more', {
+          onclick: () => { showAll = true; paint(); },
+        }, `Show all ${order.length} sites`) : null,
+      ]),
+      el('div.facet-dialog-foot', {}, [
+        el('button.btn.small', { onclick: () => dialog.close() }, 'Done'),
+      ]),
+    );
+  }
+  paint();
+
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => dialog.remove());
+  document.body.append(dialog);
+  dialog.showModal();
 }
