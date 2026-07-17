@@ -152,51 +152,35 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   frame (border color-mix(--ink 45%) + inset shadow, height 12). The green/red
   badges + Targets panel were verified headless (green rgb(122,168,99), red
   rgb(160,71,47)).
-  (d) THE REAL MAP-COLOUR FIX (Noah pushed back hard — the frame alone missed the
-  point): presence intensity `vis` (= shrunk/maxShrunk*100, scoring.js) is
-  HEAVY-TAILED — measured live on Home, median vis=1 and 659/759 pins fell in the
-  0-9 band, so a LINEAR accent->card mix crushed ~87% of dots to near-white and
-  only ~2 read orange; the white->orange key promised a spread the dots never
-  showed. FIX (his pick from 3 options: "absolute but curved"): a SCORE->COLOUR
-  gamma curve `scoreColorPct(vis)=round(100*(vis/100)^0.5)` in ui/dom.js (exponent
-  SCORE_COLOR_GAMMA=0.5 is the ONE knob; lower = more lift). Applied at BOTH the
-  map pins (mapview.js sets --s = scoreColorPct(vis)) and planner cells (views.js;
-  the `.lo` dark-ink threshold now keys on the curved value too). The legend
-  gradient is now SAMPLED from the same curve (scaleGradient() in dom.js, inline
-  style on .scale-bar) so the key matches the dots exactly. Colour only — ranking,
-  order and "N species likely" are UNCHANGED. Curved histogram now spreads
-  [328,224,100,41,32,16,6,6,2,4] vs old [659,54,23,7,5,5,0,2,2,2]; verified
-  headless (map + planner both themes, legible), zero pageerrors. NEEDS-HIS-HANDS:
-  the exact gamma (0.5) to taste.
-  (e) HOTTER SCORE COLOUR (Noah, after seeing (d): the best spots "look like
-  shadows" on the cream map — he wants the most-active = the BRIGHTEST; picked
-  "brighter, hotter colour" over dim-the-map / bigger-dots). NEW token --score-hot
-  (light #ff6a00, Dawn #ff8321) — a vivid luminous orange, SEPARATE from the muddy
-  UI --accent (#cf7f22) so data colour ≠ chrome. The map pins (.hotspot-map .pin),
-  planner cells (.cell) and the legend gradient (scaleGradient in dom.js) all now
-  mix card->--score-hot instead of card->--accent.
-  (e2) THE ACTUAL FIX — LUMINANCE DIRECTION (Noah, furious, third pass): the real
-  bug was that BRIGHTNESS was INVERSE to the value. On the light map low=bright
-  (card), high=dark(orange) — so in grayscale / for colour-blind eyes the scale
-  ran backwards and the best spots read as shadows. Hue changes can't fix that.
-  FIX: the hotspot MAP and the planner MATRIX are now forced DARK heat-fields in
-  BOTH app themes — `data-theme="dark"` set on the map wrap (mapview.js) and on
-  .matrix-wrap (views.js). In the dark tokens --card is near-black, so the SAME
-  card->--score-hot ramp becomes dim(low)->bright(high): luminance now CLIMBS with
-  the value (verified: pin luminance by score band 47,60,72,83,92,103,116,122,135,
-  147 — monotonic; grayscale render confirms). Brightest dot = most active = best,
-  colour-blind-safe. scoreScale(caption,{dark:true}) renders the legend bar in the
-  same dark tokens (dim->bright). Legend caption reworded "Brighter = more…".
-  GOTCHA fixed along the way: --far is `color-mix(var(--card2)..var(--bg2))`
-  declared only on :root, so its var()s baked in the LIGHT values and the forced-
-  dark map inherited a light --far (far counties stayed cream) — redeclared --far
-  in the [data-theme="dark"] block so it resolves dark. Also had to set
-  color:var(--ink) on the dark .matrix-wrap so the month/corner headers re-resolve
-  to light ink (inherited colour keeps the light value and vanishes on dark).
-  Verified both surfaces, both app themes, + grayscale, zero pageerrors. NEEDS-HIS-
-  HANDS: whether an always-dark map/planner in LIGHT app mode is wanted (it's the
-  only way "brighter = more" is possible + visible on a formerly-cream field); the
-  hot-orange top-end saturation.
+  (d) MAP/PLANNER "HOT TIER" — NO COLOUR SCALE (final form after FOUR iterations;
+  do NOT reintroduce any of the dead ones). History in one breath: presence `vis`
+  is heavy-tailed (median 1/100 on Home; a linear ramp crushed 87% of dots to
+  near-white) → tried a gamma curve, then a hotter orange, then forcing the map/
+  planner DARK so luminance climbed with value — Noah rejected each in turn (the
+  dark map killed the theme switch and "starting from completely dark is too low.
+  Most of the dots are just black"). HIS FINAL CALL (verbatim intent): "Forget the
+  scale. Find the natural cutoff… give the top spots a slightly obvious lift. No
+  more scale. Just normal and 'hot'." SHIPPED DESIGN: BINARY. hotTierCount(rows)
+  in model/scoring.js finds the largest consecutive-score drop in ranks 8-40 of
+  the (already-sorted) rankHotspots output (measured breaks: ~12 Jan, ~16 Apr/Jul,
+  ~13 Oct; <12 spots → top quarter). Map (mapview.js): hot pins get class
+  `pin hot` — solid --score-hot (light #ff6a00, Dawn #ff8321; token kept SEPARATE
+  from the muddy UI --accent), 1.35× radius, re-appended after the loop so they
+  draw ON TOP of dense clusters; all other pins are uniform quiet --card dots.
+  Planner (views.js): byMonth is now {rows, hot:Set} per month; `.cell.hot` =
+  solid --score-hot with fixed dark ink #2a1503; normal cells plain --card/--ink.
+  NO legend bar — plain `p.legend` captions ("Orange pins/cells are … hot
+  spots"); subtitles say "orange = hot spots". The map FOLLOWS THE THEME again
+  (no data-theme forcing anywhere). DELETED dead code: scoreColorPct/
+  scaleGradient/scoreScale (ui/dom.js), .score-scale/.scale-* CSS, --cell-ink/
+  --cell-ink-lo tokens, the `.lo` cell class. KEPT from the detour (real dawn-mode
+  bugfix): --far redeclared inside [data-theme="dark"] — its var(--card2)/
+  var(--bg2) resolve at declaration site, so the :root copy bakes in light values.
+  Ranking/order/"N species likely" never changed through any of this. Verified
+  headless both themes: 759 pins / 16 hot on Jul Home, hot fill correct, hot-on-
+  top true, planner hot-per-month 8-30, zero pageerrors. NEEDS-HIS-HANDS: the
+  1.35× hot-pin size and #ff6a00 heat to taste; whether the 8-40 gap window feels
+  right in other regions/months.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app

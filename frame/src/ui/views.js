@@ -2,7 +2,7 @@
 // VIEWS — the four screens from §5: Cards, Matrix, Species search, Settings,
 // plus a per-hotspot species matrix detail.
 // =============================================================================
-import { el, clear, pct, sparkline, scoreScale, scoreColorPct, toast } from './dom.js';
+import { el, clear, pct, sparkline, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
 import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
@@ -14,7 +14,7 @@ import { hotspotMapLinks } from '../data/hotspots.js';
 import { HABITATS } from '../data/habitats.js';
 import { freshness, monthYear } from '../model/freshness.js';
 import { MONTHS, frequencySeries, frequency, seasonality, STATUS_LABEL } from '../model/inference.js';
-import { rankHotspots, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
+import { rankHotspots, hotTierCount, FILTERS, bestForSpecies, TRUST } from '../model/scoring.js';
 import { rankingSpec } from '../model/lists.js';
 import { isTarget, targetCount, targetsRankOn, setTargetsRank, targetsRankActive } from '../model/targets.js';
 import { isSeen, seenCount, newBirdsOn, setNewBirds, newBirdsActive } from '../model/seen.js';
@@ -326,16 +326,21 @@ export function renderMatrix(root, state, nav) {
   clear(root);
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, `Species likely by month${photoFirstOn() && !targetsRankActive() ? ' · colour ranks easiest shots first' : ''} — tap a cell for that month’s detail.`),
+    el('span.subtitle', {}, `Species likely by month · orange = that month’s hot spots — tap a cell for that month’s detail.`),
   ]));
 
-  // Pre-rank each month so cell color is comparable within a month column.
+  // Pre-rank each month; each month's HOT tier (the natural break in that
+  // month's ranking, hotTierCount) is the only colour distinction — a cell is
+  // either one of the month's standout spots or it's a plain cell.
   const spec = rankingSpec();
   const modeNote = emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
   const byMonth = MONTHS.map((_, m) => {
     const ranked = rankHotspots(getHotspots(), m, { species: spec.species, weigh: spec.weigh });
-    return Object.fromEntries(ranked.map((r) => [r.hotspot.id, r]));
+    return {
+      rows: Object.fromEntries(ranked.map((r) => [r.hotspot.id, r])),
+      hot: new Set(ranked.slice(0, hotTierCount(ranked)).map((r) => r.hotspot.id)),
+    };
   });
 
   const table = el('table.matrix');
@@ -344,21 +349,17 @@ export function renderMatrix(root, state, nav) {
   table.append(head);
 
   // Order rows by their best month's presence intensity.
-  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm[h.id].vis)) }))
+  const order = getHotspots().map((h) => ({ h, best: Math.max(...byMonth.map((mm) => mm.rows[h.id].vis)) }))
     .sort((a, b) => b.best - a.best);
 
   const buildMatrixRow = (h) => {
     const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
     MONTHS.forEach((_, m) => {
-      const r = byMonth[m][h.id];
-      const s = scoreColorPct(r.vis);
+      const r = byMonth[m].rows[h.id];
+      const hot = byMonth[m].hot.has(h.id);
       const cell = el('td.cell', {
-        // 'lo' below ~55% colour intensity: the cell background is still close to
-        // --card, which is near-black in Dawn Mode, so switch to light ink. Keyed
-        // on the CURVED colour (what's actually painted), not the raw score.
-        class: [m === state.monthIdx ? 'col-active' : '', s < 55 ? 'lo' : ''].filter(Boolean).join(' '),
-        style: `--s:${s}`,
-        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}`,
+        class: [m === state.monthIdx ? 'col-active' : '', hot ? 'hot' : ''].filter(Boolean).join(' '),
+        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}${hot ? ' · hot spot this month' : ''}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
       }, String(r.diversity));
       tr.append(cell);
@@ -370,19 +371,15 @@ export function renderMatrix(root, state, nav) {
   // rest one tap away.
   const ROW_CAP = 50;
   for (const { h } of order.slice(0, ROW_CAP)) table.append(buildMatrixRow(h));
-  // Dark heat-field, same as the map: forcing Dawn tokens flips the cell ramp to
-  // dim(low) → bright(high), so a cell's BRIGHTNESS climbs with its value and the
-  // scale reads correctly in grayscale / for colour-blind eyes (the .lo light-ink
-  // switch already adapts, since low cells are now the dark ones).
-  root.append(el('div.matrix-wrap', { 'data-theme': 'dark' }, table));
+  root.append(el('div.matrix-wrap', {}, table));
   if (order.length > ROW_CAP) {
     root.append(el('button.btn.show-more', {
       onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
     }, `Show all ${order.length} hotspots`));
   }
-  root.append(scoreScale(spec.weigh
-    ? 'Brighter = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
-    : 'Brighter = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.', { dark: true }));
+  root.append(el('p.legend', {}, spec.weigh
+    ? 'Orange cells are that month’s hot spots — the natural top tier by shootable bird presence (Σ frequency × photo weight, discounted for thin coverage); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+    : 'Orange cells are that month’s hot spots — the natural top tier by bird presence (Σ frequency, discounted for thin coverage); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================

@@ -69,53 +69,6 @@ export function toast(msg, opts = {}) {
   return dismiss;
 }
 
-/**
- * Presence intensity (0–100, normalised so the best spot in view = 100) is
- * heavy-tailed: in a full region the median hotspot sits around 1% of the top
- * one, so a LINEAR accent→card mix crushes ~9 dots in 10 to near-white and only
- * a couple ever read as orange — the key promises a white→orange spread the dots
- * never actually show. This bends the SCORE→COLOUR curve so the many low spots
- * lift off white into visible tans while the few best stay fullest. It's colour
- * only — the ranking, the "N species likely" count and the order never move.
- * The exponent is the one knob: lower = more lift for low spots.
- */
-const SCORE_COLOR_GAMMA = 0.5;
-export function scoreColorPct(vis) {
-  const v = Math.max(0, Math.min(100, vis)) / 100;
-  return Math.round(100 * Math.pow(v, SCORE_COLOR_GAMMA));
-}
-
-// The legend gradient, sampled along the SAME curve so the key matches the dots:
-// at each position (the 0–100 score) the colour is exactly what a pin/cell of
-// that score wears.
-function scaleGradient() {
-  const stops = [];
-  for (let i = 0; i <= 10; i++) {
-    const v = i * 10;
-    stops.push(`color-mix(in srgb, var(--score-hot) ${scoreColorPct(v)}%, var(--card)) ${v}%`);
-  }
-  return `linear-gradient(to right, ${stops.join(', ')})`;
-}
-
-/**
- * A colour-scale legend (0 → 100), so the score colours mean something. The
- * gradient bar is sampled from the SAME curved mix the pins/cells use, so the
- * key matches the dots exactly. `opts.dark` renders the bar in the map's dark
- * heat-field tokens — dim(low) → bright(high) — so its BRIGHTNESS climbs with
- * the value (survives grayscale / colour-blindness), same as the map dots.
- */
-export function scoreScale(caption, opts = {}) {
-  const bar = el('span.scale-bar', { 'aria-hidden': 'true', style: `background:${scaleGradient()}` });
-  if (opts.dark) bar.setAttribute('data-theme', 'dark');
-  return el('div.score-scale', {}, [
-    el('div.scale-row', {}, [
-      el('span.scale-end', {}, '0'),
-      bar,
-      el('span.scale-end', {}, '100'),
-    ]),
-    caption ? el('p.scale-cap', {}, caption) : null,
-  ]);
-}
 
 /** A 12-point SVG sparkline for a 0–1 series; faded where inferred. */
 export function sparkline(series, { w = 96, h = 22, inferred = false, months = true } = {}) {
