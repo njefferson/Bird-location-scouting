@@ -370,15 +370,19 @@ export function renderMatrix(root, state, nav) {
   // rest one tap away.
   const ROW_CAP = 50;
   for (const { h } of order.slice(0, ROW_CAP)) table.append(buildMatrixRow(h));
-  root.append(el('div.matrix-wrap', {}, table));
+  // Dark heat-field, same as the map: forcing Dawn tokens flips the cell ramp to
+  // dim(low) → bright(high), so a cell's BRIGHTNESS climbs with its value and the
+  // scale reads correctly in grayscale / for colour-blind eyes (the .lo light-ink
+  // switch already adapts, since low cells are now the dark ones).
+  root.append(el('div.matrix-wrap', { 'data-theme': 'dark' }, table));
   if (order.length > ROW_CAP) {
     root.append(el('button.btn.show-more', {
       onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
     }, `Show all ${order.length} hotspots`));
   }
   root.append(scoreScale(spec.weigh
-    ? 'Fuller colour = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
-    : 'Fuller colour = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
+    ? 'Brighter = more shootable bird presence that month (Σ frequency × photo weight, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+    : 'Brighter = more bird presence that month (Σ frequency, discounted for thin coverage); each month is scaled on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.', { dark: true }));
 }
 
 // =============================================================================

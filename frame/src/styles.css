@@ -87,6 +87,10 @@
   --water: #5f8bb0; --road: #d9836a; --park: #5f8a55;
   --label-ink: #a3957c; --label-halo: var(--card);
   --boundary: #e8ddc8; /* Dawn Mode: boundaries go light against the dark ground */
+  /* --far derives from --card2/--bg2 via var(), which resolve where --far is
+     DECLARED — so the :root copy bakes in the light values. Redeclare it here so
+     the dark map (and the forced-dark hotspot map in light mode) dims correctly. */
+  --far: color-mix(in srgb, var(--card2) 55%, var(--bg2));
   /* Same neutral-taupe bar, tuned for low light: a deep taupe clearly lifted
      off the near-black warm cards, with light glyphs. */
   --dock: #4a4436;
@@ -210,6 +214,15 @@ a { color: var(--accent); }
 
 /* matrix */
 .matrix-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* The planner grid is a dark heat-field (data-theme forced on it) so brightness
+   tracks the value; give it a solid dark ground + panel frame. */
+.matrix-wrap[data-theme="dark"] { background: var(--bg); border: 1px solid var(--line);
+  border-radius: var(--r); color: var(--ink); }
+.matrix-wrap[data-theme="dark"] table.matrix .rowhead { background: var(--bg); }
+/* Re-resolve the month + corner headers to the dark theme's light ink (inherited
+   colour alone keeps the light-theme dark value and vanishes on the dark ground). */
+.matrix-wrap[data-theme="dark"] table.matrix th { color: var(--dim); }
+.matrix-wrap[data-theme="dark"] table.matrix .rowhead { color: var(--ink); }
 table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
 table.matrix th, table.matrix td { padding: 6px 4px; text-align: center; }
 table.matrix .rowhead { text-align: left; white-space: nowrap; color: var(--ink); cursor: pointer;

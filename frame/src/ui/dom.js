@@ -99,15 +99,18 @@ function scaleGradient() {
 
 /**
  * A colour-scale legend (0 → 100), so the score colours mean something. The
- * gradient bar is sampled from the SAME curved accent→card mix the pins and
- * planner cells use, so what you see on the map matches the key exactly. One
- * direction everywhere: more colour = higher score.
+ * gradient bar is sampled from the SAME curved mix the pins/cells use, so the
+ * key matches the dots exactly. `opts.dark` renders the bar in the map's dark
+ * heat-field tokens — dim(low) → bright(high) — so its BRIGHTNESS climbs with
+ * the value (survives grayscale / colour-blindness), same as the map dots.
  */
-export function scoreScale(caption) {
+export function scoreScale(caption, opts = {}) {
+  const bar = el('span.scale-bar', { 'aria-hidden': 'true', style: `background:${scaleGradient()}` });
+  if (opts.dark) bar.setAttribute('data-theme', 'dark');
   return el('div.score-scale', {}, [
     el('div.scale-row', {}, [
       el('span.scale-end', {}, '0'),
-      el('span.scale-bar', { 'aria-hidden': 'true', style: `background:${scaleGradient()}` }),
+      bar,
       el('span.scale-end', {}, '100'),
     ]),
     caption ? el('p.scale-cap', {}, caption) : null,

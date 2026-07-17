@@ -59,7 +59,14 @@ export function renderMapView(root, state, nav) {
   if (modeNote) { root.append(modeNote); return; }
 
   const { w: W, h: H } = MAP_VIEWBOX;
-  const wrap = el('div.map-wrap.map-tall');
+  // The hotspot map is a DARK heat-field in BOTH app themes — forcing the Dawn
+  // tokens on the map subtree flips the score ramp to dim(low) → bright(high),
+  // so a dot's BRIGHTNESS climbs with its activity (the best spots are the
+  // brightest, and it stays correct in grayscale / for colour-blind eyes). On a
+  // light cream field a "bright = most" scale is impossible; a dark field is the
+  // only way to make it true and legible. Dawn mode already looked right for
+  // exactly this reason.
+  const wrap = el('div.map-wrap.map-tall', { 'data-theme': 'dark' });
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'county-map hotspot-map');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -164,8 +171,8 @@ export function renderMapView(root, state, nav) {
   root.append(wrap);
 
   root.append(scoreScale(spec.weigh
-    ? `Fuller colour = more shootable bird presence this ${MONTHS[state.monthIdx]} (Σ frequency × photo weight, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`
-    : `Fuller colour = more bird presence this ${MONTHS[state.monthIdx]} (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
+    ? `Brighter = more shootable bird presence this ${MONTHS[state.monthIdx]} (Σ frequency × photo weight, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`
+    : `Brighter = more bird presence this ${MONTHS[state.monthIdx]} (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`, { dark: true }));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {

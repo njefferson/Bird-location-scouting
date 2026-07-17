@@ -174,8 +174,29 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   (light #ff6a00, Dawn #ff8321) — a vivid luminous orange, SEPARATE from the muddy
   UI --accent (#cf7f22) so data colour ≠ chrome. The map pins (.hotspot-map .pin),
   planner cells (.cell) and the legend gradient (scaleGradient in dom.js) all now
-  mix card->--score-hot instead of card->--accent. Verified both themes, cell
-  numbers still legible, zero pageerrors. NEEDS-HIS-HANDS: hot-orange saturation.
+  mix card->--score-hot instead of card->--accent.
+  (e2) THE ACTUAL FIX — LUMINANCE DIRECTION (Noah, furious, third pass): the real
+  bug was that BRIGHTNESS was INVERSE to the value. On the light map low=bright
+  (card), high=dark(orange) — so in grayscale / for colour-blind eyes the scale
+  ran backwards and the best spots read as shadows. Hue changes can't fix that.
+  FIX: the hotspot MAP and the planner MATRIX are now forced DARK heat-fields in
+  BOTH app themes — `data-theme="dark"` set on the map wrap (mapview.js) and on
+  .matrix-wrap (views.js). In the dark tokens --card is near-black, so the SAME
+  card->--score-hot ramp becomes dim(low)->bright(high): luminance now CLIMBS with
+  the value (verified: pin luminance by score band 47,60,72,83,92,103,116,122,135,
+  147 — monotonic; grayscale render confirms). Brightest dot = most active = best,
+  colour-blind-safe. scoreScale(caption,{dark:true}) renders the legend bar in the
+  same dark tokens (dim->bright). Legend caption reworded "Brighter = more…".
+  GOTCHA fixed along the way: --far is `color-mix(var(--card2)..var(--bg2))`
+  declared only on :root, so its var()s baked in the LIGHT values and the forced-
+  dark map inherited a light --far (far counties stayed cream) — redeclared --far
+  in the [data-theme="dark"] block so it resolves dark. Also had to set
+  color:var(--ink) on the dark .matrix-wrap so the month/corner headers re-resolve
+  to light ink (inherited colour keeps the light value and vanishes on dark).
+  Verified both surfaces, both app themes, + grayscale, zero pageerrors. NEEDS-HIS-
+  HANDS: whether an always-dark map/planner in LIGHT app mode is wanted (it's the
+  only way "brighter = more" is possible + visible on a formerly-cream field); the
+  hot-orange top-end saturation.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app
