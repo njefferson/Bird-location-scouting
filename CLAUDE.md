@@ -168,6 +168,27 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   [328,224,100,41,32,16,6,6,2,4] vs old [659,54,23,7,5,5,0,2,2,2]; verified
   headless (map + planner both themes, legible), zero pageerrors. NEEDS-HIS-HANDS:
   the exact gamma (0.5) to taste.
+  (e) HOTTER SCORE COLOUR (Noah, after seeing (d): the best spots "look like
+  shadows" on the cream map — he wants the most-active = the BRIGHTEST; picked
+  "brighter, hotter colour" over dim-the-map / bigger-dots). NEW token --score-hot
+  (light #ff6a00, Dawn #ff8321) — a vivid luminous orange, SEPARATE from the muddy
+  UI --accent (#cf7f22) so data colour ≠ chrome. The map pins (.hotspot-map .pin),
+  planner cells (.cell) and the legend gradient (scaleGradient in dom.js) all now
+  mix card->--score-hot instead of card->--accent. Verified both themes, cell
+  numbers still legible, zero pageerrors. NEEDS-HIS-HANDS: hot-orange saturation.
+  (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
+  <datalist> (input list=splist) — on iOS that pops its own picker instead of the
+  keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app
+  combobox (ui/views.js renderSpecies): a .sp-suggest overlay list anchored to the
+  field (CSS .sp-search/.sp-suggest in styles.css) — focus shows a scrollable
+  pickable list AND the keyboard; typing filters (startsWith then includes, cap
+  60); picking sets the exact name and opens the species panel; the panel now
+  shows only on an EXACT name match (typed-in-full or picked), partial text keeps
+  the list open; blur hides the list after 160ms so a row tap lands. Verified
+  headless (no datalist, focus->60 rows, "wood"->8, pick->panel, clear->list back),
+  zero pageerrors.
+
+## BRANCH POLICY now recorded in rule 1b (staging/main only, no claude/* branches).
 - v30 SHIPPED 2026-07-17 (PR #34): "Clearer filter category icons" — a fresh ask
   after v29 (NOT a roadmap item), MERGED to main (Noah's go). Replaced the 4
   FILTER CATEGORY glyphs (ui/facetbar.js CAT_ICON): Type → a dove, Size → a ruler

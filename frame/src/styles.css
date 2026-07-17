@@ -4,6 +4,9 @@
   --bg: #ebe1cf; --bg2: #f2ead9; --card: #faf4e8; --card2: #f2ead9;
   --ink: #2c2318; --dim: #8a7b64; --line: #e2d6bf; --track: #e6dcc7;
   --accent: #cf7f22; --accent-ink: #7a4a10; --accent-wash: #f4e6cd; --accent2: #b56a15;
+  /* Map/planner SCORE colour — a hotter, more luminous orange than the muddy
+     UI accent, so the best spots read as bright highlights, not brown shadows. */
+  --score-hot: #ff6a00;
   --slate: #3f77a4; --slate-wash: #dbe7f0; --warn: #a9781f; --live: #c0563a;
   /* Trust badge palette — mirrors the labels in model/scoring.js. Light-theme
      thin/inferred/exploratory are darkened from the reference hexes so the white
@@ -73,6 +76,8 @@
   --bg: #141210; --bg2: #2a2318; --card: #211b14; --card2: #2a2318;
   --ink: #f2e9da; --dim: #a3957c; --line: #352c20; --track: #2f2718;
   --accent: #f0a94e; --accent-ink: #f0d9b0; --accent-wash: #3a2c15; --accent2: #e0a94e;
+  /* Dawn Mode: on the dark map a bright hot orange glows against the ground. */
+  --score-hot: #ff8321;
   --slate: #7fb0da; --slate-wash: #1e2c38; --warn: #e0a94e; --live: #e8795a;
   --trust-documented: #5fae79; --trust-opportunity: #7fb0da; --trust-exploratory: #b492d8;
   --trust-thin: #a89a80; --trust-inferred: #e0a94e;
@@ -211,7 +216,7 @@ table.matrix .rowhead { text-align: left; white-space: nowrap; color: var(--ink)
   position: sticky; left: 0; background: var(--bg); padding-right: 8px; }
 table.matrix .corner { text-align: left; }
 .cell { --s: 0; color: var(--cell-ink); font-weight: 700; cursor: pointer; border: 1px solid var(--bg);
-  background: color-mix(in srgb, var(--accent) calc(var(--s) * 1%), var(--card)); }
+  background: color-mix(in srgb, var(--score-hot) calc(var(--s) * 1%), var(--card)); }
 /* Low-intensity cells: near-empty months whose background stays close to --card.
    In Dawn Mode --card is near-black, so these need light ink to be readable. */
 .cell.lo { color: var(--cell-ink-lo); }
@@ -428,7 +433,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .county-outline.region { fill: none; stroke: var(--accent2); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 
 .hotspot-map .pin { --s: 0; cursor: pointer; stroke: #06160f; stroke-width: .5;
-  fill: color-mix(in srgb, var(--accent) calc(16% + var(--s) * 0.84%), var(--card)); }
+  fill: color-mix(in srgb, var(--score-hot) calc(16% + var(--s) * 0.84%), var(--card)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
 

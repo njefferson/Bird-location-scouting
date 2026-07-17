@@ -92,7 +92,7 @@ function scaleGradient() {
   const stops = [];
   for (let i = 0; i <= 10; i++) {
     const v = i * 10;
-    stops.push(`color-mix(in srgb, var(--accent) ${scoreColorPct(v)}%, var(--card)) ${v}%`);
+    stops.push(`color-mix(in srgb, var(--score-hot) ${scoreColorPct(v)}%, var(--card)) ${v}%`);
   }
   return `linear-gradient(to right, ${stops.join(', ')})`;
 }
