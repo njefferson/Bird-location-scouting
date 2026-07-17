@@ -144,9 +144,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
-- v32 IN FLIGHT 2026-07-17 (this session): the ACCESSIBILITY PASS — fixes for
-  register items A1-A9, A11, A13 in /ACCESSIBILITY.md (A10/A12 stay open). On
-  `staging` + draft PR awaiting Noah's on-device go. KEY FACTS: badges read
+- v32 SHIPPED 2026-07-17 (PR #38, squash 909f823): the ACCESSIBILITY PASS —
+  MERGED to main on Noah's "Promote to main". Fixes register items A1-A9, A11,
+  A13 in /ACCESSIBILITY.md (A10/A12 stay open) + folded in the sticky-header
+  scroll fix (the v19 wart: .bar was `linear-gradient(--bg 70%, transparent)`
+  bleeding scrolled rows over the icons → now solid --bg with the fade in a
+  `.bar::after` strip below). KEY FACTS: badges read
   +N/−N (symbol carries meaning); .ffp-light.exclude::after slash; NEW tokens
   --count-want (badge green ground), --facet-mode-ink (green-as-text),
   --focus (= --slate) with a GLOBAL `:focus-visible` ring (all six
