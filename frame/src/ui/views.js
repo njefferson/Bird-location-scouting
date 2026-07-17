@@ -326,7 +326,7 @@ export function renderMatrix(root, state, nav) {
   clear(root);
   root.append(el('header.bar', {}, [
     el('h1', {}, 'Year planner'),
-    el('span.subtitle', {}, `Species likely by month · orange = that month’s hot spots — tap a cell for that month’s detail.`),
+    el('span.subtitle', {}, `Species likely by month · orange = historically strongest spots for that month — tap a cell for detail.`),
   ]));
 
   // Pre-rank each month; each month's HOT tier (the natural break in that
@@ -359,7 +359,7 @@ export function renderMatrix(root, state, nav) {
       const hot = byMonth[m].hot.has(h.id);
       const cell = el('td.cell', {
         class: [m === state.monthIdx ? 'col-active' : '', hot ? 'hot' : ''].filter(Boolean).join(' '),
-        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}${hot ? ' · hot spot this month' : ''}`,
+        title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}${hot ? ` · historically strong for ${MONTHS[m]}` : ''}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
       }, String(r.diversity));
       tr.append(cell);
@@ -377,9 +377,10 @@ export function renderMatrix(root, state, nav) {
       onclick: (ev) => { for (const { h } of order.slice(ROW_CAP)) table.append(buildMatrixRow(h)); ev.target.remove(); },
     }, `Show all ${order.length} hotspots`));
   }
+  // Honest label: past-seasons frequency, not live activity (see mapview).
   root.append(el('p.legend', {}, spec.weigh
-    ? 'Orange cells are that month’s hot spots — the natural top tier by shootable bird presence (Σ frequency × photo weight, discounted for thin coverage); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
-    : 'Orange cells are that month’s hot spots — the natural top tier by bird presence (Σ frequency, discounted for thin coverage); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
+    ? 'An orange cell means that hotspot has historically reported the most shootable birds in that month (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists — a plain count, never weighted. Tap a cell for that month’s detail.'
+    : 'An orange cell means that hotspot has historically reported the most birds in that month (past seasons’ Σ frequency, discounted for thin coverage — not live sightings); each month is judged on its own. The number is how many species clear 5% of checklists. Tap a cell for that month’s detail.'));
 }
 
 // =============================================================================

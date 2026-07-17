@@ -318,7 +318,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* county picker map */
 .map-wrap { position: relative; width: 100%; margin: 4px 0 10px; border: 1px solid var(--line);
   border-radius: var(--r); overflow: hidden; background: var(--bg2);
-  touch-action: none; -webkit-user-select: none; user-select: none; }
+  /* pan-y = cooperative gestures: one finger scrolls the PAGE (on small screens
+     the map fills the viewport, and touch-action:none left nowhere to scroll
+     from), two fingers pan/pinch the MAP (panzoom.js ignores one-touch pans). */
+  touch-action: pan-y; -webkit-user-select: none; user-select: none; }
 .county-map { display: block; width: 100%; height: auto; }
 .county-map .county { fill: var(--card2); stroke: var(--boundary); stroke-width: 1;
   stroke-opacity: .55; /* dashed = man-made boundary; roads solid red, rivers solid blue; dash counter-scales so 256x zoom doesn't make monsters */

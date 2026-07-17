@@ -2,8 +2,11 @@
 // PAN/ZOOM — shared viewBox pan/pinch-zoom for the county SVG maps.
 // =============================================================================
 // Used by the county picker (ui/regionpicker.js) and the hotspot map
-// (ui/mapview.js). One finger / drag pans, two fingers pinch, wheel zooms; a
-// tap that didn't pan calls onTap(e) — resolve what was hit via
+// (ui/mapview.js). COOPERATIVE GESTURES on touch: one finger belongs to the
+// PAGE (touch-action: pan-y lets the browser scroll — on a small screen the
+// map fills the viewport and used to trap scrolling entirely), two fingers
+// pan/pinch the MAP. A mouse drag still pans 1:1, wheel zooms; a tap that
+// didn't pan calls onTap(e) — resolve what was hit via
 // document.elementFromPoint (pointer capture redirects native clicks, so
 // per-element click handlers would never fire).
 //
@@ -145,7 +148,9 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
     }
   }
   svg.addEventListener('pointerdown', (e) => {
-    svg.setPointerCapture(e.pointerId);
+    // Capture can throw if the pointer is already gone (late-delivered event);
+    // tracking still works without it, so never let that abort the gesture.
+    try { svg.setPointerCapture(e.pointerId); } catch { /* keep tracking */ }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1) { moved = false; downX = e.clientX; downY = e.clientY; }
     if (pts.size >= 2) multi = true;
@@ -159,7 +164,10 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
     if (Math.hypot(cur.x - downX, cur.y - downY) > 8) moved = true;
     const arr = [...pts.values()];
     if (arr.length === 1) {
-      panBy(cur.x - prev.x, cur.y - prev.y);
+      // A single TOUCH finger is the page's: the wrap's touch-action lets the
+      // browser scroll, and the browser pointercancels us if it takes over.
+      // Panning the map here too would fight the scroll. Mouse/pen still pan.
+      if (e.pointerType !== 'touch') panBy(cur.x - prev.x, cur.y - prev.y);
     } else if (arr.length >= 2) {
       const [a, b] = arr;
       const nd = Math.hypot(a.x - b.x, a.y - b.y);

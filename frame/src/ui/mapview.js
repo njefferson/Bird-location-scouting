@@ -44,7 +44,7 @@ export function renderMapView(root, state, nav) {
   root.append(el('header.bar', {}, [
     el('div.title-row', {}, [
       el('h1', {}, 'Hotspot map'),
-      el('span.subtitle', {}, `${region.name} · orange = ${MONTHS[state.monthIdx]}’s hot spots · tap a pin`),
+      el('span.subtitle', {}, `${region.name} · orange = historically strongest in ${MONTHS[state.monthIdx]} · tap a pin`),
     ]),
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
@@ -102,7 +102,9 @@ export function renderMapView(root, state, nav) {
   const home = homeBox(bbox, W, H);
   const homeZoom = W / home.w;
   svg.style.setProperty('--pcap', homeZoom.toFixed(3));
-  const r = Math.max(2.5, home.w * 0.012);
+  // Sized so the opening county view reads as dots, not blobs (0.012 merged
+  // dense clusters into a solid mass on iPad — Noah's screenshot).
+  const r = Math.max(2, home.w * 0.008);
   const pinNames = document.createElementNS(SVG_NS, 'g');
   pinNames.setAttribute('class', 'pin-names');
   pinNames.setAttribute('aria-hidden', 'true');
@@ -148,9 +150,12 @@ export function renderMapView(root, state, nav) {
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
-    // Hotspot names appear once you're zoomed past ~2× the opening view.
+    // Hotspot names appear once you're zoomed past ~4× the opening view. At 2×
+    // most of the region was still in frame, so hundreds of names flooded on at
+    // once and papered over the map (Noah's screenshot); by 4× the view holds
+    // few enough pins for names to help rather than bury.
     onZoom: (z) => {
-      const on = z >= homeZoom * 2;
+      const on = z >= homeZoom * 4;
       if (on !== svg.classList.contains('pin-names-on')) {
         svg.classList.toggle('pin-names-on', on);
         // The names just (dis)appeared — remeasure so the deep-zoom cull covers
@@ -167,9 +172,12 @@ export function renderMapView(root, state, nav) {
   wrap.append(pz.controls());
   root.append(wrap);
 
+  // Honest label: this is PAST-SEASONS frequency, not live activity — these
+  // spots aren't "hot right now", they've historically reported the most in
+  // this month. Say exactly that.
   root.append(el('p.legend', {}, spec.weigh
-    ? `Orange pins are this ${MONTHS[state.monthIdx]}’s hot spots — the natural top tier by shootable bird presence (Σ frequency × photo weight, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`
-    : `Orange pins are this ${MONTHS[state.monthIdx]}’s hot spots — the natural top tier by bird presence (Σ frequency, discounted for thin coverage). Tap a pin to open it; pinch or scroll to zoom, drag to pan.`));
+    ? `Orange pins mark the spots that have historically reported the most shootable birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`
+    : `Orange pins mark the spots that have historically reported the most birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`));
 
   // "You are here" — only if permission was ALREADY granted (never prompts).
   navigator.permissions?.query({ name: 'geolocation' }).then((st) => {

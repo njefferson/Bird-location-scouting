@@ -169,9 +169,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   draw ON TOP of dense clusters; all other pins are uniform quiet --card dots.
   Planner (views.js): byMonth is now {rows, hot:Set} per month; `.cell.hot` =
   solid --score-hot with fixed dark ink #2a1503; normal cells plain --card/--ink.
-  NO legend bar — plain `p.legend` captions ("Orange pins/cells are … hot
-  spots"); subtitles say "orange = hot spots". The map FOLLOWS THE THEME again
-  (no data-theme forcing anywhere). DELETED dead code: scoreColorPct/
+  NO legend bar — plain `p.legend` captions. WORDING IS HONEST-HISTORICAL (Noah's
+  correction: they aren't "hot" NOW): user-facing text never says "hot spots" —
+  captions read "spots that have historically reported the most (shootable) birds
+  in <Month> … not live sightings", subtitles "orange = historically strongest";
+  "hot" survives only in code (class `hot`, hotTierCount). The map FOLLOWS THE
+  THEME again (no data-theme forcing anywhere). DELETED dead code: scoreColorPct/
   scaleGradient/scoreScale (ui/dom.js), .score-scale/.scale-* CSS, --cell-ink/
   --cell-ink-lo tokens, the `.lo` cell class. KEPT from the detour (real dawn-mode
   bugfix): --far redeclared inside [data-theme="dark"] — its var(--card2)/
@@ -181,6 +184,21 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   top true, planner hot-per-month 8-30, zero pageerrors. NEEDS-HIS-HANDS: the
   1.35× hot-pin size and #ff6a00 heat to taste; whether the 8-40 gap window feels
   right in other regions/months.
+  (g) MAP ERGONOMICS (Noah, iPad screenshots): three fixes in one pass.
+  COOPERATIVE GESTURES — .map-wrap is now `touch-action: pan-y` (was `none`,
+  which on small screens left NOWHERE to scroll the page from) and panzoom.js
+  ignores single-TOUCH pans (`if (e.pointerType !== 'touch')` guard): one finger
+  scrolls the PAGE, two fingers pan/pinch the MAP, mouse drag still pans 1:1;
+  the browser pointercancels us when it takes the scroll. Applies to the region
+  picker too (shared control). setPointerCapture is try/caught (late events).
+  PIN SIZE — base radius max(2, home.w*0.008), was max(2.5, home.w*0.012): the
+  old dots merged into a solid mass at the opening county view. LABEL THRESHOLD
+  — pin names now appear at homeZoom*4 (was *2, where hundreds flooded on at
+  once and papered the map). Captions updated ("pan with two fingers (one finger
+  scrolls the page) or drag with a mouse"). Verified headless incl. synthetic
+  pointer events: mouse pans, single touch does NOT pan, two-finger pinch works,
+  names off at 3.8x / on at 5.4x, zero pageerrors. NEEDS-HIS-HANDS: real pinch/
+  scroll feel; whether 4x label point and 0.008 dot size sit right.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app
