@@ -164,8 +164,16 @@ a { color: var(--accent-ink); }
 .dead-end .btn { display: inline-block; }
 
 /* header / controls */
-.bar { position: sticky; top: 0; z-index: 5; background: linear-gradient(var(--bg) 70%, transparent);
+/* The sticky header is SOLID behind its own content (title, badges, guild row,
+   month selector) so scrolled content never shows through over the icons — the
+   old `linear-gradient(--bg 70%, transparent)` faded the bottom third of the
+   header itself to clear, and rows sliding up behind it blended into the icons
+   (Noah's screenshot). The soft hand-off to the scrolling content lives in a
+   thin fade strip just BELOW the header instead. */
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg);
   padding: 8px 0 10px; margin-bottom: 8px; }
+.bar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px;
+  background: linear-gradient(var(--bg), transparent); pointer-events: none; }
 .title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .subtitle { color: var(--dim); font-size: 13px; }
 .back { background: none; border: 0; color: var(--accent-ink); font-size: 15px; padding: 4px 0; cursor: pointer; }
