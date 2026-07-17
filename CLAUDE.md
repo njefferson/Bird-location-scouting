@@ -100,12 +100,11 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## item SHIPPED as v27, and "icons do things everywhere" SHIPPED as v28 (both in
 ## Project facts). The v30 fresh-ask (4 FILTER CATEGORY icons) SHIPPED as v30
 ## (PR #34, Project facts). The top roadmap item — collapsible species sections
-## in the target-bird picker — is IN FLIGHT as v31 (2026-07-17, this session):
-## built, headless-verified, on `staging` + DRAFT PR "v31 — awaiting on-device
-## acceptance"; waiting on Noah's go. Remaining AFTER v31 merges, in order: the
-## older "more map landmarks" and "access notes: fill or drop" items. He said
-## "other things" beyond these — open-ended; confirm before inventing. Older v22
-## thread ("possibly other things off of that") stays open too.
+## in the target-bird picker — SHIPPED as v31 (PR #35, Project facts) along with
+## a large batch of his mid-review asks. Remaining, in order: the older "more
+## map landmarks" and "access notes: fill or drop" items. He said "other things"
+## beyond these — open-ended; confirm before inventing. Older v22 thread
+## ("possibly other things off of that") stays open too.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -119,8 +118,13 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
-- v31 IN FLIGHT 2026-07-17 (this session, PR TBD): "Collapsible groups when
-  picking target birds" — the top roadmap item. The target-bird picker's browse
+- v31 SHIPPED 2026-07-17 (PR #35, squash 8d4563a): "Collapsible groups when
+  picking target birds" (the top roadmap item) PLUS a large batch of Noah's
+  mid-review asks — MERGED to main on his explicit "Promote to main" (his gate,
+  his call; he reviewed the staged preview on-device through many rounds —
+  screenshots drove items (d)-(i) below). The remaining NEEDS-HIS-HANDS notes
+  in the items below are taste follow-ups, not regressions. Facts (a)-(i):
+  the target-bird picker's browse
   list (ui/targets.js repaintList) now folds by habitat: DEFAULT COLLAPSED, so the
   picker opens as a short tappable index instead of one long scroll. Per-section
   open state persists in localStorage `frame.targetGroupsOpen` (a Set of open
