@@ -63,6 +63,11 @@ export function renderMapView(root, state, nav) {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'county-map hotspot-map');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  // The pins are a pointer surface (759 tab stops would be keyboard hell);
+  // the Planner holds the same spots as a keyboard-accessible table, and the
+  // map says so to assistive tech (/ACCESSIBILITY.md A7).
+  svg.setAttribute('aria-label',
+    `Map of ${region.name} hotspots — pins need a pointer; the Planner tab lists the same spots as a keyboard-accessible table.`);
 
   // County fills: the far counties dim, the active region's counties tinted.
   const inRegion = new Set(region.counties);

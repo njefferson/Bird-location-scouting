@@ -2,11 +2,15 @@
    Fully variable-driven so Dawn Mode is a token swap on [data-theme="dark"]. */
 :root {
   --bg: #ebe1cf; --bg2: #f2ead9; --card: #faf4e8; --card2: #f2ead9;
-  --ink: #2c2318; --dim: #8a7b64; --line: #e2d6bf; --track: #e6dcc7;
+  /* --dim carries 12-13px caption text everywhere; #8a7b64 measured 3.18:1 on
+     --bg (AA needs 4.5). Darkened to 4.79/5.67 (bg/card) keeping the warmth. */
+  --ink: #2c2318; --dim: #6d5f49; --line: #e2d6bf; --track: #e6dcc7;
   --accent: #cf7f22; --accent-ink: #7a4a10; --accent-wash: #f4e6cd; --accent2: #b56a15;
   /* Map/planner SCORE colour — a hotter, more luminous orange than the muddy
      UI accent, so the best spots read as bright highlights, not brown shadows. */
-  --score-hot: #ff6a00;
+  /* Nudged #ff6a00 → #f25c00 for the 3:1 non-text mark ratio vs plain cells/
+     pins (2.62 → 3.04) — visually near-identical heat; cell ink stays 5.2:1. */
+  --score-hot: #f25c00;
   --slate: #3f77a4; --slate-wash: #dbe7f0; --warn: #a9781f; --live: #c0563a;
   /* Trust badge palette — mirrors the labels in model/scoring.js. Light-theme
      thin/inferred/exploratory are darkened from the reference hexes so the white
@@ -38,12 +42,15 @@
      can't be mistaken for either the cards or the background, in either theme.
      --tab-ink / --tab-ink-active relight the tab glyphs for the dark surface
      (kept separate from the app-wide --dim / --accent). Recompute per theme. */
-  --dock: #8f7f66;
-  --dock-line: #6b5d45;
+  /* Deepened for AA (v32): #8f7f66 left the 11px labels at 3.14:1. #695c47 is
+     the same taupe family, further toward "more toolbar" (the direction Noah
+     left open in v27) — inactive ink 5.26:1, active gold 4.54:1. */
+  --dock: #695c47;
+  --dock-line: #4f4433;
   --dock-shadow: 0 1px 2px rgba(40,30,10,.22), 0 8px 18px rgba(40,30,10,.18), 0 22px 44px rgba(40,30,10,.24);
   --dock-lip: inset 0 1px 0 rgba(255,255,255,.16);
   --tab-ink: #efe6d4;
-  --tab-ink-active: #f6b45c;
+  --tab-ink-active: #ffd08a;
   /* Facet icons (v23) — brightness = how present a bird group is; want/exclude
      for the tri-state filter. All are :root tokens so Dawn Mode swaps them. */
   --facet-lots: var(--accent);
@@ -53,6 +60,13 @@
   --facet-block: #a0472f;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 16%, var(--card));
+  /* Accessible companions (see /ACCESSIBILITY.md): the park green as TEXT
+     (4.57:1 on card — --facet-mode itself is a mark/fill colour only), the
+     must-include count-badge ground (4.57:1 under card-coloured digits), and
+     the keyboard focus ring (slate: 3.69:1 on bg, cool against the warm UI). */
+  --facet-mode-ink: #55793f;
+  --count-want: #55793f;
+  --focus: var(--slate);
   /* Presence traffic-light (card "Here this month" row). Hue carries the state
      (green here / amber maybe / red not-expected) AND value steps monotonically
      dark→light so it stays legible in grayscale — colour-blind users read the
@@ -102,6 +116,11 @@
   --facet-block: #e8795a;
   --facet-mode: var(--park);
   --facet-mode-wash: color-mix(in srgb, var(--park) 22%, var(--card));
+  /* Dawn-mode accessible companions: green text 6.18:1 on the dark card;
+     badge green lightened so the dark digits read 5.26:1; slate ring 8.1:1. */
+  --facet-mode-ink: #7aa863;
+  --count-want: #6f9a63;
+  --focus: var(--slate);
   /* Presence traffic-light, Dawn: same dark→light value ramp, lifted so all
      three read on the near-black ground. */
   --pi-here: #5f9a50;   /* darkest of the three, still bright enough on dark */
@@ -122,7 +141,19 @@ h2 { font-size: 16px; margin: 0 0 6px; }
    month initials, legends. */
 .tsp-freq, .cell, .spark-mon, .si-count-num, .div-chip,
 .legend, .rel-ver, .about-formula { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-a { color: var(--accent); }
+a { color: var(--accent-ink); }
+
+/* Keyboard focus is always visible: one slate ring everywhere (3.7:1 on the
+   light bg, 8:1 on Dawn). Individual rules must never re-suppress it. */
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Respect the OS motion preference: kill animations & transitions wholesale. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
 .dim { color: var(--dim); }
 .empty { color: var(--dim); text-align: center; padding: 40px 0; }
 /* dead-end states — never a blank screen: what happened + a way forward */
@@ -137,7 +168,7 @@ a { color: var(--accent); }
   padding: 8px 0 10px; margin-bottom: 8px; }
 .title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .subtitle { color: var(--dim); font-size: 13px; }
-.back { background: none; border: 0; color: var(--accent); font-size: 15px; padding: 4px 0; cursor: pointer; }
+.back { background: none; border: 0; color: var(--accent-ink); font-size: 15px; padding: 4px 0; cursor: pointer; }
 
 .months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 8px; }
 .month { background: var(--card); border: 1px solid var(--line); color: var(--dim);
@@ -212,8 +243,13 @@ a { color: var(--accent); }
 .matrix-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
 table.matrix th, table.matrix td { padding: 6px 4px; text-align: center; }
-/* Month headers sort their column; the corner restores the default order. */
+/* Month headers sort their column; the corner restores the default order.
+   The tappable part is a real BUTTON inside the th (keyboard-reachable, focus
+   ring from the global :focus-visible rule) that inherits the header look. */
 table.matrix th.mth, table.matrix .corner { cursor: pointer; }
+table.matrix .th-btn { font: inherit; color: inherit; background: none; border: 0;
+  padding: 0; cursor: pointer; letter-spacing: inherit; text-transform: inherit; }
+table.matrix .rowhead .th-btn { text-align: left; white-space: nowrap; }
 table.matrix th.mth.sorted { color: var(--accent-ink); }
 table.matrix th.mth.sorted::after { content: ' ▾'; }
 table.matrix .rowhead { text-align: left; white-space: nowrap; color: var(--ink); cursor: pointer;
@@ -277,7 +313,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* clickable bird names -> open that species inside the planner (subtle until hovered) */
 .bird-link { color: inherit; text-decoration: none; cursor: pointer; }
-.bird-link:hover, .bird-link:focus-visible { color: var(--accent); text-decoration: underline; outline: none; }
+.bird-link:hover, .bird-link:focus-visible { color: var(--accent-ink); text-decoration: underline; }
 /* In the species table the NAME is the headline each row supports — bigger,
    bolder, full ink, so the facet line / freq / marks read as secondary data. */
 .species-table td .bird-link { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; }
@@ -285,7 +321,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .species-table th:nth-child(2), .species-table td.name-cell { text-align: right; }
 .species-table td.freq-cell { color: var(--dim); }
 /* external eBird link, shown on the species page */
-.ebird-link { font-size: 11px; color: var(--accent); text-decoration: none;
+.ebird-link { font-size: 11px; color: var(--accent-ink); text-decoration: none;
   border: 1px solid var(--line); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
 .ebird-link:hover { background: var(--card2); }
 
@@ -445,6 +481,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .hotspot-map .pin { cursor: pointer; stroke: #06160f; stroke-width: .5;
   fill: var(--card); }
 .hotspot-map .pin.hot { fill: var(--score-hot);
+  /* A firmer dark edge: the hot/plain FILL hues sit 2.6:1 apart, so the size
+     step + this stroke carry the state for grayscale / colour-blind eyes. */
+  stroke-width: calc(1px * var(--fp, 1));
   r: calc(var(--pr, 3) * 1.35px * var(--fp, 1)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
@@ -513,6 +552,11 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tab { background: none; border: 0; color: var(--tab-ink); display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }
 .tab.active { color: var(--tab-ink-active); }
+/* The active tab carries a SHAPE (small bar), never hue alone. */
+.tab.active .tab-icon::after { content: ""; display: block; position: absolute;
+  left: 50%; transform: translateX(-50%); bottom: -4px; width: 16px; height: 3px;
+  border-radius: 2px; background: currentColor; }
+.tab.active .tab-icon { position: relative; }
 .tab-icon { display: flex; align-items: center; justify-content: center; line-height: 0; }
 
 /* Floating corner buttons hug the content column on wide screens (the .view
@@ -525,7 +569,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
   background: var(--card2); color: var(--dim); font-size: 15px; line-height: 1; cursor: pointer;
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
-.about-btn:hover, .about-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); outline: none; }
+.about-btn:hover, .about-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); }
 .about-btn:active { transform: translateY(1px); }
 
 /* Dawn Mode toggle — floating moon/sun, sits just left of the About button so
@@ -534,7 +578,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
   background: var(--card2); color: var(--dim); cursor: pointer;
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
-.theme-btn:hover, .theme-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); outline: none; }
+.theme-btn:hover, .theme-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); }
 .theme-btn:active { transform: translateY(1px); }
 .theme-btn svg { display: block; }
 
@@ -552,12 +596,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .about-close:active { transform: translateY(1px); }
 .about-body { padding: 22px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .about-body h2 { font-size: 19px; margin: 0 0 10px; padding-right: 34px; }
-.about-body h3 { font-size: 14px; margin: 16px 0 4px; color: var(--accent); }
+.about-body h3 { font-size: 14px; margin: 16px 0 4px; color: var(--accent-ink); }
 .about-body p { margin: 6px 0; font-size: 14px; }
 .about-body ul { margin: 6px 0; padding-left: 20px; font-size: 14px; }
 .about-body li { margin: 3px 0; }
 .about-formula { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
-  padding: 10px 12px; font-weight: 700; color: var(--accent); text-align: center;
+  padding: 10px 12px; font-weight: 700; color: var(--accent-ink); text-align: center;
   font-variant-numeric: tabular-nums; }
 .about-inferred { color: var(--warn); font-weight: 700; }
 .about-foot { color: var(--dim); font-size: 12px; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -566,10 +610,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 .whatsnew-dialog .rel-date { color: var(--dim); font-size: 12px; margin-top: -6px; }
 .whatsnew-ok { margin-top: 14px; width: 100%; }
 .about-body .roadmap li { margin: 7px 0; }
-.about-body .roadmap strong { color: var(--accent); }
+.about-body .roadmap strong { color: var(--accent-ink); }
 .about-body .rel { margin: 8px 0 12px; }
 .rel-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 2px !important; }
-.rel-ver { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.rel-ver { font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .rel-date { color: var(--dim); font-size: 12px; }
 .rel-more { font-size: 13px; margin: 4px 0 0 !important; }
 
@@ -598,9 +642,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-body p { margin: 8px 0; font-size: 14px; }
 .si-lead { margin-top: 0 !important; }
 .si-formula { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
-  padding: 10px 12px; font-weight: 700; color: var(--accent); text-align: center;
+  padding: 10px 12px; font-weight: 700; color: var(--accent-ink); text-align: center;
   font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.si-h { font-size: 13px; margin: 18px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: .4px; }
+.si-h { font-size: 13px; margin: 18px 0 8px; color: var(--accent-ink); text-transform: uppercase; letter-spacing: .4px; }
 .si-note { color: var(--dim); font-size: 13px !important; }
 .si-note.si-dim { font-size: 12px !important; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 14px; }
 .si-legend { color: var(--dim); font-size: 11px !important; margin-top: 6px !important; }
@@ -622,7 +666,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
   background: none; cursor: pointer; font-size: 20px; line-height: 1; color: var(--dim);
   display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
-.star-btn:hover, .star-btn:focus-visible { color: var(--accent); outline: none; }
+.star-btn:hover, .star-btn:focus-visible { color: var(--accent); }
 .star-btn.on { color: var(--accent); }
 .star-btn:active { transform: scale(.86); }
 /* The target mark is now a camera (a photographer's shot list). Size the SVG per
@@ -661,7 +705,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .fresh-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
 .fresh-x { background: none; border: 0; color: var(--dim); font-size: 20px; line-height: 1;
   padding: 2px 6px; cursor: pointer; border-radius: 6px; }
-.fresh-x:hover, .fresh-x:focus-visible { color: var(--ink); outline: none; }
+.fresh-x:hover, .fresh-x:focus-visible { color: var(--ink); }
 
 /* Species-tab entry card into the picker. */
 .tg-entry { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -683,7 +727,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tg-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
 .tg-hint { font-size: 12px; margin: 0 0 12px; }
 .tg-group { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--accent); margin: 16px 0 6px; }
+  letter-spacing: .5px; color: var(--accent-ink); margin: 16px 0 6px; }
 .tg-list { display: flex; flex-direction: column; }
 .tg-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px;
   border-bottom: 1px solid var(--line); }
@@ -704,7 +748,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   -webkit-tap-highlight-color: transparent; }
 .tg-fold:active { background: var(--accent-wash); }
 .tg-fold.open { border-bottom-color: transparent; }
-.tg-fold-chev { flex: none; width: 12px; font-size: 11px; color: var(--accent); }
+.tg-fold-chev { flex: none; width: 12px; font-size: 11px; color: var(--accent-ink); }
 .tg-fold-label { flex: 1 1 auto; min-width: 0; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; }
 .tg-fold-counts { flex: none; display: flex; align-items: center; gap: 6px; }
@@ -742,7 +786,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .seen-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
   background: none; cursor: pointer; font-size: 18px; line-height: 1; color: var(--dim);
   display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
-.seen-btn:hover, .seen-btn:focus-visible { color: var(--slate); outline: none; }
+.seen-btn:hover, .seen-btn:focus-visible { color: var(--slate); }
 .seen-btn.on { color: var(--slate); }
 .seen-btn:active { transform: scale(.86); }
 
@@ -784,7 +828,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tl-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .tl-name { font-family: var(--serif); font-weight: 600; font-size: 15px; color: var(--ink);
   text-decoration: none; }
-.tl-name:hover { color: var(--accent); }
+.tl-name:hover { color: var(--accent-ink); }
 .tl-where { font-size: 13px; margin: 0; }
 .tl-where strong { font-weight: 700; }
 .tl-more { font-size: 12px; margin: 0; }
@@ -873,7 +917,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facetbar .tb-mark { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .facetbar .tb-mark svg { display: block; }
 .facet-chip { display: inline-block; font-size: 12px; color: var(--ink); margin-right: 8px; }
-.facet-chip strong { color: var(--facet-mode); font-weight: 700; }
+.facet-chip strong { color: var(--facet-mode-ink); font-weight: 700; }
 
 /* Collapsed entry chip in the Ranking header — summarises or invites, opens the
    picker. Sits on its own row under the opportunity filters. */
@@ -898,7 +942,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-dialog-head .dim { font-size: 12px; margin: 0; }
 .facet-sections { padding: 8px 16px 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .facet-sec { margin: 12px 0; }
-.facet-sec h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--accent);
+.facet-sec h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--accent-ink);
   margin: 0 0 8px; }
 .facet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
 .facet-dialog-foot { display: flex; gap: 8px; justify-content: flex-end; align-items: center;
@@ -1015,9 +1059,11 @@ table.species-table tr[onclick] { cursor: pointer; }
 .ffp-cat-count { min-width: 13px; height: 13px; padding: 0 3px;
   border-radius: 7px; color: var(--card); font-size: 8.5px; font-weight: 700;
   display: grid; place-content: center; }
-.ffp-cat-count.want { background: var(--facet-mode); }   /* green — must-include */
-.ffp-cat-count.block { background: var(--facet-block); }  /* red — exclude */
-.ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode); }
+/* Colour is the bonus, the SYMBOL is the meaning: badges read "+N" / "−N"
+   (colour-blind-safe), on grounds measured ≥4.5:1 under their digits. */
+.ffp-cat-count.want { background: var(--count-want); }    /* green +N — must-include */
+.ffp-cat-count.block { background: var(--facet-block); }  /* red −N — exclude */
+.ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode-ink); }
 .ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
 .ffp-cat.open .ffp-cat-ico svg { width: 21px; height: 21px; }
 .ffp-vals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -1025,11 +1071,15 @@ table.species-table tr[onclick] { cursor: pointer; }
 .ffp-lights { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px;
   padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--facet-mode) 30%, transparent); }
 .ffp-lights-empty { font-size: 11px; color: var(--dim); }
-.ffp-light { display: inline-grid; place-content: center; width: 22px; height: 22px; border-radius: 6px; }
+.ffp-light { position: relative; display: inline-grid; place-content: center; width: 22px; height: 22px; border-radius: 6px; }
 .ffp-light-ico svg { width: 15px; height: 15px; display: block; }
 .ffp-light.want { color: var(--facet-want); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--facet-want); }
 .ffp-light.exclude { color: var(--facet-block); background: color-mix(in srgb, var(--facet-block) 12%, transparent); box-shadow: inset 0 0 0 1px var(--facet-block); }
-.ffp-clear { margin-left: auto; font-size: 11px; color: var(--facet-mode); background: none; border: 0;
+/* Excluded lights carry the slash — the same shape language as the facet
+   pills, so want vs exclude never rests on hue alone. */
+.ffp-light.exclude::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%;
+  height: 2px; background: var(--facet-block); transform: rotate(-45deg); }
+.ffp-clear { margin-left: auto; font-size: 11px; color: var(--facet-mode-ink); background: none; border: 0;
   cursor: pointer; text-decoration: underline; padding: 2px 4px; }
 
 .pw-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }

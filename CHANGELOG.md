@@ -5,6 +5,11 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v32 — 2026-07-17
+- An accessibility pass, made a standing priority: nothing in Frame relies on colour alone anymore. The filter’s green and red counters now read “+2” / “−1” (the symbol carries the meaning, colour reinforces it), an excluded filter light wears the same slash as the pills, and the active tab carries a small bar under its icon rather than just a colour change.
+- Text contrast is now measured, not eyeballed — every caption, legend, link and label was checked against the accessibility standard (WCAG AA) in both themes, and the quiet ones were deepened until they pass: captions and subtitles are a touch darker, links and section headers use the deeper ink, the bottom tab bar sits on a deeper taupe so its labels read in bright light, and the hot-spot orange was nudged imperceptibly for a firmer edge. The warm look stays; it’s just legible for everyone now.
+- The keyboard works everywhere: a clear focus ring shows where you are (it was invisible on several controls), the planner’s sort-by-month headers and hotspot names are real buttons you can Tab to and press Enter on, and screen readers hear the little confirmation toasts. The map remains a pointer surface — the Planner is the keyboard path to the same spots, and the map now says so to assistive tech. Animations also respect your system’s reduced-motion setting.
+
 ## v31 — 2026-07-17
 - The target-bird picker no longer opens as one long scroll. The habitat sections now fold: the browse list starts as a short, tappable index — each habitat shows how many birds it holds (and, if you’ve already starred any, a small camera tally) — and you unfold just the one you want. A “Browse by habitat” row up top expands or collapses everything in a tap, and each section remembers whether you left it open. Searching or tapping a facet icon still shows every match open and flat, as before.
 - The filter now says what each category is doing at a glance: every category button carries a green circle counting the groups you’re requiring and a red circle counting the ones you’re excluding, so you can read “two required, one excluded” without opening it.
