@@ -12,6 +12,21 @@ probe BEFORE writing human instructions, not after burning the user's
 attempts). UI instructions for browsers/apps you cannot see are assumptions,
 not facts. The user's time is expensive; runner time and your time are free.
 
+## 1a. ACCESSIBILITY IS A TOP PRIORITY (Noah, 2026-07-17, explicit — recorded
+## at his direction). COLOUR-BLIND-INCONSIDERATE DESIGN IS A FAIL STATE — hue-
+## only encoding is broken the same as a crash, not a taste issue. The working
+## contract lives in /ACCESSIBILITY.md (rules, verification recipe, audit
+## register — append-only). NON-NEGOTIABLES for every session:
+## - DESIGN step: for each new visual encoding, STATE ITS NON-HUE CHANNEL
+##   (luminance step / shape / size / text) in the plan BEFORE writing code.
+## - VERIFY step: grayscale render of changed screens + `node
+##   frame/scripts/contrast-check.mjs` (zero FAILs; add new fg/bg pairs to it
+##   in the same commit) + keyboard pass (Tab reaches it, Enter works, focus
+##   ring visible). Record results in the PR body.
+## - The taste rule "gentle contrast" is tuned WITHIN WCAG AA, never against it.
+## - New findings go in the ACCESSIBILITY.md register; fixed rows get their PR
+##   number; never silently delete a row.
+
 ## 1b. BRANCHES: only `staging` and `main` (Noah, 2026-07-17, explicit)
 Do NOT create `claude/*` (or any other) feature branches for product work.
 Commit the candidate directly to `staging` (deploy.yml publishes the preview at
