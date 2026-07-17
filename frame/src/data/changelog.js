@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v31',
+    date: '2026-07-17',
+    changes: [
+      'The target-bird picker no longer opens as one long scroll. The habitat sections now fold: the browse list starts as a short, tappable index — each habitat shows how many birds it holds (and, if you’ve already starred any, a small camera tally) — and you unfold just the one you want. A “Browse by habitat” row up top expands or collapses everything in a tap, and each section remembers whether you left it open. Searching or tapping a facet icon still shows every match open and flat, as before.',
+    ],
+  },
+  {
     version: 'v30',
     date: '2026-07-17',
     changes: [

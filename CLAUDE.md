@@ -90,13 +90,14 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ## not regressions.
 ## ROADMAP (Noah, 2026-07-15, in frame/src/data/roadmap.js): the bottom-tab-bar
 ## item SHIPPED as v27, and "icons do things everywhere" SHIPPED as v28 (both in
-## Project facts). Remaining, in order: (1) collapsible species sections in the
-## target-bird picker; then the older "more map landmarks" and "access notes:
-## fill or drop" items. He said "other things" beyond these — open-ended; confirm
-## before inventing. Older v22 thread ("possibly other things off of that") stays
-## open too. IN FLIGHT (2026-07-16, this session, NOT a roadmap item — a fresh
-## ask after v29 shipped): replacing the 4 FILTER CATEGORY icons (Type/Size/Nest/
-## Behaviour, ui/facetbar.js CAT_ICON) — searching for better glyphs.
+## Project facts). The v30 fresh-ask (4 FILTER CATEGORY icons) SHIPPED as v30
+## (PR #34, Project facts). The top roadmap item — collapsible species sections
+## in the target-bird picker — is IN FLIGHT as v31 (2026-07-17, this session):
+## built, headless-verified, on `staging` + DRAFT PR "v31 — awaiting on-device
+## acceptance"; waiting on Noah's go. Remaining AFTER v31 merges, in order: the
+## older "more map landmarks" and "access notes: fill or drop" items. He said
+## "other things" beyond these — open-ended; confirm before inventing. Older v22
+## thread ("possibly other things off of that") stays open too.
 
 ## Backlog (taste-derived candidates, NOT yet user-approved as roadmap —
 ## confirm before building; don't add to frame/src/data/roadmap.js until then)
@@ -110,6 +111,33 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   regions and broken import links.
 
 ## Project facts (verified, don't rediscover)
+- v31 IN FLIGHT 2026-07-17 (this session, PR TBD): "Collapsible groups when
+  picking target birds" — the top roadmap item. The target-bird picker's browse
+  list (ui/targets.js repaintList) now folds by habitat: DEFAULT COLLAPSED, so the
+  picker opens as a short tappable index instead of one long scroll. Per-section
+  open state persists in localStorage `frame.targetGroupsOpen` (a Set of open
+  habitat keys; empty = all collapsed — helpers openGroups()/setGroupOpen() in
+  ui/targets.js). Each fold header (button.tg-group.tg-fold) shows a ▸/▾ chevron,
+  the accent uppercase habitat label, a neutral species-count pill (.tg-fold-count)
+  and — only when >0 — an accent CAMERA TALLY of birds already on the shot list
+  (.tg-fold-starred, reuses cameraMark(true)). A "Browse by habitat" row up top
+  carries a one-tap Expand-all/Collapse-all (browseHeader()). KEY RULE: folding
+  applies ONLY to the plain full browse — an active SEARCH or FACET FILTER
+  (narrowing) still renders every match OPEN and FLAT (no chevrons), so you never
+  hunt for results behind a fold. New CSS block in styles.css after `.tg-name`.
+  Verified headless both themes: default-collapsed (8 sections, 0 rows shown),
+  tap unfolds + chevron/aria flip, expand-all, state persists across reload,
+  search flattens then clear re-folds; zero pageerrors. NEEDS-HIS-HANDS (taste,
+  on iPad): whether DEFAULT-COLLAPSED is the right resting state (vs default-open
+  or remember-last); the fold tap-target feel; the camera-tally read at a glance.
+- v30 SHIPPED 2026-07-17 (PR #34): "Clearer filter category icons" — a fresh ask
+  after v29 (NOT a roadmap item), MERGED to main (Noah's go). Replaced the 4
+  FILTER CATEGORY glyphs (ui/facetbar.js CAT_ICON): Type → a dove, Size → a ruler
+  (purpose-built to match the filled weight of the others), Nest → a nest with
+  eggs (a literal nest, not the old egg-cluster), Behaviour → binoculars (how easy
+  a bird is to find). Dove/nest/binocular silhouettes are public-domain game-icons
+  (CC BY 3.0, already credited in About), fitted to the 24-box. Also bundled the
+  v29-shipped doc record. sw.js → frame-v30. NEEDS-HIS-HANDS: none flagged.
 - v29 SHIPPED 2026-07-16 (PR #33): "Icons, a clearer species list, redesigned
   Ranking" — MERGED WITH Noah's on-device pass ("This is great, promote to Main").
   A multi-part quality pass, all in frame/src/. (1) A dim GUILD SILHOUETTE leads

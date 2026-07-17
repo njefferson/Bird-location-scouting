@@ -9,6 +9,11 @@
 export const ROADMAP = [
   // Noah's asks, 2026-07-15 (given with the v24/v25 go). He also said "other
   // things" — open-ended; confirm with him before inventing more.
+  // v31 shipped "Collapsible groups when picking target birds" — the habitat
+  // sections in the target-bird picker's browse list now fold (default collapsed,
+  // per-section state persisted in localStorage frame.targetGroupsOpen), with a
+  // "Browse by habitat" expand-all/collapse-all row and per-section count + camera
+  // tally. Search / active facet filter still render matches open and flat.
   // v28 shipped "Icons that do things, everywhere" — the type/size/nest/behaviour
   // icons on the species matrix, a species' page, and the target & seen picker
   // rows are now tri-state filter buttons (reusing the guild row's want/exclude);
@@ -19,8 +24,6 @@ export const ROADMAP = [
   // got a firmer edge (higher-contrast border), a layered warm shadow, and a
   // bright top lip so it always reads as a solid control in bright light, both
   // themes. Tokens: --dock-line / --dock-shadow / --dock-lip in styles.css.
-  { title: 'Collapsible groups when picking target birds',
-    detail: 'the species sections in the target-bird picker fold up, so starring birds stops being one long scroll.' },
   // v24 shipped "Photo-first ranking" — frequency × a transparent facet-derived
   // shootability weight (behaviour × size), default on, camera chip + tables,
   // one-tap plain-presence exit; target-presence mode stays frequency-only.

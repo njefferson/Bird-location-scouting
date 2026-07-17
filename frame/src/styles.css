@@ -654,6 +654,36 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tg-row-main { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .tg-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 
+/* Collapsible habitat sections in the browse list (v31): the picker opens as a
+   short index; tap a section header to unfold its birds. Header reuses the
+   .tg-group typography (accent, uppercase) and adds a chevron + count badges. */
+.tg-browsehead { display: flex; align-items: center; gap: 10px; margin: 16px 0 2px; }
+.tg-browselabel { font-family: var(--sans); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.tg-foldall { margin-left: auto; }
+.tg-fold { display: flex; align-items: center; gap: 9px; width: 100%;
+  margin: 0; padding: 11px 6px; background: none; border: none;
+  border-bottom: 1px solid var(--line); cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent; }
+.tg-fold:active { background: var(--accent-wash); }
+.tg-fold.open { border-bottom-color: transparent; }
+.tg-fold-chev { flex: none; width: 12px; font-size: 11px; color: var(--accent); }
+.tg-fold-label { flex: 1 1 auto; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.tg-fold-counts { flex: none; display: flex; align-items: center; gap: 6px; }
+.tg-fold-count { font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; color: var(--dim);
+  background: var(--card2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px; }
+.tg-fold-starred { display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  letter-spacing: 0; text-transform: none; color: var(--accent-ink);
+  background: var(--accent-wash); border: 1px solid var(--accent);
+  border-radius: 999px; padding: 1px 7px 1px 5px; }
+.tg-fold-starred svg { width: 12px; height: 12px; }
+.tg-group-body { display: flex; flex-direction: column; }
+.tg-group-body[hidden] { display: none; }
+
 /* Star column in the hotspot species matrix + a target row highlight. */
 .species-table td.star-cell { padding: 0 2px; width: 34px; }
 .species-table tr.is-target { background: var(--accent-wash); }

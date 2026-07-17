@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v31 — 2026-07-17
+- The target-bird picker no longer opens as one long scroll. The habitat sections now fold: the browse list starts as a short, tappable index — each habitat shows how many birds it holds (and, if you’ve already starred any, a small camera tally) — and you unfold just the one you want. A “Browse by habitat” row up top expands or collapses everything in a tap, and each section remembers whether you left it open. Searching or tapping a facet icon still shows every match open and flat, as before.
+
 ## v30 — 2026-07-17
 - The filter’s four category buttons have clearer icons: a dove for Type, a ruler for Size, a proper nest for Nest, and binoculars for Behaviour (how easy a bird is to find). Small thing, but the row reads at a glance now.
 
