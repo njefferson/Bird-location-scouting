@@ -223,6 +223,17 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   headless: toggle flips 84→412 (=== checklistN), Jul-sort top === true max
   (203), corner resets, ⓘ lands on #/matrix in Reports mode, zero pageerrors.
   NEEDS-HIS-HANDS: the toggle read/feel; whether reports-mode wants to persist.
+  (i) ">100% PERCENTAGES" BUG (Noah's screenshot: "Songbirds 1326%"): the
+  icon-info dialog (ui/scoreinfo.js) and the card guild tooltips (views.js
+  guildPresenceRow) printed pct(Σ per-species frequency) — a SUM of report
+  rates, not a probability, so rich guilds blew past 100%. The sum IS the
+  expected number of that group's species per checklist, so both now print
+  "≈N/visit" (≥10 → rounded, else 1 decimal); the "How bright" copy + si-legend
+  explain the unit and restate the tiers as 0.5/visit (bright) and 0.05/visit
+  (subdued) — THRESHOLDS UNCHANGED, display only. Single-species pct() uses
+  elsewhere are real ≤100% frequencies and were left alone. Verified headless:
+  dialog rows all "≈N/visit · lots/some", zero "%" in .si-vals, card tooltip
+  "(≈2.4/visit)", zero pageerrors.
   (f) SPECIES SEARCH BUG (Noah, on iPad): the #/species field used a native
   <datalist> (input list=splist) — on iOS that pops its own picker instead of the
   keyboard, then won't reopen or let you edit (stuck). REPLACED with an in-app

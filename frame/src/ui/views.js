@@ -287,7 +287,9 @@ function guildPresenceRow(h, monthIdx) {
     const inferred = level !== 'none' && !realN[key];
     const gu = GUILDS[key];
     const where = level === 'lots' ? 'lots here' : level === 'some' ? 'some here' : 'not expected';
-    const amount = g > 0 ? ` (Σ ${pct(g)} freq${inferred ? ', modeled' : ''})` : '';
+    // Summed report rates = expected species of this group on one visit — never
+    // print the sum as a "%" (a rich group's sum runs far past 1).
+    const amount = g > 0 ? ` (≈${g >= 10 ? Math.round(g) : g.toFixed(1)}/visit${inferred ? ', modeled' : ''})` : '';
     const cell = el('span.pi', {
       class: [`pi-${level}`, inferred ? 'pi-modeled' : ''].filter(Boolean).join(' '),
       title: `${gu.label} — ${where} in ${MONTHS[monthIdx]}${amount}`,
