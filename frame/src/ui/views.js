@@ -524,21 +524,70 @@ export function renderSpecies(root, state, nav) {
   }
   root.append(facetSlot);
 
-  const input = el('input.search', { type: 'search', placeholder: 'Search a species (e.g. Wood Duck)…', value: state.speciesQuery || '' });
+  // A real in-app combobox — NOT a native <datalist>, which on iOS pops its own
+  // picker instead of the keyboard, then won't reopen or let you edit (the bug
+  // Noah hit). Tapping the field shows a scrollable list you can pick from AND
+  // the keyboard to type; typing filters the list live; picking one opens that
+  // species; you can always edit or clear and the list comes back.
+  const input = el('input.search', {
+    type: 'search', placeholder: 'Search or pick a species (e.g. Wood Duck)…',
+    autocomplete: 'off', autocorrect: 'off', autocapitalize: 'words', spellcheck: 'false',
+    value: state.speciesQuery || '',
+  });
+  const sugg = el('div.sp-suggest', { hidden: true });
   const results = el('div.species-results');
-  const list = el('datalist', { id: 'splist' }, SPECIES.map((s) => el('option', { value: s.name })));
-  input.setAttribute('list', 'splist');
+
+  // Matches: names that START with the query first, then names that merely
+  // contain it; an empty query lists everything so a tap = browse the whole list.
+  function matches(q) {
+    q = q.trim().toLowerCase();
+    if (!q) return SPECIES;
+    const starts = [], has = [];
+    for (const s of SPECIES) {
+      const n = s.name.toLowerCase();
+      if (n.startsWith(q)) starts.push(s);
+      else if (n.includes(q)) has.push(s);
+    }
+    return [...starts, ...has];
+  }
+
+  function paintSuggest() {
+    clear(sugg);
+    const q = input.value.trim().toLowerCase();
+    // If the text is already an exact name, the panel's showing it — no list.
+    if (SPECIES.some((s) => s.name.toLowerCase() === q)) { sugg.hidden = true; return; }
+    const ms = matches(q).slice(0, 60);
+    if (!ms.length) { sugg.hidden = true; return; }
+    for (const s of ms) {
+      sugg.append(el('button.sp-suggest-row', {
+        onclick: () => { input.value = s.name; sugg.hidden = true; run(); },
+      }, s.name));
+    }
+    sugg.hidden = false;
+  }
 
   function run() {
     state.speciesQuery = input.value;
     clear(results);
     const q = input.value.trim().toLowerCase();
-    const s = SPECIES.find((x) => x.name.toLowerCase() === q) || SPECIES.find((x) => x.name.toLowerCase().includes(q) && q.length >= 2);
-    if (!s) { results.append(el('p.dim', {}, q ? 'No match in the curated list.' : 'Type a species name.')); return; }
+    // The detail panel shows once the text names a species exactly (typed in full
+    // or picked from the list). Partial text just keeps the list open.
+    const s = SPECIES.find((x) => x.name.toLowerCase() === q);
+    if (!s) {
+      results.append(el('p.dim', {}, q
+        ? 'Keep typing, or pick a species from the list.'
+        : 'Type a name, or tap the box to pick from the list.'));
+      return;
+    }
     results.append(speciesPanel(s, state, nav, onFacetChange));
   }
-  input.addEventListener('input', run);
-  root.append(el('div.search-wrap', {}, [input, list]));
+
+  input.addEventListener('focus', paintSuggest);
+  input.addEventListener('input', () => { paintSuggest(); run(); });
+  // Close the list when focus leaves — but after a tick, so a tap on a row lands.
+  input.addEventListener('blur', () => setTimeout(() => { sugg.hidden = true; }, 160));
+
+  root.append(el('div.search-wrap.sp-search', {}, [input, sugg]));
   root.append(results);
   repaintFacetBar();
   run();
