@@ -146,6 +146,15 @@ a { color: var(--accent-ink); }
 /* Keyboard focus is always visible: one slate ring everywhere (3.7:1 on the
    light bg, 8:1 on Dawn). Individual rules must never re-suppress it. */
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+#app:focus-visible { outline: none; } /* the landmark target itself needs no ring */
+
+/* Skip-to-content: the first Tab stop, hidden until focused, then a solid pill
+   at the top so keyboard users jump past nothing-yet to the main view. */
+.skip-link { position: fixed; top: -60px; left: 12px; z-index: 100;
+  background: var(--card); color: var(--accent-ink); border: 1px solid var(--focus);
+  border-radius: 8px; padding: 9px 14px; font-size: 14px; font-weight: 600;
+  text-decoration: none; transition: top .12s ease; }
+.skip-link:focus { top: 10px; }
 
 /* Respect the OS motion preference: kill animations & transitions wholesale. */
 @media (prefers-reduced-motion: reduce) {
@@ -640,7 +649,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-count { flex: 0 0 auto; width: 60px; height: 60px; border-radius: 50%; display: grid;
   place-content: center; text-align: center; background: var(--accent-wash); border: 1px solid var(--accent); }
 .si-count-num { font-size: 22px; font-weight: 700; line-height: 1; color: var(--accent-ink); }
-.si-count-cap { font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
+.si-count-cap { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
 /* Guild icon at the head of each explainer row, inheriting the fi-* state colour. */
 .si-icon { flex: 0 0 auto; display: inline-grid; place-content: center; }
 .si-icon svg { display: block; }
@@ -910,10 +919,10 @@ table.species-table tr[onclick] { cursor: pointer; }
   gap: 1px; padding: 3px 6px 4px; }
 .fi.has-cap::after { content: none; }            /* the caption + glyph colour carry presence */
 /* The word stays whole (one unit with the icon) — never hyphen-wraps mid-word. */
-.fi-cap { font-size: 9.5px; line-height: 1.05; text-align: center; color: var(--dim);
+.fi-cap { font-size: 11px; line-height: 1.05; text-align: center; color: var(--dim);
   white-space: nowrap; letter-spacing: .1px; }
 .fi.has-cap.fi-lots .fi-cap { color: var(--ink); }
-.fi.has-cap.wanted .fi-cap { color: var(--facet-want); }
+.fi.has-cap.wanted .fi-cap { color: var(--accent-ink); }
 .fi.has-cap.excluded .fi-cap { color: var(--facet-block); text-decoration: line-through; }
 .fi.has-cap.excluded::before { top: 14px; }      /* slash crosses the icon, not the word */
 
@@ -964,10 +973,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-pick .fi-glyph { display: inline-grid; place-content: center; }
 .facet-pick .fi-glyph svg { display: block; }
 .facet-pick .fi-label { font-size: 11px; color: var(--ink); text-align: center; line-height: 1.15; }
-.facet-pick .fi-state { font-size: 9px; text-transform: uppercase; letter-spacing: .4px; min-height: 11px; }
+.facet-pick .fi-state { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; min-height: 11px; }
 .facet-pick.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
   color: var(--facet-want); background: var(--accent-wash); }
-.facet-pick.wanted .fi-state { color: var(--facet-want); }
+.facet-pick.wanted .fi-state { color: var(--accent-ink); }
 .facet-pick.excluded { border-color: var(--facet-block); color: var(--facet-block); opacity: .8; }
 .facet-pick.excluded .fi-label { text-decoration: line-through; }
 .facet-pick.excluded .fi-state { color: var(--facet-block); }
@@ -1039,7 +1048,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* === Card presence row — INFO ONLY (not the filter) ======================= */
 .presence-row { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }
-.presence-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.presence-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
 .presence-icons { display: flex; align-items: center; gap: 1px; flex-wrap: nowrap; width: 100%;
   overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
@@ -1062,7 +1071,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   border-radius: 9px; background: var(--card); color: var(--dim); cursor: pointer; }
 .ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .ffp-cat-ico svg { width: 18px; height: 18px; display: block; transition: width .1s, height .1s; }
-.ffp-cat-label { font-size: 10.5px; color: var(--ink); }
+.ffp-cat-label { font-size: 11px; color: var(--ink); }
 .ffp-cat-counts { position: absolute; top: 2px; left: 2px; display: flex; gap: 2px; }
 .ffp-cat-count { min-width: 13px; height: 13px; padding: 0 3px;
   border-radius: 7px; color: var(--card); font-size: 8.5px; font-weight: 700;

@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v33 — 2026-07-17
+- More accessibility polish, finishing the pass. The small print grew up: species-group captions, filter-picker state words, the “here this month” label and the category labels are now a readable size instead of sub-legible fine print. A “Skip to content” link appears when you Tab into the app, so keyboard users jump straight to the view. And the little 12-month trend graphs now describe themselves to a screen reader — “peaks in June” — instead of being a silent picture.
+
 ## v32 — 2026-07-17
 - An accessibility pass, made a standing priority: nothing in Frame relies on colour alone anymore. The filter’s green and red counters now read “+2” / “−1” (the symbol carries the meaning, colour reinforces it), an excluded filter light wears the same slash as the pills, and the active tab carries a small bar under its icon rather than just a colour change.
 - Text contrast is now measured, not eyeballed — every caption, legend, link and label was checked against the accessibility standard (WCAG AA) in both themes, and the quiet ones were deepened until they pass: captions and subtitles are a touch darker, links and section headers use the deeper ink, the bottom tab bar sits on a deeper taupe so its labels read in bright light, and the hot-spot orange was nudged imperceptibly for a firmer edge. The warm look stays; it’s just legible for everyone now.

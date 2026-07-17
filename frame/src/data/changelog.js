@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v33',
+    date: '2026-07-17',
+    changes: [
+      'More accessibility polish, finishing the pass. The small print grew up: species-group captions, filter-picker state words, the “here this month” label and the category labels are now a readable size instead of sub-legible fine print. A “Skip to content” link appears when you Tab into the app, so keyboard users jump straight to the view. And the little 12-month trend graphs now describe themselves to a screen reader — “peaks in June” — instead of being a silent picture.',
+    ],
+  },
+  {
     version: 'v32',
     date: '2026-07-17',
     changes: [
