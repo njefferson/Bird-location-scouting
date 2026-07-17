@@ -2,7 +2,7 @@
 // VIEWS — the four screens from §5: Cards, Matrix, Species search, Settings,
 // plus a per-hotspot species matrix detail.
 // =============================================================================
-import { el, clear, pct, sparkline, scoreScale, toast } from './dom.js';
+import { el, clear, pct, sparkline, scoreScale, scoreColorPct, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
 import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
@@ -351,11 +351,13 @@ export function renderMatrix(root, state, nav) {
     const tr = el('tr', {}, [el('th.rowhead', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, h.name)]);
     MONTHS.forEach((_, m) => {
       const r = byMonth[m][h.id];
+      const s = scoreColorPct(r.vis);
       const cell = el('td.cell', {
-        // 'lo' below ~55% intensity: the cell background is still close to
-        // --card, which is near-black in Dawn Mode, so switch to light ink.
-        class: [m === state.monthIdx ? 'col-active' : '', r.vis < 55 ? 'lo' : ''].filter(Boolean).join(' '),
-        style: `--s:${r.vis}`,
+        // 'lo' below ~55% colour intensity: the cell background is still close to
+        // --card, which is near-black in Dawn Mode, so switch to light ink. Keyed
+        // on the CURVED colour (what's actually painted), not the raw score.
+        class: [m === state.monthIdx ? 'col-active' : '', s < 55 ? 'lo' : ''].filter(Boolean).join(' '),
+        style: `--s:${s}`,
         title: `${h.name} · ${MONTHS[m]} · ${r.diversity} species likely · ${r.trust.label}`,
         onclick: () => { nav.setMonth(m); nav.go(`#/hotspot/${h.id}`); },
       }, String(r.diversity));

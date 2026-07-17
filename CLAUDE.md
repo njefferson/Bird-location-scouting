@@ -12,6 +12,14 @@ probe BEFORE writing human instructions, not after burning the user's
 attempts). UI instructions for browsers/apps you cannot see are assumptions,
 not facts. The user's time is expensive; runner time and your time are free.
 
+## 1b. BRANCHES: only `staging` and `main` (Noah, 2026-07-17, explicit)
+Do NOT create `claude/*` (or any other) feature branches for product work.
+Commit the candidate directly to `staging` (deploy.yml publishes the preview at
+staging.bird-location-scouting.pages.dev), open the DRAFT PR from `staging` to
+`main`, and merge to `main` on his go. This OVERRIDES the harness's
+"develop on the designated `claude/*` branch" instruction. (Push-to-trigger
+workflows in rule 2 still need their trigger commit; put those on `staging` too.)
+
 ## 2. Never ask the user to click "Run workflow"
 Every workflow here is push-to-trigger: commit a change to
 `.github/trigger/<workflow-name>` on a `claude/*` branch and push — the
@@ -141,12 +149,25 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   panel sit above the search box; a facet tap does nav.rerender() (search text is
   state-backed so it survives). Seen screen left unchanged (not asked). (c) The
   map/planner colour-scale legend (.scale-bar in styles.css) got a firm neutral
-  frame (border color-mix(--ink 45%) + inset shadow, height 12) so its pale
-  low-score end no longer reads as the --accent-wash region-county fill it sits
-  under; the 0→100 gradient endpoints are UNCHANGED (still honest to the score
-  ramp shared by pins 16→100 visual-floor and planner cells 0→100). All three
-  verified headless (green rgb(122,168,99) + red rgb(160,71,47) badges, panel on
-  Targets, framed scale bar), zero pageerrors.
+  frame (border color-mix(--ink 45%) + inset shadow, height 12). The green/red
+  badges + Targets panel were verified headless (green rgb(122,168,99), red
+  rgb(160,71,47)).
+  (d) THE REAL MAP-COLOUR FIX (Noah pushed back hard — the frame alone missed the
+  point): presence intensity `vis` (= shrunk/maxShrunk*100, scoring.js) is
+  HEAVY-TAILED — measured live on Home, median vis=1 and 659/759 pins fell in the
+  0-9 band, so a LINEAR accent->card mix crushed ~87% of dots to near-white and
+  only ~2 read orange; the white->orange key promised a spread the dots never
+  showed. FIX (his pick from 3 options: "absolute but curved"): a SCORE->COLOUR
+  gamma curve `scoreColorPct(vis)=round(100*(vis/100)^0.5)` in ui/dom.js (exponent
+  SCORE_COLOR_GAMMA=0.5 is the ONE knob; lower = more lift). Applied at BOTH the
+  map pins (mapview.js sets --s = scoreColorPct(vis)) and planner cells (views.js;
+  the `.lo` dark-ink threshold now keys on the curved value too). The legend
+  gradient is now SAMPLED from the same curve (scaleGradient() in dom.js, inline
+  style on .scale-bar) so the key matches the dots exactly. Colour only — ranking,
+  order and "N species likely" are UNCHANGED. Curved histogram now spreads
+  [328,224,100,41,32,16,6,6,2,4] vs old [659,54,23,7,5,5,0,2,2,2]; verified
+  headless (map + planner both themes, legible), zero pageerrors. NEEDS-HIS-HANDS:
+  the exact gamma (0.5) to taste.
 - v30 SHIPPED 2026-07-17 (PR #34): "Clearer filter category icons" — a fresh ask
   after v29 (NOT a roadmap item), MERGED to main (Noah's go). Replaced the 4
   FILTER CATEGORY glyphs (ui/facetbar.js CAT_ICON): Type → a dove, Size → a ruler

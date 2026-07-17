@@ -6,7 +6,7 @@
 // already granted location permission (e.g. for auto-switch), a "you are here"
 // dot is drawn too — asking for permission stays a Settings decision.
 // =============================================================================
-import { el, clear, scoreScale } from './dom.js';
+import { el, clear, scoreScale, scoreColorPct } from './dom.js';
 import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
@@ -113,7 +113,7 @@ export function renderMapView(root, state, nav) {
     pin.setAttribute('cy', y.toFixed(1));
     pin.setAttribute('r', r.toFixed(1));
     pin.setAttribute('class', 'pin');
-    pin.style.setProperty('--s', vis);
+    pin.style.setProperty('--s', scoreColorPct(vis));
     pin.style.setProperty('--pr', r.toFixed(1));
     pin.dataset.id = h.id;
     const title = document.createElementNS(SVG_NS, 'title');
