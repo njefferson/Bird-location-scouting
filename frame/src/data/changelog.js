@@ -13,6 +13,9 @@ export const CHANGELOG = [
     date: '2026-07-17',
     changes: [
       'The target-bird picker no longer opens as one long scroll. The habitat sections now fold: the browse list starts as a short, tappable index — each habitat shows how many birds it holds (and, if you’ve already starred any, a small camera tally) — and you unfold just the one you want. A “Browse by habitat” row up top expands or collapses everything in a tap, and each section remembers whether you left it open. Searching or tapping a facet icon still shows every match open and flat, as before.',
+      'The filter now says what each category is doing at a glance: every category button carries a green circle counting the groups you’re requiring and a red circle counting the ones you’re excluding, so you can read “two required, one excluded” without opening it.',
+      'That same filter is now on the Target birds screen. The Type / Size / Nest / Behaviour panel you know from Ranking sits above the species list there too, so you can narrow which birds you’re browsing the same way everywhere.',
+      'On the hotspot map, the colour-scale legend at the bottom now has a defined frame, so it stands clear of the map instead of blending into the tinted counties above it.',
     ],
   },
   {

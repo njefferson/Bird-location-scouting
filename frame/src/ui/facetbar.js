@@ -104,7 +104,8 @@ export function facetFilterPanel(nav) {
   FACETS.forEach((f) => {
     const open = OPEN_CAT === f.key;
     const sub = facetSummary().find((s) => s.facet === f.key);
-    const n = sub ? sub.wanted.length + sub.excluded.length : 0;
+    const wanted = sub ? sub.wanted.length : 0;
+    const excluded = sub ? sub.excluded.length : 0;
     cats.append(el('button.ffp-cat' + (open ? '.open' : ''), {
       'aria-expanded': open ? 'true' : 'false',
       title: open ? `Hide ${f.label.toLowerCase()} options` : `Filter by ${f.label.toLowerCase()}`,
@@ -112,7 +113,13 @@ export function facetFilterPanel(nav) {
     }, [
       el('span.ffp-cat-ico', { 'aria-hidden': 'true', html: facetSvg(CAT_ICON[f.key], 22) }),
       el('span.ffp-cat-label', {}, f.label),
-      n ? el('span.ffp-cat-count', { title: `${n} set` }, String(n)) : null,
+      // Two corner tallies: GREEN = must-include (wanted), RED = exclude. Each
+      // shows only when it has a count, so a one-direction filter reads as a
+      // single circle and a mixed one as green + red side by side.
+      (wanted || excluded) ? el('span.ffp-cat-counts', { 'aria-hidden': 'true' }, [
+        wanted ? el('span.ffp-cat-count.want', { title: `${wanted} must-include` }, String(wanted)) : null,
+        excluded ? el('span.ffp-cat-count.block', { title: `${excluded} excluded` }, String(excluded)) : null,
+      ]) : null,
       el('span.ffp-cat-chev', { 'aria-hidden': 'true' }, open ? '▾' : '▸'),
     ]));
   });

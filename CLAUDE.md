@@ -130,6 +130,23 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   search flattens then clear re-folds; zero pageerrors. NEEDS-HIS-HANDS (taste,
   on iPad): whether DEFAULT-COLLAPSED is the right resting state (vs default-open
   or remember-last); the fold tap-target feel; the camera-tally read at a glance.
+  FOLLOW-ON asks folded into the SAME v31 candidate (Noah, mid-session):
+  (a) The facetFilterPanel category tiles now show TWO corner tallies instead of
+  one combined count — GREEN (.ffp-cat-count.want, --facet-mode/park green) =
+  must-include count, RED (.ffp-cat-count.block, --facet-block) = exclude count,
+  each shown only when >0, clustered top-left in .ffp-cat-counts (ui/facetbar.js
+  facetFilterPanel; CSS in styles.css). (b) The TARGETS screen (ui/targets.js)
+  now carries the SAME facetFilterPanel as Ranking (replaced the old standing
+  facetBar + per-row-only filtering): heading "Filter the species list" + the
+  panel sit above the search box; a facet tap does nav.rerender() (search text is
+  state-backed so it survives). Seen screen left unchanged (not asked). (c) The
+  map/planner colour-scale legend (.scale-bar in styles.css) got a firm neutral
+  frame (border color-mix(--ink 45%) + inset shadow, height 12) so its pale
+  low-score end no longer reads as the --accent-wash region-county fill it sits
+  under; the 0→100 gradient endpoints are UNCHANGED (still honest to the score
+  ramp shared by pins 16→100 visual-floor and planner cells 0→100). All three
+  verified headless (green rgb(122,168,99) + red rgb(160,71,47) badges, panel on
+  Targets, framed scale bar), zero pageerrors.
 - v30 SHIPPED 2026-07-17 (PR #34): "Clearer filter category icons" — a fresh ask
   after v29 (NOT a roadmap item), MERGED to main (Noah's go). Replaced the 4
   FILTER CATEGORY glyphs (ui/facetbar.js CAT_ICON): Type → a dove, Size → a ruler

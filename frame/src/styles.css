@@ -223,7 +223,13 @@ table.matrix .corner { text-align: left; }
    = higher score. */
 .score-scale { margin-top: 10px; }
 .scale-row { display: flex; align-items: center; gap: 8px; }
-.scale-bar { flex: 1 1 auto; height: 10px; border-radius: 5px; border: 1px solid var(--line);
+/* Framed as a distinct legend control: a firm neutral border + inset depth so
+   its pale (low-score) end reads as a scale, not a patch of the warm county
+   fill it sits beneath on the map. The 0→100 gradient still mirrors the score
+   ramp the pins and planner cells use. */
+.scale-bar { flex: 1 1 auto; height: 12px; border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .18);
   background: linear-gradient(to right,
     color-mix(in srgb, var(--accent) 0%, var(--card)),
     color-mix(in srgb, var(--accent) 100%, var(--card))); }
@@ -974,9 +980,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .ffp-cat-ico svg { width: 18px; height: 18px; display: block; transition: width .1s, height .1s; }
 .ffp-cat-label { font-size: 10.5px; color: var(--ink); }
-.ffp-cat-count { position: absolute; top: 2px; left: 2px; min-width: 13px; height: 13px; padding: 0 3px;
-  border-radius: 7px; background: var(--facet-mode); color: var(--card); font-size: 8.5px; font-weight: 700;
+.ffp-cat-counts { position: absolute; top: 2px; left: 2px; display: flex; gap: 2px; }
+.ffp-cat-count { min-width: 13px; height: 13px; padding: 0 3px;
+  border-radius: 7px; color: var(--card); font-size: 8.5px; font-weight: 700;
   display: grid; place-content: center; }
+.ffp-cat-count.want { background: var(--facet-mode); }   /* green — must-include */
+.ffp-cat-count.block { background: var(--facet-block); }  /* red — exclude */
 .ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode); }
 .ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
 .ffp-cat.open .ffp-cat-ico svg { width: 21px; height: 21px; }

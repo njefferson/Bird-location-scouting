@@ -15,7 +15,7 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetIconButton, guildBird } from './facetbar.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -133,16 +133,13 @@ export function renderTargets(root, state, nav) {
   const yourList = el('div.tg-yourlist');
   const listWrap = el('div.tg-list');
 
-  // Standing facet-filter bar for this screen. Tapping a size/behaviour icon on
-  // a browse row sets the shared filter; the bar announces it with a one-tap
-  // exit and (below) narrows the browse list to matching birds. Managed locally
-  // so a tap never re-renders the whole app or clears the import textarea.
-  const facetSlot = el('div.facet-slot');
-  const onFacetChange = () => { repaintFacetBar(); repaintList(); };
-  function repaintFacetBar() {
-    const bar = facetBar(state, nav, onFacetChange);
-    facetSlot.replaceChildren(...(bar ? [bar] : []));
-  }
+  // The Targets screen carries the SAME always-on filter as Ranking — the
+  // facetFilterPanel accordion (Type / Size / Nest / Behaviour, tri-state) — so
+  // the browse list below narrows the same way it does everywhere else. A facet
+  // tap re-renders the screen (the search text is state-backed, so it's kept),
+  // which rebuilds the panel with fresh green/red counts; the panel's own
+  // status-lights row is the standing "what's filtered" indicator + Clear.
+  const onFacetChange = () => nav.rerender();
 
   function repaintSummary() {
     clear(summary);
@@ -326,11 +323,11 @@ export function renderTargets(root, state, nav) {
 
   repaintSummary();
   repaintYourList();
-  repaintFacetBar();
   repaintList();
   root.append(summary);
   root.append(yourList);
-  root.append(facetSlot);
+  root.append(el('h2.tg-group', {}, 'Filter the species list'));
+  root.append(facetFilterPanel(nav));
   root.append(el('div.search-wrap', {}, search));
   root.append(el('p.dim.tg-hint', {}, 'Starring a bird is just information — it shows you where and when to find it, and never changes the hotspot ranking on its own. Flip “Rank hotspots by presence” to also sort spots by how often your birds appear.'));
   root.append(listWrap);
