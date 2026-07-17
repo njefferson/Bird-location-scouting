@@ -153,6 +153,16 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v33 SHIPPED 2026-07-17 (PR #40, squash 9e4aec9): finished the ACCESSIBILITY
+  PASS — register items A10 + A12 (so A1-A13 are ALL resolved in /ACCESSIBILITY.md).
+  A10: informational sub-11px text → 11px (.si-count-cap, .fi-cap, .facet-pick
+  .fi-state, .presence-label, .ffp-cat-label); wanted-state text → --accent-ink
+  to hold AA at the bigger size; contrast gate now 30 pairs. Documented-exempt
+  (decorative/redundant/compact-with-text-alt): sparkline month letters, +N/−N
+  count badges, chevrons, the photo ON/OFF pill. A12: .skip-link (first Tab stop
+  → #app, `<main tabindex=-1>`, nav aria-label=Main); sparkline() now sets
+  role=img + a spoken trend label ("peaks in <Month>", via SPARK_MONTHS in
+  ui/dom.js); heading order swept (h1→h2→h3, no skips). MERGED on Noah's "Go".
 - v32 SHIPPED 2026-07-17 (PR #38, squash 909f823): the ACCESSIBILITY PASS —
   MERGED to main on Noah's "Promote to main". Fixes register items A1-A9, A11,
   A13 in /ACCESSIBILITY.md (A10/A12 stay open) + folded in the sticky-header
