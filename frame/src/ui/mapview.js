@@ -10,7 +10,7 @@ import { el, clear } from './dom.js';
 import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
-import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
+import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels, bboxOfD, parseRings, clipRingsToBox, ringsToD } from './basemap.js';
 import { mapLog, getMapLog } from './maplog.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
@@ -88,13 +88,16 @@ export function renderMapView(root, state, nav) {
   const gCounty = document.createElementNS(SVG_NS, 'g');
   svg.append(gCounty);
   const countyItems = Object.keys(A.shapes).map((code) => {
+    const cls = 'county' + (inRegion.has(code) ? ' region' : ' far');
     const p = document.createElementNS(SVG_NS, 'path');
     p.setAttribute('d', A.shapes[code]);
-    p.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
+    p.setAttribute('class', cls);
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = COUNTIES[code]?.name || code;
     p.append(title);
-    return { el: p, bb: bboxOfD(A.shapes[code]), on: false };
+    // dSrc/cls feed the deep-zoom fill substitution (see startSwap): county
+    // fills are the app's biggest-extent geometry, the ones Safari chokes on.
+    return { el: p, bb: bboxOfD(A.shapes[code]), on: false, dSrc: A.shapes[code], cls, fill: 1 };
   });
 
   // Orientation landmarks (rivers, roads, lakes, parks) — VIRTUALISED: the group
@@ -239,8 +242,13 @@ export function renderMapView(root, state, nav) {
     onclick: () => dbgSet(dbgBox.hidden), // tap the scale = toggle the data window
   }, [scaleBar, scaleTxt]));
   const NICE_MI = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
+  let scRect = null, scRectAt = 0;
   function updateScale(vb, zf, ms) {
-    const rect = svg.getBoundingClientRect();
+    // Rect cached ~500ms: this also runs mid-gesture now (live ×zoom readout),
+    // where a fresh getBoundingClientRect per call would force layout.
+    const now = performance.now();
+    if (!scRect || now - scRectAt > 500) { scRect = svg.getBoundingClientRect(); scRectAt = now; }
+    const rect = scRect;
     if (!rect.width) return;
     const pxPerUnit = Math.min(rect.width / vb.width, rect.height / vb.height);
     const miPerPx = (kmPerUnit / 1.60934) / pxPerUnit;
@@ -415,7 +423,7 @@ ${dbgLog.join('\n')}`;
   // Abandonable at every slice boundary: any box movement bumps the generation
   // and the queue dies.
   const OPS = 40;
-  let syncT = 0, swapGen = 0, swapRaf = 0, swapActive = false, holdStart = 0;
+  let syncT = 0, swapGen = 0, swapRaf = 0, swapActive = false, holdStart = 0, scaleLiveT = 0;
   function startSwap() {
     // "The box has stopped" requires the FINGERS OFF THE GLASS, not just a
     // quiet timer: human pinches pause >90ms between strokes constantly, and
@@ -444,17 +452,25 @@ ${dbgLog.join('\n')}`;
     const inBox = (b) => !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
     // Decide everything now; queue only the DOM operations. Mount entries carry
     // their target group so a slice can batch all appends into one fragment.
-    // DEEP-ZOOM FREE DEFERRAL (from Noah's iPhone trace): the 3s lockup was a
-    // BROWSER stall ("gap 3042ms") right after the first free slice at ×256 —
-    // while the same free counts were cheap at ×21/×112 (258 and 304 frees in
-    // ~0.27s). Removals hand Safari a rendering bill that scales with zoom
-    // depth. So past FREE_HOLD_ZF the swap HOLDS its frees: the items stay
-    // mounted (invisible — they're outside the box) and are re-queued by the
-    // first shallower swap, where freeing is proven cheap. Bounded: a deep view
-    // is ≤1/32 of the county, so deep panning accumulates slowly, and zooming
-    // out re-uses the held nodes instead of remounting them.
-    const FREE_HOLD_ZF = 32;
-    const holdFrees = zf >= FREE_HOLD_ZF;
+    // DEEP MODE (zf ≥ DEEP_ZF) — two rules, both from Noah's iPhone traces:
+    //  • HOLD FREES: removals hand Safari a rendering bill that scales with
+    //    zoom depth (gap 3042ms after the first free slice at ×256, while 300
+    //    frees at ×21/×112 cost ~0.27s). Out-of-box items stay mounted
+    //    (invisible) and the first shallower swap frees them where it's cheap.
+    //  • SUBSTITUTE GIANT FILLS: the residual 8-9s stalls survived free 0 —
+    //    they're WebKit's FIRST PAINT of a county-spanning fill at deep scale
+    //    (it rasterises by element extent, not the visible sliver: ~30k px
+    //    wide at ×256). So any in-view fill much bigger than the view is
+    //    swapped for a copy CLIPPED IN JS to 3× the view box — identical
+    //    pixels inside the viewport, microseconds to paint. The real geometry
+    //    returns on the way out. The clip box edges sit a full viewport
+    //    beyond every screen edge, so its artificial border is never visible.
+    const DEEP_ZF = 32;
+    const deep = zf >= DEEP_ZF;
+    const holdFrees = deep;
+    const cbx1 = vb.x - vb.width, cby1 = vb.y - vb.height, cbx2 = vb.x + 2 * vb.width, cby2 = vb.y + 2 * vb.height;
+    const hugeFill = (bb) => (bb[2] - bb[0]) > 2.5 * (cbx2 - cbx1) || (bb[3] - bb[1]) > 2.5 * (cby2 - cby1);
+    const ringsOf = (it) => (it.rings !== undefined ? it.rings : (it.rings = parseRings(it.dSrc || it.d)));
     let held = 0;
     const freeN = { p: 0, b: 0, c: 0, n: 0 }; // pins/basemap/county fills/names
     const toRemove = [], toMount = [];
@@ -462,8 +478,30 @@ ${dbgLog.join('\n')}`;
     const ensureBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } return it.el; };
     const ensurePin = (it) => (it.el || (it.el = makePin(it)));
     const ensureEl = (it) => it.el;
-    for (const it of countyItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, gCounty, ensureEl]); else drop(it, 'c'); } }
-    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else drop(it, 'b'); } }
+    // The clipped substitute — (re)clipped to THIS stop's box on every deep
+    // swap (the box moved, that's why the swap ran). Same class = same paint.
+    const ensureSub = (it) => {
+      if (!it.sub) { it.sub = document.createElementNS(SVG_NS, 'path'); it.sub.setAttribute('class', it.cls + ' fill-sub'); }
+      it.sub.setAttribute('d', ringsToD(clipRingsToBox(it.rings, cbx1, cby1, cbx2, cby2)));
+      return it.sub;
+    };
+    // Fills route through a 3-state plan (off | full | sub). full↔sub swaps
+    // are ATOMIC within one mount slice (entry carries the outgoing element),
+    // so the giant geometry leaves the tree the same frame its stand-in lands.
+    const planFill = (it, group, ensureFull, t) => {
+      const on = inBox(it.bb);
+      const cur = !it.on ? 'off' : (it.subOn ? 'sub' : 'full');
+      const want = !on ? 'off' : (deep && hugeFill(it.bb) && ringsOf(it) ? 'sub' : 'full');
+      if (want === 'sub') toMount.push([it, group, ensureSub, true, cur === 'full' ? it.el : null]);
+      else if (want === 'full') { if (cur !== 'full') toMount.push([it, group, ensureFull, false, cur === 'sub' ? it.sub : null]); }
+      else if (cur !== 'off') drop(it, t);
+    };
+    for (const it of countyItems) planFill(it, gCounty, ensureEl, 'c');
+    for (const it of bmItems) {
+      if (it.fill) { planFill(it, bmGroup, ensureBm, 'b'); continue; }
+      const on = inBox(it.bb);
+      if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else drop(it, 'b'); }
+    }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
       if (on !== it.on) { if (on) toMount.push([it, it.hot ? gPinsHot : gPins, ensurePin]); else drop(it, 'p'); }
@@ -483,7 +521,8 @@ ${dbgLog.join('\n')}`;
     // trace WHICH content type a free-phase stall follows; "hold" = frees
     // deferred to a shallower swap (deep-zoom rule above).
     const fb = ['p', 'b', 'c', 'n'].filter((k) => freeN[k]).map((k) => `${k}${freeN[k]}`).join(' ');
-    dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length}${fb ? `[${fb}]` : ''}${held ? ` hold ${held}` : ''} mount ${toMount.length}`);
+    const nSub = toMount.reduce((n, e) => n + (e[3] ? 1 : 0), 0); // giant fills running clipped
+    dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length}${fb ? `[${fb}]` : ''}${held ? ` hold ${held}` : ''} mount ${toMount.length}${nSub ? ` sub ${nSub}` : ''}`);
     const progress = () => {
       const parts = [];
       if (totPins) parts.push(`pins ${mPins}/${totPins}`);
@@ -514,14 +553,16 @@ ${dbgLog.join('\n')}`;
       if (mi < toMount.length) {
         const frags = new Map();
         while (mi < toMount.length && ops < OPS) {
-          const [it, group, ensure] = toMount[mi++];
+          const [it, group, ensure, isSub, swapOut] = toMount[mi++];
           let f = frags.get(group); if (!f) { f = document.createDocumentFragment(); frags.set(group, f); }
-          f.append(ensure(it)); it.on = true; if (isPin(group)) mPins++; ops++;
+          f.append(ensure(it)); it.on = true; it.subOn = !!isSub;
+          if (swapOut) { swapOut.remove(); ops++; } // full↔sub: old element out, same frame
+          if (isPin(group)) mPins++; ops++;
         }
         for (const [group, f] of frags) group.append(f);
       } else if (ri < toRemove.length) {
         phase = 'frees';
-        while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
+        while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; (it.subOn ? it.sub : it.el).remove(); it.on = false; it.subOn = false; ops++; }
       } else if (!varsDone) {
         phase = 'vars';
         varsDone = true; pz.applyVars();
@@ -584,6 +625,16 @@ ${dbgLog.join('\n')}`;
       holdStart = 0; holdHide();
       clearTimeout(syncT);
       syncT = setTimeout(startSwap, 280);
+      // Live scale/×zoom while the box moves (throttled; HTML overlay, so it
+      // never invalidates map rendering) — Noah's screenshots showed a stale
+      // "×4.9" beside a ×256 view because the readout only refreshed on a
+      // COMPLETED swap, and abandoned ones never got there.
+      const now = performance.now();
+      if (now - scaleLiveT > 150) {
+        scaleLiveT = now;
+        const lv = svg.viewBox.baseVal;
+        if (lv && lv.width) updateScale(lv, W / lv.width, null);
+      }
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');

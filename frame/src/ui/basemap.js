@@ -45,6 +45,72 @@ export function bboxOfD(d) {
   return [x1, y1, x2, y2];
 }
 
+// ---------------------------------------------------------------------------
+// FILL CLIPPING (v42 deep-zoom fix). WebKit rasterises an SVG fill by the
+// element's own extent, not the visible sliver: at ×256 a county-spanning
+// polygon becomes a ~30k-pixel surface and the first paint at that depth
+// blocks the main thread for seconds (Noah's iPhone trace: gap 8-9s with ZERO
+// DOM ops in flight). The cure is to never hand Safari a giant fill at deep
+// zoom — the map swaps it for a polygon CLIPPED IN JS to a box around the
+// view (tiny extent, paints in microseconds), identical inside the viewport.
+// These helpers do that: parse the generated "M x y L x y … Z" geometry into
+// rings, clip rings to a box (Sutherland–Hodgman), and serialise back.
+// ---------------------------------------------------------------------------
+
+// Rings of [x,y] pairs from generated path data. Absolute M/L/Z only — the
+// only commands our generators emit; anything else returns null and the
+// caller paints the original geometry unclipped.
+export function parseRings(d) {
+  if (/[^MLZ0-9.,\s-]/.test(d)) return null;
+  const rings = [];
+  for (const seg of d.split('M').slice(1)) {
+    const n = seg.match(/-?[0-9.]+/g);
+    if (!n || n.length < 6) continue;
+    const ring = [];
+    for (let i = 0; i + 1 < n.length; i += 2) ring.push([+n[i], +n[i + 1]]);
+    rings.push(ring);
+  }
+  return rings.length ? rings : null;
+}
+
+// Sutherland–Hodgman: each ring clipped against the box's four half-planes.
+// Correct for the flat-colour fills we draw (holes aren't in the data).
+export function clipRingsToBox(rings, x1, y1, x2, y2) {
+  const planes = [
+    [(p) => p[0] >= x1, (a, b) => [x1, a[1] + (b[1] - a[1]) * (x1 - a[0]) / (b[0] - a[0])]],
+    [(p) => p[0] <= x2, (a, b) => [x2, a[1] + (b[1] - a[1]) * (x2 - a[0]) / (b[0] - a[0])]],
+    [(p) => p[1] >= y1, (a, b) => [a[0] + (b[0] - a[0]) * (y1 - a[1]) / (b[1] - a[1]), y1]],
+    [(p) => p[1] <= y2, (a, b) => [a[0] + (b[0] - a[0]) * (y2 - a[1]) / (b[1] - a[1]), y2]],
+  ];
+  const out = [];
+  for (const ring of rings) {
+    let poly = ring;
+    for (const [inside, cross] of planes) {
+      const next = [];
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        const ain = inside(a), bin = inside(b);
+        if (ain) { next.push(a); if (!bin) next.push(cross(a, b)); }
+        else if (bin) next.push(cross(a, b));
+      }
+      poly = next;
+      if (!poly.length) break;
+    }
+    if (poly.length >= 3) out.push(poly);
+  }
+  return out;
+}
+
+export function ringsToD(rings) {
+  let d = '';
+  for (const ring of rings) {
+    d += `M${ring[0][0].toFixed(2)} ${ring[0][1].toFixed(2)}`;
+    for (let i = 1; i < ring.length; i++) d += `L${ring[i][0].toFixed(2)} ${ring[i][1].toFixed(2)}`;
+    d += 'Z';
+  }
+  return d;
+}
+
 // Coarsen a closed shape for use as a CLIP path only — clipping doesn't need
 // every point, and a lighter clip region is much cheaper for Safari to evaluate
 // each frame. Never used for anything visible.
@@ -91,9 +157,12 @@ function chunkPolyline(out, d, cls, maxPts = 20) {
 export function basemapItems(area = 'california') {
   const L = LAYERS[area];
   const items = [];
-  for (const d of L.PARKS) items.push({ d, cls: 'bm-park', bb: bboxOfD(d) });
-  for (const d of L.LAKES) items.push({ d, cls: 'bm-lake', bb: bboxOfD(d) });
-  if (area === 'california') for (const s of WATER_SHAPES) items.push({ d: s.d, cls: 'bm-lake', bb: bboxOfD(s.d) });
+  // Fills carry fill:1 — the hotspot map's deep zoom substitutes them with a
+  // view-clipped copy (see parseRings/clipRingsToBox above); lines never need
+  // it, chunkPolyline already bounds their extents.
+  for (const d of L.PARKS) items.push({ d, cls: 'bm-park', bb: bboxOfD(d), fill: 1 });
+  for (const d of L.LAKES) items.push({ d, cls: 'bm-lake', bb: bboxOfD(d), fill: 1 });
+  if (area === 'california') for (const s of WATER_SHAPES) items.push({ d: s.d, cls: 'bm-lake', bb: bboxOfD(s.d), fill: 1 });
   for (const d of L.RIVERS) chunkPolyline(items, d, 'bm-river');
   for (const d of L.COASTLINE) chunkPolyline(items, d, 'bm-coast');
   for (const d of L.ROADS) chunkPolyline(items, d, 'bm-road');
