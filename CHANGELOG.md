@@ -7,6 +7,7 @@ tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 
 ## v37 — 2026-07-18
 - Yosemite is now a built-in region. Tap the new “Yosemite” pill at the top to move the whole planner into the park — Yosemite Valley, Wawona, El Portal and Big Meadow on the west side, Tuolumne Meadows, Hetch Hetchy and Hodgdon Meadow up high. Like Home, it ships with the app and is stored on your device, so it works offline — which matters in a park where cell signal is thin. (Open the app once with a connection to pick up this update; after that it’s there without one.)
+- Both Yosemite counties (Mariposa and Tuolumne) are now set to carry EVERY eBird hotspot, like Sacramento and Humboldt do — not just the top 15. The full pin set arrives with the data refresh that follows this release; open the app online once after and it’s on your device.
 
 ## v36 — 2026-07-18
 - Navigation, reworked. Tap a hotspot card anywhere to open its location page — the whole card is the button now, so the old “Species matrix” button is gone.
