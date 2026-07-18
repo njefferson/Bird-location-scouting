@@ -93,7 +93,7 @@ export function renderMapView(root, state, nav) {
 
   // Orientation landmarks (rivers, roads, lakes, parks) — VIRTUALISED: the group
   // is mounted here for z-order, but its pieces live in a data list and only the
-  // ones inside the current view are ever in the DOM (see sync() below). Zoomed
+  // ones inside the current view are ever in the DOM (see startSwap() below). Zoomed
   // out, the view holds the whole county so everything mounts — same picture as
   // before; zoomed in, the DOM holds just the local geometry.
   const bmGroup = basemapShell(svg, 'bm-hotspot', area);
@@ -138,7 +138,7 @@ export function renderMapView(root, state, nav) {
   // for a dense county (Humboldt's 597 spots) so clusters read as a stipple.
   const r = Math.max(1.6, home.w * 0.006);
 
-  // PINS + NAMES are VIRTUALISED too: plain data records here; sync() below
+  // PINS + NAMES are VIRTUALISED too: plain data records here; startSwap() below
   // mounts only the ones inside the current view and removes them as they leave.
   // Two pin groups so the hot tier always draws ON TOP of ordinary dots in a
   // dense cluster; both sit under the label layers (original z-order).
@@ -186,7 +186,7 @@ export function renderMapView(root, state, nav) {
   // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
   // county names — all pointer-transparent, all size-capped by --zf.
   // VIRTUALISED like everything else: build once, detach every child into a
-  // data list, and let sync() mount only the ones near the window. Text is the
+  // data list, and let the swap mount only the ones near the window. Text is the
   // most expensive thing Safari paints — none of it may sit in the DOM unseen.
   function anchorBox(node) {
     if (node.tagName === 'g') { // road shield: rect carries the geometry
@@ -213,7 +213,7 @@ export function renderMapView(root, state, nav) {
   wrap.append(svg);
 
   // VIRTUALISATION — the map's core loading rule (Noah's): the DOM only ever
-  // holds what's inside the window. On each settle, sync() walks the data lists
+  // holds what's inside the window. When the box stops, startSwap() walks the data lists
   // and MOUNTS the basemap pieces and pins whose boxes intersect the view (with
   // a margin so a small pan doesn't hit blank edge), and REMOVES the ones that
   // left. Zoom out and the detail releases; zoom in somewhere else and that
@@ -241,38 +241,49 @@ export function renderMapView(root, state, nav) {
       else if (!show && it.on) { it.el.remove(); it.on = false; }
     }
   }
-  // ONE pass, run ONLY when the box has stopped (Noah's rule — nothing happens
+  // THE SWAP, run ONLY when the box has stopped (Noah's rule — nothing happens
   // while the box moves): release everything that isn't in the box, mount what
-  // is, then place the labels. The moving gesture just scales what was already
-  // drawn; the single swap lands while the fingers are at rest.
-  function sync() {
+  // is, then place the labels for that height. Two properties matter as much as
+  // when it runs:
+  //  • it is SLICED — the decisions are made up front in plain JS (cheap), and
+  //    the DOM work is applied in ~5ms slices across frames, releases first, so
+  //    no single frame ever swallows a hundreds-of-nodes burst ("the load");
+  //  • it is ABANDONABLE — the moment the box moves again, the in-flight queue
+  //    is dropped at the next slice boundary and freed. A gesture never waits
+  //    on loading; the next stop starts a fresh swap from whatever is mounted.
+  let syncT = 0, swapGen = 0, swapRaf = 0;
+  function startSwap() {
+    const gen = ++swapGen;
     const vb = svg.viewBox.baseVal;
     if (!vb || !vb.width) return;
     const zf = W / vb.width;
     const mx = vb.width * 0.35, my = vb.height * 0.35; // pan headroom
     const x1 = vb.x - mx, y1 = vb.y - my, x2 = vb.x + vb.width + mx, y2 = vb.y + vb.height + my;
-    for (const it of bmItems) {
-      const b = it.bb;
-      const on = !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
-      if (on && !it.on) { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); it.on = true; }
-      else if (!on && it.on) { it.el.remove(); it.on = false; }
-    }
+    const inBox = (b) => !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
+    const mountBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); };
+    const mountPin = (it) => { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); };
+    // Decide everything now; queue only the DOM operations.
+    const toRemove = [], toMount = [];
+    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) (on ? toMount : toRemove).push([it, mountBm]); }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
-      if (on && !it.on) { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); it.on = true; }
-      else if (!on && it.on) { it.el.remove(); it.on = false; }
+      if (on !== it.on) (on ? toMount : toRemove).push([it, mountPin]);
     }
     for (const v of [lmVirt, ctyVirt]) {
-      for (const it of v.items) {
-        const b = it.bb;
-        const on = !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
-        if (on && !it.on) { v.group.append(it.el); it.on = true; }
-        else if (!on && it.on) { it.el.remove(); it.on = false; }
-      }
+      for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) (on ? toMount : toRemove).push([it, (i) => v.group.append(i.el)]); }
     }
-    relabel(vb, zf);
+    let ri = 0, mi = 0;
+    const step = () => {
+      swapRaf = 0;
+      if (gen !== swapGen) return; // box moved — abandon; the queue dies here
+      const t0 = performance.now();
+      while (ri < toRemove.length && performance.now() - t0 < 5) { const it = toRemove[ri++][0]; it.el.remove(); it.on = false; }
+      while (ri >= toRemove.length && mi < toMount.length && performance.now() - t0 < 5) { const [it, mount] = toMount[mi++]; mount(it); it.on = true; }
+      if (ri < toRemove.length || mi < toMount.length) { swapRaf = requestAnimationFrame(step); return; }
+      relabel(vb, zf); // final slice: the ≤36 labels for this height
+    };
+    step();
   }
-  let syncT = 0;
 
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
@@ -280,10 +291,12 @@ export function renderMapView(root, state, nav) {
     // visibility cull would fight it and cache detached nodes.
     viewCull: false,
     onZoom: () => {
-      // NOTHING happens while the box moves — every event just pushes the one
-      // settle pass back. sync() runs once, when the box has stopped.
+      // NOTHING happens while the box moves — any in-flight swap is abandoned
+      // and freed IMMEDIATELY, and the one settle swap is pushed back.
+      swapGen++;
+      if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; }
       clearTimeout(syncT);
-      syncT = setTimeout(sync, 90);
+      syncT = setTimeout(startSwap, 90);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
@@ -292,7 +305,7 @@ export function renderMapView(root, state, nav) {
   });
   wrap.append(pz.controls());
   root.append(wrap);
-  syncT = setTimeout(sync, 0); // initial mount for the opening view
+  syncT = setTimeout(startSwap, 0); // initial mount for the opening view
 
   // Honest label: this is PAST-SEASONS frequency, not live activity — these
   // spots aren't "hot right now", they've historically reported the most in
