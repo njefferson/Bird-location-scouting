@@ -5,6 +5,11 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v38 — 2026-07-18
+- Yellowstone. The planner leaves California for the first time: a built-in “Yellowstone” region covering the park and its gateways — Mammoth, Lamar and Canyon in the northeast, Old Faithful and Yellowstone Lake, Grand Teton and Jackson to the south, West Yellowstone and Gardiner at the entrances, Island Park across the Idaho line. Every eBird hotspot in all five counties, with every species each one reports.
+- The map knows the way there too: Yellowstone draws on its own map canvas — the five counties with the park boundaries, Yellowstone Lake, Jackson Lake, Hebgen Lake, the Yellowstone, Gallatin and Shoshone rivers, and the highway numbers, all offline like the California map. The two counties holding the park itself are stored on your device up front, so the region works with no signal at all — open the app once with a connection to pick this update up first.
+- One honest note: the species list Frame ranks with grew up in California. Most Yellowstone birds are on it, but a few northern specialties aren’t counted yet — they’re in the downloaded data and will light up as the list grows.
+
 ## v37 — 2026-07-18
 - Yosemite is now a built-in region. Tap the new “Yosemite” pill at the top to move the whole planner into the park — Yosemite Valley, Wawona, El Portal and Big Meadow on the west side, Tuolumne Meadows, Hetch Hetchy and Hodgdon Meadow up high. Like Home, it ships with the app and is stored on your device, so it works offline — which matters in a park where cell signal is thin. (Open the app once with a connection to pick up this update; after that it’s there without one.)
 - Both Yosemite counties (Mariposa and Tuolumne) are now set to carry EVERY eBird hotspot, like Sacramento and Humboldt do — not just the top 15. The full pin set arrives with the data refresh that follows this release; open the app online once after and it’s on your device.
