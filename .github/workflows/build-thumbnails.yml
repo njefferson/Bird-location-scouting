@@ -1,0 +1,99 @@
+# Build a small Wikimedia-Commons photo thumbnail for every curated species and
+# commit them under frame/data/thumbs/ (+ the credits manifest thumbs.json).
+# See frame/scripts/build-thumbnails.mjs for the why (Commons, not eBird) and how.
+# Needs only EBIRD_API_TOKEN (species name -> code + scientific name); the images
+# come from Wikimedia's public APIs. Runs on a runner because the session sandbox
+# can't reach wikipedia.org (egress policy). Dispatch on `staging` for the preview,
+# then promote as usual.
+#
+#   mode = probe  -> fetch a small sample, print a report, COMMIT NOTHING (verify)
+#   mode = build  -> fetch all (skipping species already done), commit + deploy
+name: Build species thumbnails
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'probe (report only) or build (commit + deploy)'
+        type: choice
+        options: [probe, build]
+        default: probe
+      limit:
+        description: 'max species to process (blank = all)'
+        type: string
+        default: ''
+      only:
+        description: 'space-separated eBird codes to (re)build, e.g. "grbher3 baleag"'
+        type: string
+        default: ''
+      force:
+        description: 'refetch species that already have a thumb'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  thumbs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install sharp
+        run: npm install --no-save sharp
+
+      - name: Build thumbnails
+        env:
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          LIMIT: ${{ inputs.limit }}
+          ONLY: ${{ inputs.only }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args="$MODE"
+          [ -n "$LIMIT" ] && args="$args --limit $LIMIT"
+          [ -n "$ONLY" ] && args="$args --only $ONLY"
+          [ "$FORCE" = "true" ] && args="$args --force"
+          echo "node frame/scripts/build-thumbnails.mjs $args"
+          node frame/scripts/build-thumbnails.mjs $args
+
+      - name: Commit thumbnails if they changed
+        id: commit
+        if: inputs.mode == 'build'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frame/data/thumbs frame/data/thumbs.json
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No thumbnail changes to commit."
+          else
+            git commit -m "Build species thumbnails (Wikimedia Commons)"
+            for i in 1 2 3 4 5; do
+              if git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}"; then
+                echo "changed=true" >> "$GITHUB_OUTPUT"; break
+              fi
+              echo "push attempt $i failed — retrying in $((5*i))s"; sleep $((5*i))
+            done
+          fi
+
+      # Bot GITHUB_TOKEN pushes don't trigger deploy.yml, so deploy inline
+      # (staging -> preview, main -> prod) like sync-taxonomy.yml.
+      - name: Deploy to Cloudflare Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frame
+          command: pages deploy . --project-name=bird-location-scouting --branch=${{ github.ref_name }} --commit-dirty=true
