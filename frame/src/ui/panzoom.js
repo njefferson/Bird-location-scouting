@@ -30,7 +30,7 @@ function textTier() {
   catch { return 1; }
 }
 
-export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null, viewCull = true } = {}) {
+export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null, viewCull = true, deferVars = false } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
@@ -85,8 +85,11 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   const applyVB = () => {
     raf = 0;
     svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
-    clearTimeout(varsT);
-    varsT = setTimeout(writeVars, 90);
+    // deferVars: the hotspot map SEQUENCES this write inside its stop-swap
+    // (releases first, so the global text/pin restyle hits the smallest set) —
+    // writing it here on a timer raced the swap and restyled the big pre-swap
+    // set (the freeze Noah saw exactly when the text resized).
+    if (!deferVars) { clearTimeout(varsT); varsT = setTimeout(writeVars, 90); }
     if (viewCull) cull(W / vw); // maps that mount/unmount their own DOM opt out
     if (onZoom) onZoom(W / vw);
   };
@@ -265,6 +268,10 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   const ctl = {
     reset() { vx = HOME.x; vy = HOME.y; vw = HOME.w; vh = HOME.h; setVB(); },
     zoomAtCenter(f) { zoomAt(centerX(), centerY(), f); },
+    // For deferVars maps: write the sizing vars NOW (called mid-swap, after
+    // releases, so the global restyle covers the fewest elements).
+    applyVars() { clearTimeout(varsT); writeVars(); },
+    zoom() { return W / vw; },
     // Force the viewport-cull list to rebuild on the next frame. Labels that
     // were display:none when the list was first built (e.g. pin names, hidden
     // until you zoom in) get a zero bbox and are skipped forever otherwise —

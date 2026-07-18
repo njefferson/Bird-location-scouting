@@ -517,6 +517,16 @@ table.species-table tr[onclick] { cursor: pointer; }
   stroke-width: .34em; stroke-opacity: .9; stroke-linejoin: round; }
 .hotspot-map .pin-name.lbl-show { visibility: visible; }
 
+/* Map scale — bottom-left overlay: a distance bar for users, with the zoom
+   factor tucked in small (screenshot-debuggable). Updated only at rest. */
+.map-scale { position: absolute; left: 10px; bottom: 8px; display: flex; align-items: center;
+  gap: 7px; padding: 4px 9px; border-radius: 7px; pointer-events: none;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink); }
+.map-scale-bar { display: inline-block; height: 5px; min-width: 12px;
+  border: 1.5px solid var(--ink); border-top: none; }
+.map-scale-zf { color: var(--dim); }
+
 /* Deep-zoom PERFORMANCE: the map still draws everything IN VIEW — long lines are
    chunked (ui/basemap.js) so the viewport cull drops the off-screen pieces, fills
    cull whole by bbox, and every element's cull bbox is precomputed from its data

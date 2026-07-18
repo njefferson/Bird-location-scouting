@@ -212,6 +212,35 @@ export function renderMapView(root, state, nav) {
 
   wrap.append(svg);
 
+  // SCALE BAR (Noah's ask) — a real distance scale for users, updated at rest
+  // with everything else (never during the gesture). The small ×N zoom factor
+  // beside it doubles as debugging aid: a screenshot now says exactly where in
+  // the zoom the map was. km-per-map-unit is derived once from the projection
+  // at the region's own latitude.
+  const kmPerUnit = (() => {
+    const ref = hotspots[0] || { lat: 39, lng: -121 };
+    const [ax] = latLngToMap(ref.lat, ref.lng, area);
+    const [bx] = latLngToMap(ref.lat, ref.lng + 0.2, area);
+    const km = 0.2 * 111.32 * Math.cos((ref.lat * Math.PI) / 180);
+    return km / Math.abs(bx - ax || 1);
+  })();
+  const scaleBar = el('span.map-scale-bar');
+  const scaleTxt = el('span.map-scale-txt');
+  wrap.append(el('div.map-scale', { 'aria-hidden': 'true' }, [scaleBar, scaleTxt]));
+  const NICE_MI = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
+  function updateScale(vb, zf) {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    const pxPerUnit = Math.min(rect.width / vb.width, rect.height / vb.height);
+    const miPerPx = (kmPerUnit / 1.60934) / pxPerUnit;
+    const maxPx = rect.width * 0.3;
+    let mi = NICE_MI[0];
+    for (const n of NICE_MI) { if (n / miPerPx <= maxPx) mi = n; else break; }
+    scaleBar.style.width = `${Math.round(mi / miPerPx)}px`;
+    scaleTxt.textContent = `${mi < 1 ? mi : Math.round(mi)} mi`;
+    scaleTxt.append(el('span.map-scale-zf', {}, ` ·×${zf >= 10 ? Math.round(zf) : zf.toFixed(1)}`));
+  }
+
   // VIRTUALISATION — the map's core loading rule (Noah's): the DOM only ever
   // holds what's inside the window. When the box stops, startSwap() walks the data lists
   // and MOUNTS the basemap pieces and pins whose boxes intersect the view (with
@@ -251,6 +280,22 @@ export function renderMapView(root, state, nav) {
   //  • it is ABANDONABLE — the moment the box moves again, the in-flight queue
   //    is dropped at the next slice boundary and freed. A gesture never waits
   //    on loading; the next stop starts a fresh swap from whatever is mounted.
+  // The swap runs in STRICT PHASES, each in op-capped slices (~40 DOM ops per
+  // frame — a JS-time budget lied: .remove()/.append() are cheap to CALL, the
+  // style/layout/paint lands after the frame yields, so 5ms of calls could cost
+  // Safari 100ms+ of rendering):
+  //   1. RELEASES — shrink the tree first.
+  //   2. ONE sizing-var write (pz.applyVars) — this is the "text resize". It
+  //      restyles every mounted var() consumer, so it runs exactly once per
+  //      stop, over the SMALLEST possible set, never racing the mounts.
+  //      (It used to fire on its own timer against the big pre-swap set — the
+  //      freeze Noah pinned to the moment the text resized.)
+  //   3. MOUNTS — batched per slice through DocumentFragments (one insertion
+  //      per group per frame), each new node styling once with correct vars.
+  //   4. LABELS + the scale readout, last.
+  // Abandonable at every slice boundary: any box movement bumps the generation
+  // and the queue dies.
+  const OPS = 40;
   let syncT = 0, swapGen = 0, swapRaf = 0;
   function startSwap() {
     const gen = ++swapGen;
@@ -260,27 +305,39 @@ export function renderMapView(root, state, nav) {
     const mx = vb.width * 0.35, my = vb.height * 0.35; // pan headroom
     const x1 = vb.x - mx, y1 = vb.y - my, x2 = vb.x + vb.width + mx, y2 = vb.y + vb.height + my;
     const inBox = (b) => !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
-    const mountBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); };
-    const mountPin = (it) => { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); };
-    // Decide everything now; queue only the DOM operations.
+    // Decide everything now; queue only the DOM operations. Mount entries carry
+    // their target group so a slice can batch all appends into one fragment.
     const toRemove = [], toMount = [];
-    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) (on ? toMount : toRemove).push([it, mountBm]); }
+    const ensureBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } return it.el; };
+    const ensurePin = (it) => (it.el || (it.el = makePin(it)));
+    const ensureEl = (it) => it.el;
+    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else toRemove.push(it); } }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
-      if (on !== it.on) (on ? toMount : toRemove).push([it, mountPin]);
+      if (on !== it.on) { if (on) toMount.push([it, it.hot ? gPinsHot : gPins, ensurePin]); else toRemove.push(it); }
     }
     for (const v of [lmVirt, ctyVirt]) {
-      for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) (on ? toMount : toRemove).push([it, (i) => v.group.append(i.el)]); }
+      for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, v.group, ensureEl]); else toRemove.push(it); } }
     }
-    let ri = 0, mi = 0;
+    let ri = 0, mi = 0, varsDone = false;
     const step = () => {
       swapRaf = 0;
       if (gen !== swapGen) return; // box moved — abandon; the queue dies here
-      const t0 = performance.now();
-      while (ri < toRemove.length && performance.now() - t0 < 5) { const it = toRemove[ri++][0]; it.el.remove(); it.on = false; }
-      while (ri >= toRemove.length && mi < toMount.length && performance.now() - t0 < 5) { const [it, mount] = toMount[mi++]; mount(it); it.on = true; }
-      if (ri < toRemove.length || mi < toMount.length) { swapRaf = requestAnimationFrame(step); return; }
+      let ops = 0;
+      while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
+      if (ri >= toRemove.length && !varsDone) { varsDone = true; pz.applyVars(); ops = OPS; } // the one restyle gets its own frame
+      else if (varsDone) {
+        const frags = new Map();
+        while (mi < toMount.length && ops < OPS) {
+          const [it, group, ensure] = toMount[mi++];
+          let f = frags.get(group); if (!f) { f = document.createDocumentFragment(); frags.set(group, f); }
+          f.append(ensure(it)); it.on = true; ops++;
+        }
+        for (const [group, f] of frags) group.append(f);
+      }
+      if (ri < toRemove.length || !varsDone || mi < toMount.length) { swapRaf = requestAnimationFrame(step); return; }
       relabel(vb, zf); // final slice: the ≤36 labels for this height
+      updateScale(vb, zf);
     };
     step();
   }
@@ -290,6 +347,9 @@ export function renderMapView(root, state, nav) {
     // This map manages its own DOM (mount/unmount by view) — the generic
     // visibility cull would fight it and cache detached nodes.
     viewCull: false,
+    // The sizing-var write is SEQUENCED inside the stop-swap (phase 2) so the
+    // one big restyle never races the mounts — see startSwap.
+    deferVars: true,
     onZoom: () => {
       // NOTHING happens while the box moves — any in-flight swap is abandoned
       // and freed IMMEDIATELY, and the one settle swap is pushed back.
