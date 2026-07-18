@@ -185,12 +185,30 @@ export function renderMapView(root, state, nav) {
 
   // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
   // county names — all pointer-transparent, all size-capped by --zf.
-  appendLandmarkLabels(svg, area);
+  // VIRTUALISED like everything else: build once, detach every child into a
+  // data list, and let sync() mount only the ones near the window. Text is the
+  // most expensive thing Safari paints — none of it may sit in the DOM unseen.
+  function anchorBox(node) {
+    if (node.tagName === 'g') { // road shield: rect carries the geometry
+      const rc = node.querySelector('rect');
+      if (rc) { const x = +rc.getAttribute('x'), y = +rc.getAttribute('y'); return [x - 2, y - 2, x + +rc.getAttribute('width') + 2, y + +rc.getAttribute('height') + 2]; }
+    }
+    const x = +(node.getAttribute('x') ?? node.getAttribute('cx') ?? 0);
+    const y = +(node.getAttribute('y') ?? node.getAttribute('cy') ?? 0);
+    const hw = (node.textContent?.length || 2) * 2.4 + 6; // generous text half-width
+    return [x - hw, y - 10, x + hw, y + 10];
+  }
+  function virtualizeGroup(group) {
+    const items = [];
+    for (const node of [...group.children]) { items.push({ el: node, bb: anchorBox(node), on: false }); node.remove(); }
+    return { group, items };
+  }
+  const lmVirt = virtualizeGroup(appendLandmarkLabels(svg, area));
   const pinNames = document.createElementNS(SVG_NS, 'g');
   pinNames.setAttribute('class', 'pin-names');
   pinNames.setAttribute('aria-hidden', 'true');
   svg.append(pinNames);
-  appendCountyLabels(svg, Object.keys(A.shapes));
+  const ctyVirt = virtualizeGroup(appendCountyLabels(svg, Object.keys(A.shapes)));
 
   wrap.append(svg);
 
@@ -240,9 +258,17 @@ export function renderMapView(root, state, nav) {
       if (on && !it.on) { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); it.on = true; }
       else if (!on && it.on) { it.el.remove(); it.on = false; }
     }
+    for (const v of [lmVirt, ctyVirt]) {
+      for (const it of v.items) {
+        const b = it.bb;
+        const on = !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
+        if (on && !it.on) { v.group.append(it.el); it.on = true; }
+        else if (!on && it.on) { it.el.remove(); it.on = false; }
+      }
+    }
     relabel(vb, zf);
   }
-  let syncT = 0;
+  let syncT = 0, lastSync = 0;
 
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
@@ -250,11 +276,16 @@ export function renderMapView(root, state, nav) {
     // visibility cull would fight it and cache detached nodes.
     viewCull: false,
     onZoom: () => {
-      // Re-sync the mounted set after the gesture settles (fires on pan and
-      // zoom); debounced so it never runs mid-frame, short enough that the
-      // world fills in quickly after a pinch.
+      // Keep the mounted set tracking the window DURING the gesture, not just
+      // after it: a long pinch used to carry the full opening set the whole way
+      // in (597 pins + all the text), re-rendered at growing scale every frame —
+      // the "slows down as I zoom" Noah kept hitting. Throttled to ~9 Hz (the
+      // sync itself is a few thousand box tests — well under a frame), plus a
+      // settle pass for the final accurate state.
+      const now = performance.now();
+      if (now - lastSync > 110) { lastSync = now; sync(); }
       clearTimeout(syncT);
-      syncT = setTimeout(sync, 70);
+      syncT = setTimeout(() => { lastSync = performance.now(); sync(); }, 70);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
