@@ -216,14 +216,13 @@ export function renderMapView(root, state, nav) {
     W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
     onZoom: (z) => {
-      // Zoomed in, STOP DRAWING the heavy clipped basemap (dense OSM shorelines,
-      // rivers, roads — ~30k path points under a county clip-path). Safari
-      // re-rasterises all of it every frame at high scale and locks the map up,
-      // even though almost nothing is on screen (Noah's deep-zoom lag). Two tiers
-      // so context fades gracefully; pins always stay. map-lite drops the basemap
-      // detail + landmark labels but keeps the land; map-deep drops the land too.
-      svg.classList.toggle('map-lite', z >= 12);
-      svg.classList.toggle('map-deep', z >= 40);
+      // Zoomed in, DROP THE BASEMAP CLIP-PATH. Safari re-evaluates the county
+      // clip against the whole basemap group every frame, which is a big part of
+      // the deep-zoom lockup; once you're zoomed in, the view sits inside the
+      // county so there's nothing to clip away anyway. The heavy geometry itself
+      // is handled by chunked lines + the viewport cull (nothing is deleted —
+      // what's in view still draws). Kept off until you're past the region view.
+      svg.classList.toggle('map-unclip', z >= 12);
       // Recompute the visible label set after the gesture settles (fires on pan
       // and zoom); debounced so it never runs mid-frame.
       clearTimeout(relabelT);

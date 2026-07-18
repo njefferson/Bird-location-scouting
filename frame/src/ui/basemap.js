@@ -35,6 +35,26 @@ function path(d, cls) {
   return p;
 }
 
+// Split a long polyline ("M x y L x y …", the only commands the basemap uses)
+// into shorter OVERLAPPING pieces, and append each as its own <path>. A single
+// coastline path spans the whole coast, so its bounding box always overlaps the
+// view and the viewport cull can never drop it — Safari then re-tessellates the
+// entire thing every frame at deep zoom (the lockup). Chunked, each piece has a
+// small bbox, so off-screen pieces cull and only what's actually on screen draws.
+// Fills are NOT chunked (a fill needs its closed ring); they're bounded and cull
+// whole. maxPts keeps each piece cheap while overlapping one point for continuity.
+function appendPolyline(g, d, cls, maxPts = 20) {
+  const nums = d.match(/-?[0-9.]+/g);
+  if (!nums || nums.length <= maxPts * 2) { g.append(path(d, cls)); return; }
+  for (let i = 0; i + 3 < nums.length; i += (maxPts - 1) * 2) {
+    const seg = nums.slice(i, i + maxPts * 2);
+    if (seg.length < 4) break;
+    let piece = `M${seg[0]} ${seg[1]}`;
+    for (let j = 2; j + 1 < seg.length; j += 2) piece += `L${seg[j]} ${seg[j + 1]}`;
+    g.append(path(piece, cls));
+  }
+}
+
 /**
  * Append the landmark backdrop to an SVG, clipped to the county silhouette.
  * `id` must be unique per SVG (it names the clipPath). Returns the <g> so a
@@ -61,9 +81,11 @@ export function appendBasemap(svg, id = 'bm', area = 'california') {
   for (const d of L.PARKS) g.append(path(d, 'bm-park'));
   for (const d of L.LAKES) g.append(path(d, 'bm-lake'));
   if (area === 'california') for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
-  for (const d of L.RIVERS) g.append(path(d, 'bm-river'));
-  for (const d of L.COASTLINE) g.append(path(d, 'bm-coast'));
-  for (const d of L.ROADS) g.append(path(d, 'bm-road'));
+  // Lines are chunked so off-screen pieces cull (see appendPolyline); fills above
+  // stay whole.
+  for (const d of L.RIVERS) appendPolyline(g, d, 'bm-river');
+  for (const d of L.COASTLINE) appendPolyline(g, d, 'bm-coast');
+  for (const d of L.ROADS) appendPolyline(g, d, 'bm-road');
   svg.append(g);
   return g;
 }

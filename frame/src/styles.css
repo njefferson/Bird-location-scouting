@@ -517,13 +517,12 @@ table.species-table tr[onclick] { cursor: pointer; }
   stroke-width: .34em; stroke-opacity: .9; stroke-linejoin: round; }
 .hotspot-map .pin-name.lbl-show { visibility: visible; }
 
-/* Deep-zoom PERFORMANCE (mapview adds .map-lite past ~12x, .map-deep past ~40x):
-   stop drawing the heavy clipped basemap geometry so Safari doesn't re-rasterise
-   ~30k path points every frame at high scale (the deep-zoom lockup). map-lite
-   drops the basemap detail + landmark labels but keeps the land as context;
-   map-deep drops the land (county fills/outlines/labels) too — just the pins. */
-.map-lite .basemap, .map-lite .landmark-labels { display: none; }
-.map-deep .county-labels, .map-deep .county, .map-deep .county-outline { display: none; }
+/* Deep-zoom PERFORMANCE: the map still draws everything IN VIEW — long lines are
+   chunked (ui/basemap.js) so the viewport cull drops the off-screen pieces, and
+   fills cull whole by bbox. The one thing we drop once zoomed in is the county
+   CLIP-PATH: Safari re-evaluates it against the whole basemap every frame (much
+   of the lockup), and inside a zoomed-in view there's nothing to clip away. */
+.map-unclip .basemap { clip-path: none !important; }
 
 /* Rubber-band pulse when a pinch pushes past the zoom limit — feedback, not lag. */
 .county-map.pz-limit-in { animation: pzLimitIn .22s ease-out; }
