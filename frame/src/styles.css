@@ -362,7 +362,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn.labelled .mark-ico svg { width: 18px; height: 18px; }
 .seen-btn.labelled .mark-ico { font-size: 16px; line-height: 1; }
 .star-btn.labelled.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); }
-.seen-btn.labelled.on { background: var(--slate-wash); border-color: var(--slate); color: var(--slate); }
+/* seen-on: the slate cue is the wash + border; text stays --ink so it clears AA
+   (slate-on-slate-wash is only 3.8:1 in the light theme). */
+.seen-btn.labelled.on { background: var(--slate-wash); border-color: var(--slate); color: var(--ink); }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
 .spark { display: block; }
