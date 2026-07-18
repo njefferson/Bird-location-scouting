@@ -9,6 +9,16 @@
 
 export const CHANGELOG = [
   {
+    version: 'v41',
+    date: '2026-07-18',
+    changes: [
+      'Every bird now shows its face. Where each species used to sit behind a small grey silhouette of its group, there’s now an actual photo — a rounded thumbnail — beside the name: in your target list, your life list, each hotspot’s species table, and a larger portrait on the species page. Tap any photo to open that bird’s page, the same as tapping its name. All 272 birds have one, each cropped to frame the bird; the silhouette only stands in for a moment before a photo has loaded.',
+      'The photos come from Wikimedia Commons — freely-licensed images, each credited to its photographer under About → “Species photo credits”. (Not eBird’s photos: those belong to the people who took them and aren’t ours to bundle.) The whole set is about half a megabyte and loads quietly as you browse rather than all at once, so the app still installs light — and the silhouette always stands in when you’re offline and haven’t seen a bird’s photo yet.',
+      'Frame can live on your home screen. It’s a real app you can install — full-screen, and offline in the field with no signal — but nothing used to show you how. Now a gentle prompt points new users the right way (on iPhone and iPad: tap Share, then “Add to Home Screen”; on Android and computers, a one-tap Install), and if you dismiss it, the full step-by-step is always waiting under Settings → “Install this app.”',
+      'The map reads clearly now, even where hotspots crowd together. In a county with hundreds of spots — Humboldt especially — the map used to stack every name into an unreadable wall of text, clump the dots into black blobs, and get laggy as you zoomed in. Now the dots are a soft stipple with the strongest spots picked out in orange, and names appear only for spots that fit without overlapping — more of them as you zoom in and the crowd thins — so it stays readable and smooth. The map also opens framed on the hotspots and lets you scroll to every one of them, including the offshore pelagic spots that sit out past the coast — it no longer jams against the edge and hides them.',
+    ],
+  },
+  {
     version: 'v40',
     date: '2026-07-18',
     changes: [

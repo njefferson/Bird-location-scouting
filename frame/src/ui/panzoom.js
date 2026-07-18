@@ -30,7 +30,7 @@ function textTier() {
   catch { return 1; }
 }
 
-export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
+export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
@@ -67,9 +67,22 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, maxZoom = 8, onTap
     if (onZoom) onZoom(zf);
   };
   const setVB = () => { if (!raf) raf = requestAnimationFrame(applyVB); };
+  // Without explicit bounds (the region picker), keep the view inside the canvas
+  // exactly as before. WITH bounds (the hotspot map, framed on its pins), let the
+  // view CENTRE reach anywhere in the bounds — so an edge/offshore pin can be
+  // scrolled to the middle instead of being pinned against the canvas edge.
+  function clampAxis(v, size, min, max) {
+    const lo = min - size / 2, hi = max - size / 2; // vx range so centre ∈ [min,max]
+    return lo > hi ? (min + max) / 2 - size / 2 : Math.min(Math.max(v, lo), hi);
+  }
   function clampPan() {
-    vx = Math.min(Math.max(vx, 0), W - vw);
-    vy = Math.min(Math.max(vy, 0), H - vh);
+    if (bounds) {
+      vx = clampAxis(vx, vw, bounds.x1, bounds.x2);
+      vy = clampAxis(vy, vh, bounds.y1, bounds.y2);
+    } else {
+      vx = Math.min(Math.max(vx, 0), W - vw);
+      vy = Math.min(Math.max(vy, 0), H - vh);
+    }
   }
 
   // Viewport culling — zoomed in, the svg was still painting every path, label

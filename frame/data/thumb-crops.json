@@ -1,0 +1,4 @@
+{
+  "_README": "eBird speciesCode -> crop override for data/thumbs/<code>.webp. The default is a punchy 'attention' square crop (see frame/scripts/build-thumbnails.mjs). Override only the ones that look wrong: \"contain\" = show the whole photo letterboxed on the card colour; [fx,fy] = focal point (0..1 of the source) the square centres on; a gravity string = \"north\"/\"south\"/\"east\"/\"west\"/\"centre\"/\"entropy\". A species with no entry uses the default, so photos added later are handled automatically.",
+  "stejay": "contain"
+}

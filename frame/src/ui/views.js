@@ -5,7 +5,9 @@
 import { el, clear, pct, sparkline, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetBar, facetIconButton } from './facetbar.js';
+import { speciesThumb } from './thumbs.js';
+import { installSettingsBody } from './install.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -500,7 +502,7 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     const tr = el('tr', { class: [isTarget(r.s.name) ? 'is-target' : '', isSeen(r.s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       el('td.mark-cell', {}, [starButton(r.s, paint), seenButton(r.s, paint)]),
       el('td.name-cell', {}, [speciesLink('', r.s, state, nav), inferredNow ? el('span.star', { title: r.fNow.rule }, ' *') : null]),
-      el('td', {}, speciesFacetRow(r.s)),
+      el('td', {}, speciesFacetRow(r.s, state, nav)),
       el('td.freq-cell', { title: r.fNow.rule }, pct(r.fNow.value)),
       el('td', {}, sparkline(r.series, { inferred: inferredNow })),
     ]);
@@ -529,11 +531,12 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
 // parenthetical line (type · size · nest · behaviour), lighter than the species
 // name, so the table stays short. Tap-to-filter lives on the card guild row, the
 // picker, the species page and the Target/Seen rows, not here.
-function speciesFacetRow(s) {
+function speciesFacetRow(s, state, nav) {
   const parts = speciesFacetIcons(s).map((fi) =>
     fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
+  const open = state && nav ? () => { state.speciesQuery = s.name; nav.go('#/species'); } : null;
   return el('span.sp-facet-line', {}, [
-    guildBird(s),
+    speciesThumb(s, 40, open),
     el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : ''),
   ]);
 }
@@ -659,13 +662,23 @@ export function renderSpecies(root, state, nav) {
 function speciesPanel(s, state, nav, onFacetChange) {
   const panel = el('div.sp-panel', { class: isSeen(s.name) ? 'is-seen' : '' });
   const head = el('div.sp-head', {}, [
-    starButton(s),
-    seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
-    el('h2', {}, s.name),
-    el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
-    ebirdLink(s),
+    speciesThumb(s, 56),
+    el('div.sp-head-main', {}, [
+      el('h2', {}, s.name),
+      el('div.sp-head-sub', {}, [
+        el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
+        ebirdLink(s),
+      ]),
+    ]),
   ]);
   panel.append(head);
+  // The shot-list / seen controls get plain-language labels here (on their own
+  // row, not crowding the photo) — a bare camera beside a photo read as "edit
+  // photo", and a bare + was ambiguous.
+  panel.append(el('div.sp-actions', {}, [
+    starButton(s, null, { label: true }),
+    seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name)), { label: true }),
+  ]));
   // Facet chips: type · size · nest · behaviour — each a tri-state filter you
   // can tap to narrow every ranked view (the standing bar above shows the exit).
   panel.append(el('div.sp-facet-chips', {}, speciesFacetIcons(s).map((fi) =>
@@ -731,6 +744,9 @@ export function renderSettings(root, state, nav) {
 
   const e = ebirdSettings();
   const form = el('div.settings');
+
+  // --- Install (always here, so the steps survive dismissing the banner) -----
+  form.append(section('Install this app', installSettingsBody()));
 
   // --- Regions + their data (v14/v16) ---------------------------------------
   const saved = savedRegions();

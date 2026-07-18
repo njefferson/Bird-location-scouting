@@ -48,6 +48,30 @@ import { SPECIES } from '../src/data/species.js';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const THUMB_DIR = path.join(ROOT, 'data', 'thumbs');
 const MANIFEST = path.join(ROOT, 'data', 'thumbs.json');
+const CROPS_FILE = path.join(ROOT, 'data', 'thumb-crops.json');
+
+// ---------------------------------------------------------------------------
+// PER-PHOTO CROP RULE (data/thumb-crops.json: eBird code -> directive)
+// ---------------------------------------------------------------------------
+// The default crop is a punchy square "cover" using sharp's content-aware
+// `attention` strategy — right for the great majority of bird photos. It can
+// misjudge a busy background or an odd pose, though (a jay bent over feeding),
+// so any species can OVERRIDE its crop by adding one line to thumb-crops.json:
+//
+//   "steljay": "contain"      -> show the WHOLE photo, letterboxed on the card
+//                                colour (use when no square crop keeps the bird)
+//   "steljay": [0.5, 0.3]     -> a FOCAL POINT (x, y as 0..1 of the source): the
+//                                square is centred there — nudge y down/up to keep
+//                                the head. Still a punchy full-bleed crop.
+//   "steljay": "north"        -> a fixed gravity ("north"/"south"/"east"/"west"/
+//                                "centre"), or "entropy" for the busiest region.
+//
+// A species with NO entry gets the default, so photos added later are handled
+// automatically; only the ones that look wrong ever need a line here. This is
+// the durable rule — edit thumb-crops.json, never hand-crop images.
+const DEFAULT_CROP = 'attention';
+let CROPS = {};
+if (existsSync(CROPS_FILE)) { try { CROPS = JSON.parse(await readFile(CROPS_FILE, 'utf8')); } catch (e) { console.error('Bad thumb-crops.json:', e.message); } }
 
 const API = 'https://api.ebird.org';
 const token = process.env.EBIRD_API_TOKEN;
@@ -55,9 +79,9 @@ const token = process.env.EBIRD_API_TOKEN;
 // contact, and rewards it with saner rate limits. maxlag defers to replica lag.
 const UA = 'FrameBirdScout/1.0 (https://bird-location-scouting.pages.dev; noah.jefferson@gmail.com)';
 
-const THUMB_PX = 96;   // stored square size (display ~40-48px, so ~2x for retina)
-const WEBP_Q = 74;
-const SCALE_URL_PX = 320; // pull a 320px source from Commons, then downscale locally
+const THUMB_PX = 128;  // stored square size (displayed 40-56px, so ~2-3x for retina)
+const WEBP_Q = 76;
+const SCALE_URL_PX = 400; // pull a 400px source from Commons, then downscale locally
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -105,6 +129,10 @@ function plain(html) {
 // non-commercial / no-derivatives / fair-use, and require a recognisable free tag.
 function isFree(licenseShort) {
   const l = (licenseShort || '').toLowerCase();
+  // Explicit allow (Noah's call, 2026-07-18): Commons "Copyrighted free use" —
+  // the copyright holder permits use by anyone for any purpose. Checked before
+  // the /copyright/ reject below (which would otherwise catch the word).
+  if (/copyrighted free use/.test(l)) return true;
   if (/nc\b|non-?commercial|nd\b|no-?deriv|fair use|copyright|all rights/.test(l)) return false;
   return /cc0|cc[ -]?by|public domain|pdm|no restrictions|gfdl|attribution/.test(l);
 }
@@ -145,14 +173,38 @@ async function fileInfo(fileName) {
   };
 }
 
-async function toWebp(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+// Apply the per-photo crop rule (see thumb-crops.json docs above) to a sharp
+// pipeline, returning it resized to a THUMB_PX square.
+async function cropSquare(img, directive) {
+  if (directive === 'contain') {
+    return img.resize(THUMB_PX, THUMB_PX, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } });
+  }
+  if (Array.isArray(directive) && directive.length === 2) {
+    // Focal point [fx, fy]: extract the largest square centred there, then scale.
+    const meta = await img.metadata();
+    const side = Math.min(meta.width, meta.height);
+    const [fx, fy] = directive;
+    const clamp = (v, hi) => Math.max(0, Math.min(Math.round(v), hi));
+    const left = clamp(fx * meta.width - side / 2, meta.width - side);
+    const top = clamp(fy * meta.height - side / 2, meta.height - side);
+    return img.extract({ left, top, width: side, height: side }).resize(THUMB_PX, THUMB_PX);
+  }
+  // A gravity/strategy string ("north"/"centre"/"entropy"/…) or the default.
+  const position = typeof directive === 'string' ? directive : DEFAULT_CROP;
+  return img.resize(THUMB_PX, THUMB_PX, { fit: 'cover', position });
+}
+
+async function toWebp(url, code) {
+  let res;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.status === 429 || res.status === 503) { await sleep(1200 * (attempt + 1)); continue; }
+    break;
+  }
   if (!res.ok) throw new Error(`image ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  return sharp(buf)
-    .resize(THUMB_PX, THUMB_PX, { fit: 'cover', position: 'attention' }) // crop to subject
-    .webp({ quality: WEBP_Q })
-    .toBuffer();
+  const img = await cropSquare(sharp(buf).rotate(), CROPS[code]); // rotate() honours EXIF orientation
+  return img.webp({ quality: WEBP_Q, alphaQuality: 90 }).toBuffer();
 }
 
 // --- main --------------------------------------------------------------------
@@ -189,7 +241,7 @@ async function main() {
       }
       report.licenses[info.license] = (report.licenses[info.license] || 0) + 1;
 
-      const webp = await toWebp(info.thumburl);
+      const webp = await toWebp(info.thumburl, code);
       report.totalBytes += webp.length;
 
       if (mode === 'build') {

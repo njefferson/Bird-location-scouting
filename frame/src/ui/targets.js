@@ -15,7 +15,8 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetFilterPanel, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetIconButton } from './facetbar.js';
+import { speciesThumb } from './thumbs.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -50,7 +51,6 @@ function setGroupOpen(key, open) {
 // the browse list below (and every ranked view) to birds like this one.
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
-    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
@@ -71,15 +71,20 @@ export function cameraMark(on) {
     : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${CAM_BODY}"/><circle cx="12" cy="13.4" r="3.1"/></svg>`;
 }
 
-export function starButton(s, onToggle) {
-  const btn = el('button.star-btn', {
+export function starButton(s, onToggle, opts = {}) {
+  const labelled = !!opts.label;
+  const btn = el('button.star-btn' + (labelled ? '.labelled' : ''), {
     'aria-label': isTarget(s.name) ? `Remove ${s.name} from your shot list` : `Add ${s.name} to your shot list`,
     title: isTarget(s.name) ? 'On your shot list — tap to remove' : 'Add to your shot list',
   });
+  const icon = labelled ? el('span.mark-ico', { 'aria-hidden': 'true' }) : null;
+  const label = labelled ? el('span.mark-label') : null;
+  if (labelled) btn.append(icon, label);
   const paint = () => {
     const on = isTarget(s.name);
     btn.classList.toggle('on', on);
-    btn.innerHTML = cameraMark(on);
+    if (labelled) { icon.innerHTML = cameraMark(on); label.textContent = on ? 'On shot list' : 'Shot list'; }
+    else btn.innerHTML = cameraMark(on);
     btn.title = on ? 'On your shot list — tap to remove' : 'Add to your shot list';
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   };
@@ -313,6 +318,7 @@ export function renderTargets(root, state, nav) {
     const node = el('div.tg-row', { class: [isTarget(s.name) ? 'on' : '', isSeen(s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       starButton(s, () => { node.classList.toggle('on', isTarget(s.name)); repaintYourList(); repaintSummary(); }),
       el('div.tg-row-main', {}, [
+        speciesThumb(s, 40, () => { state.speciesQuery = s.name; nav.go('#/species'); }),
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),

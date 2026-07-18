@@ -7,6 +7,32 @@
 import { el } from './dom.js';
 import { CHANGELOG } from '../data/changelog.js';
 import { ROADMAP } from '../data/roadmap.js';
+import { thumbCredits } from './thumbs.js';
+
+// Per-photo attribution for the species thumbnails, built fresh each time the
+// About dialog opens (the manifest loads at boot, after this mounts). Each row:
+// species — photographer (licence), linking to the Commons file page. Built with
+// DOM nodes, not an HTML string, so author names never need escaping.
+function fillPhotoCredits(container) {
+  const credits = thumbCredits();
+  const codes = Object.keys(credits).sort((a, b) => (credits[a].n || '').localeCompare(credits[b].n || ''));
+  container.replaceChildren();
+  if (!codes.length) {
+    container.append(el('p.pc-empty', {}, 'Species photos load when you’re online; credits appear here once they have.'));
+    return;
+  }
+  container.append(el('p.pc-intro', {}, `${codes.length} species photos, from Wikimedia Commons contributors:`));
+  const list = el('ul.pc-list', {});
+  for (const code of codes) {
+    const r = credits[code];
+    list.append(el('li.pc-row', {}, [
+      el('span.pc-name', {}, r.n || code),
+      ' — ',
+      el('a.pc-cred', { href: r.s || '#', target: '_blank', rel: 'noopener' }, `${r.a || 'Unknown'} (${r.l || '—'})`),
+    ]));
+  }
+  container.append(list);
+}
 
 const ABOUT_HTML = `
   <h2>Frame — why this app exists</h2>
@@ -62,7 +88,9 @@ const ABOUT_HTML = `
   (ODbL); curated reservoir &amp; refuge labels, each position verified against
   its county — orientation, not navigation · Bird-group icons from
   game-icons.net (CC BY 3.0) by Lorc, Delapouite, Caro Asercion &amp; sbed, and
-  the public-domain QGISsvgAnimals set (woodpecker, kingfisher, curlew).</p>
+  the public-domain QGISsvgAnimals set (woodpecker, kingfisher, curlew) ·
+  Species photos from Wikimedia Commons, each under its own public-domain,
+  Creative Commons or free-use licence — full per-photo credits below.</p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move
@@ -93,9 +121,18 @@ function changelogHTML() {
 export function mountAbout() {
   if (document.getElementById('about-btn')) return; // mount once
 
+  const creditList = el('div.pc-body', {});
+  const photoCredits = el('details.photo-credits', {}, [
+    el('summary', {}, 'Species photo credits'),
+    creditList,
+  ]);
+
   const dialog = el('dialog.about-dialog', { id: 'about-dialog' }, [
     el('button.about-close', { 'aria-label': 'Close', onclick: () => dialog.close() }, '×'),
-    el('div.about-body', { html: ABOUT_HTML + roadmapHTML() + changelogHTML() }),
+    el('div.about-body', {}, [
+      el('div', { html: ABOUT_HTML + roadmapHTML() + changelogHTML() }),
+      photoCredits,
+    ]),
   ]);
   // Click on the backdrop (outside the content) closes it.
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
@@ -104,7 +141,7 @@ export function mountAbout() {
     id: 'about-btn',
     title: 'About this app',
     'aria-label': 'About this app',
-    onclick: () => dialog.showModal(),
+    onclick: () => { fillPhotoCredits(creditList); dialog.showModal(); },
   }, 'ⓘ');
 
   document.body.append(btn, dialog);

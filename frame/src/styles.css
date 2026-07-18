@@ -328,6 +328,66 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-facet-bird svg { display: block; }
 .sp-facet-line .sp-facet-bird { margin-top: 1px; }
 .sp-facet-note { font-style: italic; font-size: 11.5px; color: var(--dim); line-height: 1.3; }
+
+/* Species photo thumbnail (Wikimedia Commons) — a leading avatar beside a bird's
+   name. A rounded square with a hairline frame; falls back to the dim guild
+   silhouette (.is-fallback) when there's no photo. Decorative (name is the
+   label): aria-hidden, empty alt. Not a hue-encoding — the frame is neutral. */
+.sp-thumb { flex: 0 0 auto; width: var(--thumb, 30px); height: var(--thumb, 30px);
+  border-radius: 7px; overflow: hidden; background: var(--card2);
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent); }
+.sp-thumb-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sp-thumb.is-fallback { color: var(--dim); }
+.sp-thumb.is-fallback .sp-thumb-glyph { opacity: .72; }
+.sp-thumb-glyph svg { display: block; }
+.sp-facet-line .sp-thumb { margin-top: 1px; }
+/* Tap the photo to open the species (mirrors the name link). */
+.sp-thumb.clickable { cursor: pointer; transition: box-shadow .12s ease; }
+.sp-thumb.clickable:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent); }
+@media (prefers-reduced-motion: reduce) { .sp-thumb.clickable { transition: none; } }
+
+/* Species page header: photo + a name/status block, then a labelled action row
+   for the shot-list / seen toggles (so a bare camera by the photo can't read as
+   "edit photo", and the + isn't a mystery). */
+.sp-head-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sp-head-main h2 { margin: 0; }
+.sp-head-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
+.star-btn.labelled, .seen-btn.labelled {
+  width: auto; height: auto; border-radius: 999px; display: inline-flex; align-items: center;
+  gap: 6px; padding: 7px 13px; border: 1px solid var(--line); background: var(--card2);
+  color: var(--ink); font-size: 13px; font-weight: 600; }
+.star-btn.labelled .mark-ico, .seen-btn.labelled .mark-ico { display: inline-flex; align-items: center; }
+.star-btn.labelled .mark-ico svg { width: 18px; height: 18px; }
+.seen-btn.labelled .mark-ico { font-size: 16px; line-height: 1; }
+/* Install ("add to home screen") — banner + steps. Banner mirrors .freshbar but
+   in the accent family (an invitation, not a warning). */
+.installbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--accent); background: var(--accent-wash); }
+.install-ico { flex: 0 0 auto; color: var(--accent-ink); display: inline-grid; place-content: center; }
+.install-ico svg { display: block; }
+.install-msg { flex: 1 1 180px; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.install-msg strong { font-weight: 700; color: var(--accent-ink); }
+.install-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
+.install-dialog { border: none; border-radius: 14px; padding: 0; max-width: 420px; width: calc(100% - 32px);
+  background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,.28); }
+.install-dialog::backdrop { background: rgba(0,0,0,.4); }
+.install-body { padding: 22px 20px; }
+.install-body h2 { font-size: 18px; margin: 0 0 12px; padding-right: 30px; }
+.install-body p { font-size: 14px; margin: 8px 0; }
+.install-body .btn.primary { margin-bottom: 12px; }
+.install-steps { margin: 8px 0; padding-left: 22px; font-size: 14px; }
+.install-steps li { margin: 7px 0; line-height: 1.4; }
+.inline-ico { display: inline-flex; vertical-align: -3px; color: var(--accent-ink); }
+.install-done { color: var(--facet-mode-ink, var(--accent-ink)); font-weight: 600; font-size: 14px; }
+.setting .install-steps strong, .install-body .install-steps strong { color: var(--accent-ink); }
+
+.star-btn.labelled.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); }
+/* seen-on: the slate cue is the wash + border; text stays --ink so it clears AA
+   (slate-on-slate-wash is only 3.8:1 in the light theme). */
+.seen-btn.labelled.on { background: var(--slate-wash); border-color: var(--slate); color: var(--ink); }
 .sp-fi { display: inline-grid; place-content: center; color: var(--dim); }
 .sp-fi svg { display: block; }
 .spark { display: block; }
@@ -440,13 +500,15 @@ table.species-table tr[onclick] { cursor: pointer; }
 .hotspot-map .pin { r: calc(var(--pr, 3) * 1px * var(--fp, 1)); stroke-width: calc(.5px * var(--fp, 1)); }
 .hotspot-map .you-dot { r: calc(var(--pr, 2.4) * 1px * var(--fp, 1)); stroke-width: calc(1px * var(--fp, 1)); }
 
-/* Hotspot names: hidden until zoomed past ~2× the opening view (mapview toggles
-   .pin-names-on), then every dot says which hotspot it is. */
-.hotspot-map .pin-names { display: none; }
-.hotspot-map.pin-names-on .pin-names { display: inline; }
-.pin-name { fill: var(--ink); fill-opacity: .85; text-anchor: middle; font-family: var(--sans);
-  font-weight: 600; paint-order: stroke; stroke: var(--label-halo); stroke-width: .3em;
-  stroke-opacity: .85; stroke-linejoin: round; }
+/* Hotspot names: every dot has one in the DOM, but they're hidden by default —
+   mapview's declutter pass adds .lbl-show to the non-overlapping subset it wants
+   visible for the current view (so a dense county never paints all 597 at once,
+   which was unreadable and slow). The viewport cull can still hide an on-screen
+   label if it scrolls off (inline visibility wins over the class). */
+.pin-name { visibility: hidden; fill: var(--ink); fill-opacity: .9; text-anchor: middle;
+  font-family: var(--sans); font-weight: 600; paint-order: stroke; stroke: var(--label-halo);
+  stroke-width: .34em; stroke-opacity: .9; stroke-linejoin: round; }
+.hotspot-map .pin-name.lbl-show { visibility: visible; }
 
 /* Deep-zoom declutter (mapview adds .map-deep past 48x): when one lake fills
    the screen, the letters get out of the way — landmark and county names hide,
@@ -504,13 +566,16 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Two states only: ordinary spots are quiet uniform dots; the month's HOT tier
    is a solid --score-hot dot, a third larger, drawn on top of its neighbours. */
-.hotspot-map .pin { cursor: pointer; stroke: #06160f; stroke-width: .5;
-  fill: var(--card); }
-.hotspot-map .pin.hot { fill: var(--score-hot);
+/* Plain pins are a soft, semi-transparent dot so a dense cluster reads as a
+   light stipple instead of a solid black mass (Noah's Humboldt screenshot); the
+   hot tier keeps a firm dark edge + a bigger dot so it still pops on top. */
+.hotspot-map .pin { cursor: pointer; fill: var(--card); fill-opacity: .78;
+  stroke: color-mix(in srgb, var(--ink) 52%, transparent); stroke-width: .4; }
+.hotspot-map .pin.hot { fill: var(--score-hot); fill-opacity: 1;
   /* A firmer dark edge: the hot/plain FILL hues sit 2.6:1 apart, so the size
      step + this stroke carry the state for grayscale / colour-blind eyes. */
-  stroke-width: calc(1px * var(--fp, 1));
-  r: calc(var(--pr, 3) * 1.35px * var(--fp, 1)); }
+  stroke: #06160f; stroke-width: calc(1px * var(--fp, 1));
+  r: calc(var(--pr, 3) * 1.5px * var(--fp, 1)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
 
@@ -642,6 +707,20 @@ table.species-table tr[onclick] { cursor: pointer; }
 .rel-ver { font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .rel-date { color: var(--dim); font-size: 12px; }
 .rel-more { font-size: 13px; margin: 4px 0 0 !important; }
+
+/* Species photo credits — a collapsed section listing each thumbnail's
+   photographer + licence (Wikimedia Commons). Scrolls within itself so 270-odd
+   rows don't blow out the dialog. */
+.photo-credits { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+.photo-credits > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent-ink); }
+.photo-credits[open] > summary { margin-bottom: 8px; }
+.pc-intro { font-size: 12px; color: var(--dim); margin: 4px 0 8px !important; }
+.pc-empty { font-size: 13px; color: var(--dim); }
+.pc-list { max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  margin: 0 !important; padding-left: 0 !important; list-style: none; }
+.pc-row { font-size: 12px; margin: 4px 0; line-height: 1.35; }
+.pc-name { font-weight: 600; }
+.pc-cred { color: var(--dim); }
 
 /* Score explainer — tap a score to see what it means and how it was worked out. */
 .si-dialog { position: fixed; inset: 0; margin: auto; width: min(92vw, 480px); max-height: 86vh;
