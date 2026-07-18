@@ -55,9 +55,9 @@ const token = process.env.EBIRD_API_TOKEN;
 // contact, and rewards it with saner rate limits. maxlag defers to replica lag.
 const UA = 'FrameBirdScout/1.0 (https://bird-location-scouting.pages.dev; noah.jefferson@gmail.com)';
 
-const THUMB_PX = 96;   // stored square size (display ~40-48px, so ~2x for retina)
-const WEBP_Q = 74;
-const SCALE_URL_PX = 320; // pull a 320px source from Commons, then downscale locally
+const THUMB_PX = 128;  // stored square size (displayed 40-56px, so ~2-3x for retina)
+const WEBP_Q = 76;
+const SCALE_URL_PX = 400; // pull a 400px source from Commons, then downscale locally
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -158,9 +158,13 @@ async function toWebp(url) {
   }
   if (!res.ok) throw new Error(`image ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
+  // CONTAIN, not cover: fit the WHOLE bird inside the square on a transparent
+  // ground (the card colour shows through in the UI). A square "cover" crop was
+  // decapitating birds whose lead photo isn't a tidy portrait (e.g. a jay bent
+  // over feeding) — a contained image never cuts the subject.
   return sharp(buf)
-    .resize(THUMB_PX, THUMB_PX, { fit: 'cover', position: 'attention' }) // crop to subject
-    .webp({ quality: WEBP_Q })
+    .resize(THUMB_PX, THUMB_PX, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .webp({ quality: WEBP_Q, alphaQuality: 90 })
     .toBuffer();
 }
 
