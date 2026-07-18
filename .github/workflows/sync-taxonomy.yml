@@ -1,0 +1,67 @@
+# Regenerate frame/data/taxonomy.json (species NAME → eBird code) from the
+# current species.js, WITHOUT a data rebuild. This is what makes a species
+# actually count: the county files already store every species by code, but the
+# app only attaches a code to a curated species if its name is in taxonomy.json.
+# So after editing species.js (e.g. the v39 Yellowstone species pass), run this
+# to resolve the new names → codes and ship the map. Needs only EBIRD_API_TOKEN
+# (no cookie, no bar-chart download); ~15 s. Commits + deploys the branch it runs
+# on (dispatch it on `staging` for the preview, then promote as usual).
+name: Sync taxonomy (names → codes)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # validate() resolves EVERY species name against the live eBird taxonomy
+      # and writes data/taxonomy.json as it goes; it EXITS 1 if any name is wrong
+      # (a typo can't silently ship a species that never matches its data).
+      - name: Validate names + regenerate taxonomy.json
+        env:
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
+        run: node frame/scripts/build-counties.mjs validate
+
+      - name: Commit taxonomy.json if it changed
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frame/data/taxonomy.json
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "taxonomy.json unchanged — nothing to commit."
+          else
+            git commit -m "Sync taxonomy.json (species names → codes)"
+            for i in 1 2 3 4 5; do
+              if git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}"; then
+                echo "changed=true" >> "$GITHUB_OUTPUT"; break
+              fi
+              echo "push attempt $i failed — retrying in $((5*i))s"; sleep $((5*i))
+            done
+          fi
+
+      # Bot GITHUB_TOKEN pushes don't trigger deploy.yml, so deploy inline to
+      # this branch's Cloudflare Pages target (staging → preview, main → prod).
+      - name: Deploy to Cloudflare Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frame
+          command: pages deploy . --project-name=bird-location-scouting --branch=${{ github.ref_name }} --commit-dirty=true
