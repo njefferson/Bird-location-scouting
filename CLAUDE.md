@@ -166,6 +166,58 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Data capture itself is DONE & correct — see v37/v38/v39 facts (all 5 GYE
   counties 254-308 spp each via the full-taxonomy build; Yosemite pair 268-271
   spp; every county built 2026-07-18 at full depth).
+- v41 SHIPPED 2026-07-18 (PR #49, squash 78183e6): "Species photos + install
+  guidance + dense-map fix" — MERGED to main on Noah's "It's better, promote to
+  main" (his gate, satisfied on iPad; earlier photo/crop rounds also on-device).
+  THREE features shipped together; sw.js → frame-v41. Facts a later session needs:
+  (1) SPECIES PHOTO THUMBNAILS: a real photo beside every species name (target
+  picker, life-list picker, hotspot species table, + a 56px portrait on the
+  species page). Source is WIKIMEDIA COMMONS ONLY (never eBird/Macaulay —
+  copyrighted, non-redistributable); freely-licensed (PD/CC0/CC-BY/CC-BY-SA + two
+  "Copyrighted free use" Noah OK'd). Files: frame/data/thumbs/<eBird-code>.webp
+  (272 files, ~1.1 MB, 128px), frame/data/thumbs.json (code→{n,a,l,s} credits),
+  frame/data/thumb-crops.json (per-photo crop overrides). ui/thumbs.js:
+  speciesThumb(s,size,onOpen) — photo if manifest has s.code else guild
+  silhouette fallback; onOpen makes the photo a tap-target to the species page
+  (kept off tab order — decorative dup of the name link). Manifest loads at boot
+  (main.js loadThumbs). sw.js precaches thumbs.json ONLY; images runtime-cache on
+  first view (light install). BUILD PIPELINE: scripts/build-thumbnails.mjs +
+  .github/workflows/build-thumbnails.yml (dispatchable; runs on a RUNNER because
+  the sandbox egress policy BLOCKS wikipedia.org/commons — 403). Per species:
+  eBird name → sciName+code (taxonomy API) → Wikipedia free-licensed lead image
+  (pilicense=free) → Commons imageinfo license/author → sharp crop → webp. CROP
+  RULE (the durable answer to "handle crops per-photo + a rule for new photos"):
+  default = punchy content-aware 'attention' square crop; override a bad one in
+  thumb-crops.json by code → "contain" (whole photo, transparent letterbox) |
+  [fx,fy] focal point | gravity string. New photos get the default automatically;
+  only bad crops need a line (currently just stejay:"contain"). Modes: `probe`
+  (report, no commit), `build` (commit+deploy), `--only <codes>`, `--force`.
+  GOTCHA: dispatch via MCP actions_run_trigger; the workflow has its OWN
+  concurrency group (thumbnails-<ref>) so a branch deploy can't cancel an
+  in-flight build (a shared deploy-<ref> group killed the first full run).
+  Reviewed all 272 crops via a local montage (sharp installed locally from npm;
+  sandbox CAN reach registry.npmjs.org). (2) INSTALL GUIDANCE (ui/install.js):
+  dismissible banner (frame.installDismissed) tells new users how to add to home
+  screen — iOS Share→Add to Home Screen steps in a dialog, Android/desktop a
+  one-tap native Install via beforeinstallprompt; permanent step-by-step also in
+  Settings → "Install this app" (re-referenceable after dismiss). isStandalone()
+  hides everything once installed. Banner prepended in main.js render() (guarded
+  off #/settings). (3) DENSE-MAP FIX (ui/mapview.js + ui/panzoom.js): Humboldt
+  has 597 hotspots. LABEL DECLUTTER — every pin has a name in the DOM (default
+  hidden via .pin-name{visibility:hidden}); a debounced relabel() on settle adds
+  .lbl-show to a NON-OVERLAPPING, rank-first subset in view (cap 36), so it never
+  paints hundreds of overlapping labels (was unreadable + the paint lag). Plain
+  pins smaller (home.w*0.006) + soft/translucent (fill-opacity .78, soft stroke)
+  so clusters read as a stipple; hot tier keeps firm orange dot (r×1.5). PAN/
+  FRAME FIX — coastal counties have PELAGIC pins WEST of the county land, off the
+  CA canvas (negative x). mapview now frames the opening view + pan bounds on the
+  PIN bbox (county bbox ∪ all pin positions), and panzoom takes a `bounds` option:
+  when set, clampPan lets the view CENTRE reach anywhere in bounds (edge/offshore
+  pins can be centred) instead of the old [0,W] canvas clamp (region picker passes
+  NO bounds → unchanged). homeBox no longer clamps to [0,W]. KNOWN FOLLOW-UP
+  (v42, Noah flagged post-merge): deep zoom is still laggy/unresponsive (pins
+  appear to lose their --fp size cap and balloon), and an offshore label vanished
+  as he zoomed closer when it was the only pin in view.
 - v39 SHIPPED 2026-07-18 (PR #47, squash fb745f7): "Yellowstone birds now count"
   — the species-curation pass v38 flagged as its natural follow-up. MERGED on
   Noah's "promote to main". Added 99 Rocky-Mountain / Greater-Yellowstone species
