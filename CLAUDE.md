@@ -153,6 +153,29 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v34 SHIPPED 2026-07-18 (PR #42, squash 3bd14be): "Honest access notes" —
+  resolved the roadmap item "access notes: fill or drop" to DROP the placeholder.
+  MERGED to main on Noah's "Promote the Main". FILL WAS RULED OUT (no honest
+  source: eBird hotspot info carries no access/parking guidance, OSM tags too
+  sparse). KEY FACT Noah confirmed: the ~60 curated `access` notes are the
+  ORIGINAL SEED hotspots hard-coded in frame/src/data/hotspots.js (ARP/FOLSOM/
+  NATOMA/FOOTHILL constants + per-site strings) from the app's first iterations,
+  NOT anything he wrote recently; the ~300 data-built county hotspots
+  (data/counties/*.json) have NO access field. CHANGE (frame/src/ui/views.js):
+  the ranking-card "Access" button (card actions) and the hotspot-detail
+  "Access:" line (.access-box → now .access-note wrapped) render ONLY when
+  `h.access` exists — `h.access ? el(...) : null` in both places; removed the
+  old placeholder fallback text ("No curated access notes for this hotspot
+  yet…") from toggleNotes entirely. Apple/Google Maps buttons stay on EVERY card
+  and EVERY hotspot page (getting-there is universal). styles.css added
+  `.access-note { margin: 0 0 4px; }`. sw.js → frame-v34. Verified headless: 50
+  ranking cards, 12 Access buttons (curated only), 0 placeholder text in DOM,
+  expanded note real (no undefined/null), every card has both Maps buttons; seed
+  detail (mather-lake) shows its note + Maps, no undefined; contrast gate green;
+  zero pageerrors. NEEDS-HIS-HANDS: on iPad, that a hotspot with NO Access button
+  doesn't read as "missing" (Maps buttons must clearly cover getting there).
+  ROADMAP now has ONE item left: "More map landmarks" (closed/restricted areas +
+  school campuses on the county map, offline).
 - v33 SHIPPED 2026-07-17 (PR #40, squash 9e4aec9): finished the ACCESSIBILITY
   PASS — register items A10 + A12 (so A1-A13 are ALL resolved in /ACCESSIBILITY.md).
   A10: informational sub-11px text → 11px (.si-count-cap, .fi-cap, .facet-pick
