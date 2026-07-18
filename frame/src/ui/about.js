@@ -145,4 +145,10 @@ export function mountAbout() {
   }, 'ⓘ');
 
   document.body.append(btn, dialog);
+
+  // Tiny build tag (Noah: a small version number for screenshots) — the top
+  // corner of every screen, dim and decorative. The human-readable version
+  // story lives in About → "What's new"; this just stamps which build a
+  // screenshot came from.
+  document.body.append(el('div.ver-tag', { 'aria-hidden': 'true' }, CHANGELOG[0].version));
 }

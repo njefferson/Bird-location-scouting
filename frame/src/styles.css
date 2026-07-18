@@ -1246,3 +1246,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Species panel: the honest one-line weight readout. */
 .sp-photo { font-size: 12px; margin: 0 0 8px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* Build tag — a tiny version stamp in the corner so every screenshot says which
+   build it came from. Decorative (aria-hidden); the version story lives in About. */
+.ver-tag { position: fixed; top: 2px; right: 8px; z-index: 60; pointer-events: none;
+  font-family: var(--mono); font-size: 9.5px; color: var(--dim); opacity: .65; }
