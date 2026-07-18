@@ -520,9 +520,18 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Map scale — bottom-left overlay: a distance bar for users, with the zoom
    factor tucked in small (screenshot-debuggable). Updated only at rest. */
 .map-scale { position: absolute; left: 10px; bottom: 8px; display: flex; align-items: center;
-  gap: 7px; padding: 4px 9px; border-radius: 7px; pointer-events: none;
+  gap: 7px; padding: 4px 9px; border-radius: 7px; cursor: pointer; /* tap = diagnostics window */
   background: color-mix(in srgb, var(--card) 88%, transparent);
   border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink); }
+
+/* Diagnostics window (tap the scale bar): live internals over the map for
+   screenshot-debugging a freeze. pre keeps the fixed layout; pointer-events
+   none so it never eats a gesture. */
+.map-debug { position: absolute; top: 10px; left: 10px; margin: 0; padding: 8px 10px;
+  border-radius: 7px; pointer-events: none; white-space: pre; text-align: left;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  border: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px;
+  line-height: 1.45; color: var(--ink); }
 .map-scale-bar { display: inline-block; height: 5px; min-width: 12px;
   border: 1.5px solid var(--ink); border-top: none; }
 .map-scale-zf { color: var(--dim); }

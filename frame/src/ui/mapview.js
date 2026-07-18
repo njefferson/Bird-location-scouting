@@ -226,7 +226,10 @@ export function renderMapView(root, state, nav) {
   })();
   const scaleBar = el('span.map-scale-bar');
   const scaleTxt = el('span.map-scale-txt');
-  wrap.append(el('div.map-scale', { 'aria-hidden': 'true' }, [scaleBar, scaleTxt]));
+  wrap.append(el('div.map-scale', {
+    'aria-hidden': 'true', title: 'Map diagnostics',
+    onclick: () => dbgSet(dbgPre.hidden), // tap the scale = toggle the data window
+  }, [scaleBar, scaleTxt]));
   const NICE_MI = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
   function updateScale(vb, zf, ms) {
     const rect = svg.getBoundingClientRect();
@@ -258,6 +261,46 @@ export function renderMapView(root, state, nav) {
   const progUpdate = (text) => { prog.hidden = false; progTxt.textContent = text; };
   const progDone = (ms) => { progTxt.textContent = `updated ·${(ms / 1000).toFixed(1)}s`; clearTimeout(progHideT); progHideT = setTimeout(() => { prog.hidden = true; }, 1400); };
   const progHide = () => { clearTimeout(progHideT); prog.hidden = true; };
+
+  // DEBUG WINDOW (Noah's ask) — tap the scale bar to overlay live map internals
+  // to screenshot mid-freeze: zoom + viewBox, mounted/total per data type, a
+  // frame-jank meter, a tick counter (its number STOPS when the main thread is
+  // blocked — pair with the spinner, which keeps turning on the compositor),
+  // and the last few swap events. Persisted (frame.mapDebug); zero cost while
+  // off. Diagnostics are second to users: it's invisible unless summoned.
+  const DBG_KEY = 'frame.mapDebug';
+  const dbgLog = [];
+  const dbgT0 = performance.now();
+  const dbgEvent = (msg) => { dbgLog.push(`${((performance.now() - dbgT0) / 1000).toFixed(1)} ${msg}`); if (dbgLog.length > 6) dbgLog.shift(); };
+  const dbgPre = el('pre.map-debug', { hidden: true, 'aria-hidden': 'true' });
+  wrap.append(dbgPre);
+  let dbgTimer = 0, dbgRaf = 0, dbgTick = 0, dbgLast = 0, dbgWorst = 0, dbgWorstAt = 0;
+  function dbgFrame(now) {
+    dbgTick++;
+    const d = dbgLast ? now - dbgLast : 0;
+    dbgLast = now;
+    if (now - dbgWorstAt > 2000) { dbgWorst = d; dbgWorstAt = now; }
+    else if (d > dbgWorst) dbgWorst = d;
+    dbgRaf = requestAnimationFrame(dbgFrame);
+  }
+  const dbgOn = (arr) => arr.reduce((n, it) => n + (it.on ? 1 : 0), 0);
+  function dbgRender() {
+    if (!svg.isConnected) { dbgSet(false); return; } // view was re-rendered away
+    const vb = svg.viewBox.baseVal;
+    dbgPre.textContent =
+`×${(W / vb.width).toFixed(1)}  vb ${vb.x.toFixed(0)},${vb.y.toFixed(0)} ${vb.width.toFixed(0)}×${vb.height.toFixed(0)}
+pins ${dbgOn(pinItems)}/${pinItems.length}  map ${dbgOn(bmItems)}/${bmItems.length}
+names ${dbgOn(lmVirt.items) + dbgOn(ctyVirt.items)}/${lmVirt.items.length + ctyVirt.items.length}  labels ${dbgOn(labelItems)}
+tick ${dbgTick}  worst frame ${dbgWorst.toFixed(0)}ms/2s
+${dbgLog.join('\n')}`;
+  }
+  function dbgSet(on) {
+    dbgPre.hidden = !on;
+    clearInterval(dbgTimer); cancelAnimationFrame(dbgRaf); dbgTimer = 0; dbgRaf = 0;
+    if (on) { dbgLast = 0; dbgRaf = requestAnimationFrame(dbgFrame); dbgTimer = setInterval(dbgRender, 250); dbgRender(); }
+    try { localStorage.setItem(DBG_KEY, on ? '1' : '0'); } catch { /* private mode */ }
+  }
+  try { if (localStorage.getItem(DBG_KEY) === '1') dbgSet(true); } catch { /* private mode */ }
 
   // VIRTUALISATION — the map's core loading rule (Noah's): the DOM only ever
   // holds what's inside the window. When the box stops, startSwap() walks the data lists
@@ -347,6 +390,7 @@ export function renderMapView(root, state, nav) {
     const totMap = toMount.length - totPins;
     let ri = 0, mi = 0, mPins = 0, li = 0, varsDone = false, labelPlan = null;
     const t0 = performance.now();
+    dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length} mount ${toMount.length}`);
     const progress = () => {
       const parts = [];
       if (toRemove.length) parts.push(`free ${ri}/${toRemove.length}`);
@@ -357,12 +401,12 @@ export function renderMapView(root, state, nav) {
     };
     const step = () => {
       swapRaf = 0;
-      if (gen !== swapGen) { progHide(); return; } // box moved — abandon; queue dies
+      if (gen !== swapGen) { progHide(); dbgEvent('swap abandoned'); return; } // box moved — queue dies
       let ops = 0;
       if (ri < toRemove.length) {
         while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
       } else if (!varsDone) {
-        varsDone = true; pz.applyVars(); // the one restyle gets its own frame
+        varsDone = true; pz.applyVars(); dbgEvent('vars write'); // the one restyle gets its own frame
       } else if (mi < toMount.length) {
         const frags = new Map();
         while (mi < toMount.length && ops < OPS) {
@@ -381,6 +425,7 @@ export function renderMapView(root, state, nav) {
         const ms = performance.now() - t0;
         updateScale(vb, zf, ms);
         progDone(ms);
+        dbgEvent(`done ${(ms / 1000).toFixed(2)}s labels ${labelPlan.show.length}`);
         return;
       }
       progress();
