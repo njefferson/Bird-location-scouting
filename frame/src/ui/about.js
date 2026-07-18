@@ -89,8 +89,8 @@ const ABOUT_HTML = `
   its county — orientation, not navigation · Bird-group icons from
   game-icons.net (CC BY 3.0) by Lorc, Delapouite, Caro Asercion &amp; sbed, and
   the public-domain QGISsvgAnimals set (woodpecker, kingfisher, curlew) ·
-  Species photos from Wikimedia Commons, each under its own public-domain or
-  Creative Commons licence (CC BY / CC BY-SA) — full per-photo credits below.</p>
+  Species photos from Wikimedia Commons, each under its own public-domain,
+  Creative Commons or free-use licence — full per-photo credits below.</p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move

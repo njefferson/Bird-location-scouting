@@ -12,7 +12,7 @@ export const CHANGELOG = [
     version: 'v41',
     date: '2026-07-18',
     changes: [
-      'Every bird now shows its face. Where each species used to sit behind a small grey silhouette of its group, there’s now an actual photo — a little rounded thumbnail — beside the name: in your target list, your life list, and each hotspot’s species table. 270 of the 272 birds have one; the two without a freely-licensed photo keep the old silhouette (as does any bird before its photo has loaded).',
+      'Every bird now shows its face. Where each species used to sit behind a small grey silhouette of its group, there’s now an actual photo — a little rounded thumbnail — beside the name: in your target list, your life list, and each hotspot’s species table. All 272 birds have one; the silhouette only stands in for a moment before a photo has loaded.',
       'The photos come from Wikimedia Commons — freely-licensed images, each credited to its photographer under About → “Species photo credits”. (Not eBird’s photos: those belong to the people who took them and aren’t ours to bundle.) The whole set is about half a megabyte and loads quietly as you browse rather than all at once, so the app still installs light — and the silhouette always stands in when you’re offline and haven’t seen a bird’s photo yet.',
     ],
   },
