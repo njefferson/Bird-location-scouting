@@ -11,7 +11,8 @@ import { SPECIES } from '../data/species.js';
 import { HABITATS } from '../data/habitats.js';
 import { STATUS_LABEL } from '../model/inference.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetBar, facetIconButton } from './facetbar.js';
+import { speciesThumb } from './thumbs.js';
 import {
   isSeen, toggleSeen, addSeen, seenCount, getSeen, clearSeen, setSeen,
   newBirdsOn, setNewBirds, newBirdsActive,
@@ -21,7 +22,6 @@ import {
 // browse list, and every ranked view, to birds like this one).
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
-    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
@@ -189,6 +189,7 @@ export function renderSeen(root, state, nav) {
     const node = el('div.tg-row.seen-row', { class: isSeen(s.name) ? 'on' : '' }, [
       seenButton(s, () => { node.classList.toggle('on', isSeen(s.name)); repaintSummary(); }),
       el('div.tg-row-main', {}, [
+        speciesThumb(s, 34),
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),

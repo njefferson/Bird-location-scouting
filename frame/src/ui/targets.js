@@ -15,7 +15,8 @@ import { bestForSpecies } from '../model/scoring.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { isSeen } from '../model/seen.js';
 import { facetsActive, applyFacetFilter } from '../model/facets.js';
-import { facetFilterPanel, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetIconButton } from './facetbar.js';
+import { speciesThumb } from './thumbs.js';
 import {
   isTarget, toggleTarget, getTargets, targetCount, clearTargets, setTargets,
   targetsRankOn, setTargetsRank, targetsRankActive,
@@ -50,7 +51,6 @@ function setGroupOpen(key, open) {
 // the browse list below (and every ranked view) to birds like this one.
 function sizeBehaviorIcons(s, onChange) {
   return el('span.sp-facets.sp-facets-labelled', {}, [
-    guildBird(s),
     facetIconButton('size', s.size, { size: 16, label: true, onChange }),
     facetIconButton('behavior', s.behavior, { size: 16, label: true, onChange }),
   ]);
@@ -313,6 +313,7 @@ export function renderTargets(root, state, nav) {
     const node = el('div.tg-row', { class: [isTarget(s.name) ? 'on' : '', isSeen(s.name) ? 'is-seen' : ''].filter(Boolean).join(' ') }, [
       starButton(s, () => { node.classList.toggle('on', isTarget(s.name)); repaintYourList(); repaintSummary(); }),
       el('div.tg-row-main', {}, [
+        speciesThumb(s, 34),
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),

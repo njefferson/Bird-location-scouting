@@ -146,7 +146,12 @@ async function fileInfo(fileName) {
 }
 
 async function toWebp(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  let res;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.status === 429 || res.status === 503) { await sleep(1200 * (attempt + 1)); continue; }
+    break;
+  }
   if (!res.ok) throw new Error(`image ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   return sharp(buf)

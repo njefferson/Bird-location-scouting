@@ -5,7 +5,8 @@
 import { el, clear, pct, sparkline, toast } from './dom.js';
 import { trustBadge, inferredChip, liveBadge, nBadge } from './badges.js';
 import { openIconInfo } from './scoreinfo.js';
-import { facetFilterPanel, facetBar, facetIconButton, guildBird } from './facetbar.js';
+import { facetFilterPanel, facetBar, facetIconButton } from './facetbar.js';
+import { speciesThumb } from './thumbs.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -533,7 +534,7 @@ function speciesFacetRow(s) {
   const parts = speciesFacetIcons(s).map((fi) =>
     fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
   return el('span.sp-facet-line', {}, [
-    guildBird(s),
+    speciesThumb(s, 26),
     el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : ''),
   ]);
 }
