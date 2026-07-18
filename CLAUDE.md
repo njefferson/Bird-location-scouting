@@ -153,6 +153,27 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v35 SHIPPED 2026-07-18 (PR #43, squash 6d1e847): "Drop the access blurbs
+  entirely" — MERGED to main on Noah's "Promote". Follow-through on v34: Noah
+  confirmed the 30 seed `access` notes were GENERATED park summaries (fees/
+  parking/trails/"dawn best"), NOT his field notes — same false-confidence v34
+  removed from the placeholder, one layer down — so ALL 30 are gone. CHANGES:
+  frame/src/data/hotspots.js — removed the `access` field from all 30 hotspots
+  AND the 4 shared blurb constants (ARP/FOLSOM/NATOMA/FOOTHILL); header comment
+  updated (no more "access notes"). frame/src/ui/views.js — DELETED the dead
+  note UI: the card "Access" button, the toggleNotes() function, and the detail
+  "Access:" line; the hotspot detail `.access-box` now holds ONLY the Apple/
+  Google Maps links. styles.css — dropped the now-unused `.card-notes` and
+  `.access-note` rules (`.access-box`/`.access-links` stay). sw.js → frame-v35.
+  Getting-there stays universal (Maps buttons on every card + hotspot); habitat
+  chips convey the park's character. COUNT: it was 30 (the seed hotspots), NOT
+  the "~60" my earlier note claimed nor the "31" I said in chat — corrected
+  everywhere. Verified headless: 50 cards / 0 Access buttons, every card keeps
+  both Maps buttons, effie-yeaw detail shows only Maps (no note, no crash), no
+  access prose left in source, zero pageerrors. ALSO (this same push, roadmap-
+  only fast-forward to main): added roadmap item "More navigation apps" (Waze +
+  others alongside Apple/Google Maps) at Noah's request. ROADMAP now has TWO
+  items: "More map landmarks" then "More navigation apps".
 - v34 SHIPPED 2026-07-18 (PR #42, squash 3bd14be): "Honest access notes" —
   resolved the roadmap item "access notes: fill or drop" to DROP the placeholder.
   MERGED to main on Noah's "Promote the Main". FILL WAS RULED OUT (no honest

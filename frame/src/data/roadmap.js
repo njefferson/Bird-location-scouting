@@ -39,6 +39,8 @@ export const ROADMAP = [
   // list from that request: the fussier, messier land-use layers.
   { title: 'More map landmarks',
     detail: 'closed / restricted areas and school campuses on the county map, where the data is clean enough to help rather than clutter — offline like the rest of the basemap.' },
+  { title: 'More navigation apps',
+    detail: 'a “get me there” hand-off to Waze and other navigation apps, alongside the Apple and Google Maps buttons — so you can open a hotspot in whatever you actually drive with.' },
   // v34 resolved "access notes: fill or drop" (Noah's 'drop' after we confirmed
   // no honest fill source — eBird hotspot info carries no access guidance, OSM
   // tags too sparse). It removed the false-promise "no curated access notes yet"
