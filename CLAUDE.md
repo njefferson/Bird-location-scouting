@@ -153,6 +153,36 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v37 SHIPPED 2026-07-18 (PR #45, squash ad105e6): "Yosemite built-in region,
+  full-depth counties, scoped rebuilds" — MERGED on Noah's "promote to main"
+  (for his daughter's trip, so timing mattered). THREE parts:
+  (1) REGION: REGIONS in data/counties.js gained { id:'yosemite', counties:
+  ['US-CA-043','US-CA-109'] } (Mariposa = Valley/Wawona/El Portal, Tuolumne =
+  Tuolumne Meadows/Hetch Hetchy/Hodgdon). Madera/Mono LEFT OUT on purpose (park
+  slices are trail-only wilderness; their top spots are foothill/east-side).
+  Both county files PRECACHED in sw.js (were ~470 KB at depth 15 — sizes GREW
+  with the full-depth data; check before precaching more). sw.js → frame-v37.
+  (2) DEPTH: Mariposa + Tuolumne → FULL_DEPTH in counties.js. WHY PINS WERE
+  "MISSING" (Noah asked): DEFAULT_DEPTH=15 — the statewide build keeps only the
+  top-15 hotspots per county BY DESIGN; only El Dorado/Placer/Sacramento/
+  Humboldt (+now the Yosemite pair) keep every hotspot. Nobody ever had every
+  pin statewide; "full-depth statewide rebuild" in older notes meant "statewide
+  run in which the FEATURED counties' full data landed". Statewide-every-pin
+  would be ~15k hotspots, >6h job limit, ~100MB+ — offered, not recommended.
+  (3) SCOPED REBUILDS (refresh-data.yml): dispatch input `scope` (e.g.
+  "US-CA-043 US-CA-109") or a "scope:"-prefixed line in a push-trigger commit
+  message force-rebuilds JUST those counties (~minutes); NEVER applies to the
+  quarterly schedule; message via env (no shell interpolation). GOTCHA: the
+  session git RELAY drops head_commit metadata, so push-to-trigger guards
+  SKIP legitimate trigger bumps — USE MCP WORKFLOW DISPATCH instead
+  (actions_run_trigger worked all session). Relay also refuses branch deletes
+  (stale claude/trigger-probe branch remains, harmless). COOKIE: the 07-15
+  cookie DIED in 3 days (probe verdict HTML); Noah pasted a fresh one
+  2026-07-18, probe-verified DATA, and the scoped Yosemite rebuild was fired
+  (run 29632807337). ALSO PROVEN (Noah asked): SW version bumps do NOT
+  re-download data — activate() carries runtime-cached counties cache-to-cache
+  (zero network, tested live v37→v38), and precached files revalidate with 304/
+  0 bytes when unchanged; only genuinely changed files transfer.
 - v36 SHIPPED 2026-07-18 (PR #44, squash 34e7545): "Navigation, reworked" —
   MERGED to main on Noah's "Everything is perfect on my iPhone promote to main"
   (his on-device gate SATISFIED, iPhone). Grew from the roadmap item "More
