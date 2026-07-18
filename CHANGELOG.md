@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v39 — 2026-07-18
+- Yellowstone birds now count. The app’s species list grew up in California, so on the Yellowstone maps a lot of northern birds were sitting in the data uncounted. This adds 99 Rocky-Mountain species — Trumpeter Swan, Barrow’s Goldeneye, Harlequin Duck, Dusky and Ruffed Grouse, Greater Sage-Grouse, the three-toed and black-backed woodpeckers, Boreal Owl, Calliope Hummingbird, the rosy-finches, Canada Jay, and the willow-and-sage songbirds — each with its type, size and habitat so it filters and ranks like every other bird. They were already in your downloaded data; now they show up in the counts, the rankings and the species search. (No new download — this just teaches the app to read what was already there.)
+
 ## v38 — 2026-07-18
 - Yellowstone. The planner leaves California for the first time: a built-in “Yellowstone” region covering the park and its gateways — Mammoth, Lamar and Canyon in the northeast, Old Faithful and Yellowstone Lake, Grand Teton and Jackson to the south, West Yellowstone and Gardiner at the entrances, Island Park across the Idaho line. Every eBird hotspot in all five counties, with every species each one reports.
 - The map knows the way there too: Yellowstone draws on its own map canvas — the five counties with the park boundaries, Yellowstone Lake, Jackson Lake, Hebgen Lake, the Yellowstone, Gallatin and Shoshone rivers, and the highway numbers, all offline like the California map. The two counties holding the park itself are stored on your device up front, so the region works with no signal at all — open the app once with a connection to pick this update up first.
