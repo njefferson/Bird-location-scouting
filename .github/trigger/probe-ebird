@@ -6,3 +6,4 @@ probe run: verify the NEW cookie (updated 2026-07-15) before the full-depth stat
 probe run: re-check after joining the multi-line cookie paste into one header line
 probe run: is the cookie still live after the 13:15 dead-cookie abort? (ultracode review session, 2026-07-15)
 probe run: is the 2026-07-15 cookie still live? (before Yosemite full-depth rebuild, 2026-07-18)
+probe run: re-fire (branch-creation push skipped the head_commit guard)
