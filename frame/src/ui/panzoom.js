@@ -67,7 +67,11 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // continuous drag Noah felt). They now update on a coarse cadence (~10 Hz +
   // a trailing settle), so content scales with the map for a beat, then snaps —
   // how real map apps behave during a pinch.
-  let raf = 0, lastVars = 0, varsT = 0;
+  // WHILE THE BOX MOVES, NOTHING ELSE HAPPENS (Noah's rule). The sizing vars
+  // invalidate style for every mounted var() consumer, so they are written ONLY
+  // once the box has stopped (trailing timer) — during the gesture the already-
+  // drawn content simply scales with the viewBox, then snaps at rest.
+  let raf = 0, varsT = 0;
   function writeVars() {
     const zf = W / vw;
     const tx = parseFloat(svg.style.getPropertyValue('--tx')) || 1.3;
@@ -81,13 +85,10 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   const applyVB = () => {
     raf = 0;
     svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
-    const zf = W / vw;
-    const now = performance.now();
-    if (now - lastVars > 100) { lastVars = now; writeVars(); }
     clearTimeout(varsT);
-    varsT = setTimeout(() => { lastVars = performance.now(); writeVars(); }, 120);
-    if (viewCull) cull(zf); // maps that mount/unmount their own DOM opt out
-    if (onZoom) onZoom(zf);
+    varsT = setTimeout(writeVars, 90);
+    if (viewCull) cull(W / vw); // maps that mount/unmount their own DOM opt out
+    if (onZoom) onZoom(W / vw);
   };
   const setVB = () => { if (!raf) raf = requestAnimationFrame(applyVB); };
   // Without explicit bounds (the region picker), keep the view inside the canvas
