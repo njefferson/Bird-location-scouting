@@ -369,7 +369,7 @@ ${dbgLog.join('\n')}`;
   // Abandonable at every slice boundary: any box movement bumps the generation
   // and the queue dies.
   const OPS = 40;
-  let syncT = 0, swapGen = 0, swapRaf = 0;
+  let syncT = 0, swapGen = 0, swapRaf = 0, swapActive = false;
   function startSwap() {
     // "The box has stopped" requires the FINGERS OFF THE GLASS, not just a
     // quiet timer: human pinches pause >90ms between strokes constantly, and
@@ -404,24 +404,30 @@ ${dbgLog.join('\n')}`;
     const totMap = toMount.length - totPins;
     let ri = 0, mi = 0, mPins = 0, li = 0, varsDone = false, labelPlan = null;
     const t0 = performance.now();
+    if (swapActive) dbgEvent('superseded'); // a prior chain never finished
+    swapActive = true;
     dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length} mount ${toMount.length}`);
     const progress = () => {
       const parts = [];
-      if (toRemove.length) parts.push(`free ${ri}/${toRemove.length}`);
-      if (totMap) parts.push(`map ${Math.min(mi - mPins, totMap)}/${totMap}`);
       if (totPins) parts.push(`pins ${mPins}/${totPins}`);
+      if (totMap) parts.push(`map ${Math.min(mi - mPins, totMap)}/${totMap}`);
+      if (toRemove.length) parts.push(`free ${ri}/${toRemove.length}`);
       if (labelPlan && labelPlan.show.length) parts.push(`labels ${li}/${labelPlan.show.length}`);
       progUpdate(parts.join(' · ') || 'updating…');
     };
+    // PHASE ORDER — what the user can SEE comes first (Noah's blank-map
+    // screenshot: two consecutive stops spent all their time freeing invisible
+    // off-screen junk and were killed before ever mounting — the view starved):
+    //   1. MOUNTS — fill the box NOW (tiny at deep zoom: first frame).
+    //   2. FREES — invisible housekeeping, after the picture is whole.
+    //   3. one sizing-var write (smallest set: frees already done).
+    //   4. LABELS, hardest-capped (halo'd text is Safari's priciest paint).
+    // Pins can't render mis-sized in phase 1: --fp refreshes ~8 Hz mid-gesture.
     const step = () => {
       swapRaf = 0;
-      if (gen !== swapGen) { progHide(); dbgEvent('swap abandoned'); return; } // box moved — queue dies
+      if (gen !== swapGen) { progHide(); swapActive = false; dbgEvent('swap abandoned'); return; } // box moved — queue dies
       let ops = 0;
-      if (ri < toRemove.length) {
-        while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
-      } else if (!varsDone) {
-        varsDone = true; pz.applyVars(); dbgEvent('vars write'); // the one restyle gets its own frame
-      } else if (mi < toMount.length) {
+      if (mi < toMount.length) {
         const frags = new Map();
         while (mi < toMount.length && ops < OPS) {
           const [it, group, ensure] = toMount[mi++];
@@ -429,16 +435,20 @@ ${dbgLog.join('\n')}`;
           f.append(ensure(it)); it.on = true; if (isPin(group)) mPins++; ops++;
         }
         for (const [group, f] of frags) group.append(f);
+      } else if (ri < toRemove.length) {
+        while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
+      } else if (!varsDone) {
+        varsDone = true; pz.applyVars(); dbgEvent('vars write'); // the one restyle gets its own frame
       } else if (!labelPlan) {
         labelPlan = planLabels(vb, zf);
         for (const it of labelPlan.hide) { it.el.remove(); it.on = false; } // removals are cheap
       } else if (li < labelPlan.show.length) {
-        // Halo'd text is Safari's priciest paint — mount labels at the hardest cap.
         while (li < labelPlan.show.length && ops < 8) { const it = labelPlan.show[li++]; if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; ops++; }
       } else {
         const ms = performance.now() - t0;
         updateScale(vb, zf, ms);
         progDone(ms);
+        swapActive = false;
         dbgEvent(`done ${(ms / 1000).toFixed(2)}s labels ${labelPlan.show.length}`);
         return;
       }
@@ -463,7 +473,7 @@ ${dbgLog.join('\n')}`;
       // startSwap) is what "stopped" means — 90ms fired inside natural pinch
       // micro-pauses.
       swapGen++;
-      if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; dbgEvent('abandon'); }
+      if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; swapActive = false; dbgEvent('abandon'); }
       progHide();
       clearTimeout(syncT);
       syncT = setTimeout(startSwap, 280);
