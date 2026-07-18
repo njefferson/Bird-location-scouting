@@ -285,6 +285,10 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     // releases, so the global restyle covers the fewest elements).
     applyVars() { clearTimeout(varsT); writeVars(); },
     zoom() { return W / vw; },
+    // Fingers on the glass? "The box has stopped" must NEVER be declared while
+    // touching — a human pinch is full of >90ms micro-pauses, and a timer alone
+    // kept firing swaps mid-gesture (Noah's debug-window screenshot).
+    isGesturing() { return pts.size > 0; },
     // Force the viewport-cull list to rebuild on the next frame. Labels that
     // were display:none when the list was first built (e.g. pin names, hidden
     // until you zoom in) get a zero bbox and are skipped forever otherwise —

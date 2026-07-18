@@ -284,8 +284,16 @@ export function renderMapView(root, state, nav) {
     dbgRaf = requestAnimationFrame(dbgFrame);
   }
   const dbgOn = (arr) => arr.reduce((n, it) => n + (it.on ? 1 : 0), 0);
+  let dbgLive = false; // becomes true once the svg is actually in the document
   function dbgRender() {
-    if (!svg.isConnected) { dbgSet(false); return; } // view was re-rendered away
+    if (!svg.isConnected) {
+      // Before first attach: just wait for the next tick. After having been
+      // live: the view was re-rendered away — stop this instance's timers but
+      // KEEP the preference so the window survives navigation.
+      if (dbgLive) { clearInterval(dbgTimer); cancelAnimationFrame(dbgRaf); dbgTimer = 0; dbgRaf = 0; }
+      return;
+    }
+    dbgLive = true;
     const vb = svg.viewBox.baseVal;
     dbgPre.textContent =
 `×${(W / vb.width).toFixed(1)}  vb ${vb.x.toFixed(0)},${vb.y.toFixed(0)} ${vb.width.toFixed(0)}×${vb.height.toFixed(0)}
@@ -363,6 +371,12 @@ ${dbgLog.join('\n')}`;
   const OPS = 40;
   let syncT = 0, swapGen = 0, swapRaf = 0;
   function startSwap() {
+    // "The box has stopped" requires the FINGERS OFF THE GLASS, not just a
+    // quiet timer: human pinches pause >90ms between strokes constantly, and
+    // timer-only settling fired swap after swap mid-gesture (Noah's debug
+    // screenshot: swaps at 7.9/8.0/8.2s + a vars write, all while pinching).
+    // While touching, just check back soon; the swap runs after release.
+    if (pz && pz.isGesturing()) { clearTimeout(syncT); syncT = setTimeout(startSwap, 150); return; }
     const gen = ++swapGen;
     const vb = svg.viewBox.baseVal;
     if (!vb || !vb.width) return;
@@ -445,12 +459,14 @@ ${dbgLog.join('\n')}`;
     onZoom: () => {
       // NOTHING happens while the box moves — any in-flight swap is abandoned
       // and freed IMMEDIATELY (its progress readout too), and the one settle
-      // swap is pushed back.
+      // swap is pushed back. 280ms of quiet + fingers off the glass (checked in
+      // startSwap) is what "stopped" means — 90ms fired inside natural pinch
+      // micro-pauses.
       swapGen++;
-      if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; }
+      if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; dbgEvent('abandon'); }
       progHide();
       clearTimeout(syncT);
-      syncT = setTimeout(startSwap, 90);
+      syncT = setTimeout(startSwap, 280);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
