@@ -38,8 +38,18 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // it; the bars are invisible tan-on-tan). All finger math MUST use this box,
   // not the element box — using the element width made the map move only ~55%
   // of the finger on iPad ("finger moves further than the page").
+  // The element rect is CACHED (300ms): getBoundingClientRect on every finger
+  // move forced a synchronous layout against that frame's writes — a read/write
+  // thrash on every pointermove that Safari couldn't keep up with. The rect
+  // can't change mid-gesture (two-finger input is preventDefaulted).
+  let rectCache = null, rectAt = 0;
+  function svgRect() {
+    const now = performance.now();
+    if (!rectCache || now - rectAt > 300) { rectCache = svg.getBoundingClientRect(); rectAt = now; }
+    return rectCache;
+  }
   function contentBox() {
-    const r = svg.getBoundingClientRect();
+    const r = svgRect();
     const s = Math.min(r.width / vw, r.height / vh); // screen px per viewBox unit
     const cw = vw * s, ch = vh * s;
     return { left: r.left + (r.width - cw) / 2, top: r.top + (r.height - ch) / 2, cw, ch, s };
@@ -51,10 +61,14 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // names, --fp pins, --fb boundary dashes) are computed HERE as plain numbers —
   // Safari mis-renders min()/division-by-var inside CSS calc (fat black pins on
   // iPad), so CSS only ever multiplies by these.
-  let raf = 0;
-  const applyVB = () => {
-    raf = 0;
-    svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
+  // THE FRAME BUDGET RULE: the ONLY per-frame write is the viewBox. The sizing
+  // vars invalidate style for every element that uses var() — writing them each
+  // frame made Safari recompute every mounted pin's transform 60×/s (the
+  // continuous drag Noah felt). They now update on a coarse cadence (~10 Hz +
+  // a trailing settle), so content scales with the map for a beat, then snaps —
+  // how real map apps behave during a pinch.
+  let raf = 0, lastVars = 0, varsT = 0;
+  function writeVars() {
     const zf = W / vw;
     const tx = parseFloat(svg.style.getPropertyValue('--tx')) || 1.3;
     const pcap = parseFloat(svg.style.getPropertyValue('--pcap')) || 4;
@@ -63,6 +77,15 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     svg.style.setProperty('--fc', (Math.min(zf, 2.6) / zf * tx).toFixed(4));
     svg.style.setProperty('--fp', (Math.min(zf, pcap) / zf).toFixed(4));
     svg.style.setProperty('--fb', (Math.min(zf, 4) / zf).toFixed(4));
+  }
+  const applyVB = () => {
+    raf = 0;
+    svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
+    const zf = W / vw;
+    const now = performance.now();
+    if (now - lastVars > 100) { lastVars = now; writeVars(); }
+    clearTimeout(varsT);
+    varsT = setTimeout(() => { lastVars = performance.now(); writeVars(); }, 120);
     if (viewCull) cull(zf); // maps that mount/unmount their own DOM opt out
     if (onZoom) onZoom(zf);
   };

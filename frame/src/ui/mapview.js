@@ -241,32 +241,46 @@ export function renderMapView(root, state, nav) {
       else if (!show && it.on) { it.el.remove(); it.on = false; }
     }
   }
-  function sync() {
+  // `full` (the settle pass) applies everything and recomputes labels. A
+  // GESTURE pass (!full) respects a per-tick DOM budget: Safari turns a burst
+  // of SVG insert/removes into one long frame, so the shedding itself was the
+  // stutter Noah felt. Capped, each tick's churn stays inside the frame budget
+  // and the backlog drains over the next ticks / the settle. Labels are settle-
+  // ONLY — they appear when you arrive at a height, never churn mid-gesture
+  // (text is Safari's most expensive paint).
+  const CHURN = 60;
+  function sync(full = true) {
     const vb = svg.viewBox.baseVal;
     if (!vb || !vb.width) return;
     const zf = W / vb.width;
     const mx = vb.width * 0.35, my = vb.height * 0.35; // pan headroom
     const x1 = vb.x - mx, y1 = vb.y - my, x2 = vb.x + vb.width + mx, y2 = vb.y + vb.height + my;
+    let budget = full ? Infinity : CHURN;
+    const place = (it, on, mount) => {
+      if (on === it.on || budget <= 0) return;
+      if (on) mount(); else it.el.remove();
+      it.on = on; budget--;
+    };
     for (const it of bmItems) {
       const b = it.bb;
-      const on = b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
-      if (on && !it.on) { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); it.on = true; }
-      else if (!on && it.on) { it.el.remove(); it.on = false; }
+      const on = !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
+      place(it, on, () => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); });
     }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
-      if (on && !it.on) { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); it.on = true; }
-      else if (!on && it.on) { it.el.remove(); it.on = false; }
+      place(it, on, () => { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); });
     }
     for (const v of [lmVirt, ctyVirt]) {
       for (const it of v.items) {
         const b = it.bb;
         const on = !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
-        if (on && !it.on) { v.group.append(it.el); it.on = true; }
-        else if (!on && it.on) { it.el.remove(); it.on = false; }
+        place(it, on, () => v.group.append(it.el));
       }
     }
-    relabel(vb, zf);
+    if (full) relabel(vb, zf);
+    else if (zf < LABEL_ON) { // dropping below label height mid-gesture: clear fast
+      for (const it of labelItems) if (it.on) { it.el.remove(); it.on = false; }
+    }
   }
   let syncT = 0, lastSync = 0;
 
@@ -276,16 +290,12 @@ export function renderMapView(root, state, nav) {
     // visibility cull would fight it and cache detached nodes.
     viewCull: false,
     onZoom: () => {
-      // Keep the mounted set tracking the window DURING the gesture, not just
-      // after it: a long pinch used to carry the full opening set the whole way
-      // in (597 pins + all the text), re-rendered at growing scale every frame —
-      // the "slows down as I zoom" Noah kept hitting. Throttled to ~9 Hz (the
-      // sync itself is a few thousand box tests — well under a frame), plus a
-      // settle pass for the final accurate state.
+      // Keep the mounted set tracking the window DURING the gesture (throttled,
+      // budgeted — see sync), with a full settle pass for the final state.
       const now = performance.now();
-      if (now - lastSync > 110) { lastSync = now; sync(); }
+      if (now - lastSync > 110) { lastSync = now; sync(false); }
       clearTimeout(syncT);
-      syncT = setTimeout(() => { lastSync = performance.now(); sync(); }, 70);
+      syncT = setTimeout(() => { lastSync = performance.now(); sync(true); }, 90);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
