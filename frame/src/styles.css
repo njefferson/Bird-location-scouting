@@ -203,6 +203,16 @@ a { color: var(--accent-ink); }
 .show-more { align-self: center; margin: 4px 0 2px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px;
   box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(60,40,10,.05); }
+/* The whole card is a tap-to-open navigation tile. Affordance is NOT hue-only:
+   the pointer cursor, a shadow/border lift on hover, and a press on :active all
+   signal it (the reduced-motion kill-switch above neutralizes the transition).
+   Keyboard users reach the same page via the location-name link (.card-title-link). */
+.card.tappable { cursor: pointer; transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease; }
+.card.tappable:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 10px 26px rgba(60,40,10,.09); }
+.card.tappable:active { transform: translateY(1px); }
+.card-title-link { color: inherit; text-decoration: none; }
+.card-title-link:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .card-head-main { min-width: 0; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
@@ -245,7 +255,6 @@ a { color: var(--accent-ink); }
 .tsp-bar { grid-column: 1 / -1; height: 4px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
 .tsp-bar i { display: block; height: 100%; background: var(--accent); }
 
-.card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn { background: var(--card2); border: 1px solid var(--line); color: var(--ink);
   border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; }
 .btn.ghost { background: none; }
@@ -343,6 +352,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 .access-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 12px; font-size: 13px; }
 .access-box .btn { margin-top: 8px; }
+.access-label { margin: 0; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
 .access-links { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* species search */

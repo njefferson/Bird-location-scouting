@@ -39,10 +39,18 @@ export function inBox(lat, lng, box = BOX) {
 // accept coordinates OR text, never both mixed:
 //   Google Maps URL API:  /maps/search/?api=1&query=<lat>%2C<lng>   (exact pin)
 //   Apple Maps:           /?ll=<lat>,<lng>&q=<name>  (q labels the ll pin)
+//   Waze:                 /ul?ll=<lat>%2C<lng>&navigate=yes  (app if installed,
+//                         waze.com live-map in the browser if not — degrades honestly)
+//   geo: (ANDROID ONLY):  geo:<lat>,<lng>?q=<lat>,<lng>(<name>)  — fires Android's
+//                         "open with" chooser across every installed map app. iOS
+//                         Safari ignores geo:, so the UI shows this button ONLY on
+//                         Android (see mapButtons() in ui/views.js).
 export function hotspotMapLinks(h) {
   return {
     apple: `https://maps.apple.com/?ll=${h.lat},${h.lng}&q=${encodeURIComponent(h.name)}`,
     google: `https://www.google.com/maps/search/?api=1&query=${h.lat}%2C${h.lng}`,
+    waze: `https://waze.com/ul?ll=${h.lat}%2C${h.lng}&navigate=yes`,
+    geo: `geo:${h.lat},${h.lng}?q=${h.lat},${h.lng}(${encodeURIComponent(h.name)})`,
   };
 }
 
