@@ -38,6 +38,10 @@ on:
         description: 'Resume partial run (skip counties already built) instead of rebuilding all fresh'
         type: boolean
         default: false
+      scope:
+        description: 'Optional: space-separated county codes (e.g. "US-CA-043 US-CA-109") to force-rebuild JUST those counties — minutes instead of hours. Empty = full statewide run.'
+        type: string
+        default: ''
   schedule:
     - cron: '0 14 1 */3 *'   # 1st of Jan/Apr/Jul/Oct, 06:00/07:00 Pacific
   # PUSH-TO-TRIGGER: creating/bumping .github/trigger/refresh-data on a
@@ -96,6 +100,8 @@ jobs:
           EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
           EBIRD_COOKIE: ${{ secrets.EBIRD_COOKIE }}
           RESUME: ${{ inputs.resume || contains(github.event.head_commit.message, '[resume]') }}
+          TRIGGER_MSG: ${{ github.event.head_commit.message }}
+          SCOPE_INPUT: ${{ inputs.scope }}
         run: |
           if [ -z "$EBIRD_COOKIE" ]; then
             echo "::error::No EBIRD_COOKIE secret. On a DESKTOP browser signed into ebird.org: DevTools → Network → any ebird.org request → Request Headers → copy the whole 'cookie:' value, then save it as the EBIRD_COOKIE repository secret. (The cookie is HttpOnly — no bookmarklet or page script can read it.)"
@@ -112,7 +118,30 @@ jobs:
           # (The script itself also joins a multi-line cookie and builds the
           # full-depth featured counties first — the shell join above just
           # keeps this workflow safe even against an older checked-out script.)
-          if [ "$RESUME" = "true" ]; then
+          #
+          # SCOPED REBUILD: force-rebuild JUST the named counties — minutes
+          # instead of ~4.5 h, and the existing files stay live until each is
+          # overwritten complete. Two ways to name them, NEVER the schedule
+          # (the quarterly statewide run can't be silently narrowed):
+          #   - workflow_dispatch: the `scope` input (the reliable channel).
+          #   - push-trigger: a line STARTING with "scope:" in the trigger
+          #     commit's message (like [resume] — the run checks out main, so
+          #     the message, not the trigger branch's files, must carry it).
+          #     Via env, never inline-interpolated: commit messages are
+          #     attacker-ish input. A code merely mentioned in prose doesn't
+          #     count — only a "scope:" line does. NB the session git relay
+          #     has been seen dropping head_commit metadata (probe guard
+          #     skipped, 2026-07-18), so prefer the dispatch input.
+          SCOPE=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SCOPE=$(printf '%s\n' "$TRIGGER_MSG" | grep -iE '^scope:' | grep -oE 'US-[A-Z]{2}-[0-9]{3}' | sort -u | tr '\n' ' ')
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SCOPE=$(printf '%s\n' "$SCOPE_INPUT" | grep -oE 'US-[A-Z]{2}-[0-9]{3}' | sort -u | tr '\n' ' ')
+          fi
+          if [ -n "$SCOPE" ]; then
+            echo "Scoped rebuild: $SCOPE"
+            node frame/scripts/build-counties.mjs build --force $SCOPE
+          elif [ "$RESUME" = "true" ]; then
             echo "Resuming: counties with existing files are skipped."
             node frame/scripts/build-counties.mjs build
           else

@@ -10,11 +10,13 @@
 //   - (v13) the county-picker map (tap a county → toggle its code)
 //
 // `depth` = how many top-coverage hotspots the build keeps for that county.
-// Featured counties (home turf + Humboldt) keep EVERY hotspot (depth Infinity —
-// slice(0, Infinity) keeps all): ~184/216/359/585 each per the July 2026 census,
-// so field spots like Ice House Reservoir make the cut. Statewide default stays
-// shallow to keep the data and eBird load small. The data itself lands with the
-// next "Refresh eBird data" run (needs a live EBIRD_COOKIE).
+// Featured counties (home turf + Humboldt + the Yosemite pair) keep EVERY
+// hotspot (depth Infinity — slice(0, Infinity) keeps all): ~184/216/359/585
+// each per the July 2026 census, so field spots like Ice House Reservoir make
+// the cut. Statewide default stays shallow to keep the data and eBird load
+// small. The data itself lands with the next "Refresh eBird data" run (needs a
+// live EBIRD_COOKIE) — a scoped run (a `scope: US-CA-043 ...` line in the
+// trigger COMMIT MESSAGE) rebuilds just the named counties in minutes, not hours.
 // =============================================================================
 
 export const DEFAULT_DEPTH = 15;
@@ -43,7 +45,7 @@ export const COUNTIES = {
   'US-CA-037': { name: 'Los Angeles' },
   'US-CA-039': { name: 'Madera' },
   'US-CA-041': { name: 'Marin' },
-  'US-CA-043': { name: 'Mariposa' },
+  'US-CA-043': { name: 'Mariposa', depth: FULL_DEPTH },   // Yosemite Valley side (v37)
   'US-CA-045': { name: 'Mendocino' },
   'US-CA-047': { name: 'Merced' },
   'US-CA-049': { name: 'Modoc' },
@@ -76,7 +78,7 @@ export const COUNTIES = {
   'US-CA-103': { name: 'Tehama' },
   'US-CA-105': { name: 'Trinity' },
   'US-CA-107': { name: 'Tulare' },
-  'US-CA-109': { name: 'Tuolumne' },
+  'US-CA-109': { name: 'Tuolumne', depth: FULL_DEPTH },   // Yosemite high country (v37)
   'US-CA-111': { name: 'Ventura' },
   'US-CA-113': { name: 'Yolo' },
   'US-CA-115': { name: 'Yuba' },
@@ -104,4 +106,12 @@ export const COUNTY_CODES = Object.keys(COUNTIES);
 export const REGIONS = [
   { id: 'home', name: 'Home', counties: ['US-CA-067', 'US-CA-017', 'US-CA-061'] },
   { id: 'humboldt', name: 'Humboldt', counties: ['US-CA-023'] },
+  // Yosemite: Mariposa + Tuolumne hold every road-accessible park hotspot —
+  // Mariposa the Valley (Yosemite Valley, Wawona, El Portal, Big Meadow) and
+  // Tuolumne the high country (Tuolumne Meadows, Hetch Hetchy, Hodgdon Meadow).
+  // The park's Madera/Mono portions are trail-only wilderness; those counties'
+  // top spots are foothill/east-side, not the park, so they're left out to keep
+  // the region park-focused. Both files are PRECACHED in sw.js (small, ~470 KB)
+  // so the region works offline in a park with famously poor cell signal.
+  { id: 'yosemite', name: 'Yosemite', counties: ['US-CA-043', 'US-CA-109'] },
 ];
