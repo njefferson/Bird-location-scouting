@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v36 — 2026-07-18
+- More ways to navigate. Every hotspot — on the ranking cards and the detail page — now has a Waze button next to Apple Maps and Google Maps. It opens the Waze app if you have it, or the Waze website if you don’t. On Android there’s also an “Other maps” button that hands the spot to whatever map apps you’ve got installed. (iPhones and iPads don’t offer that kind of chooser to a web page, so there the three named buttons are the way to pick — each opens a pin at the hotspot’s exact coordinates.)
+
 ## v35 — 2026-07-18
 - Dropped the last of the access blurbs. A handful of well-known spots still showed a short “access” description — paved trails, day-use fees, where to park. Those were generic park summaries with no verified source behind them, and a wrong fee or a closed gate is the worst thing to be confident about when you’re deciding where to drive at dawn. So they’re gone. Getting-there is the Apple/Google Maps buttons on every hotspot, and the habitat chips (oak, lake, marsh…) tell you what kind of place it is. The app no longer states an access fact it can’t stand behind.
 

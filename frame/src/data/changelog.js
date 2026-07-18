@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v36',
+    date: '2026-07-18',
+    changes: [
+      'More ways to navigate. Every hotspot — on the ranking cards and the detail page — now has a Waze button next to Apple Maps and Google Maps. It opens the Waze app if you have it, or the Waze website if you don’t. On Android there’s also an “Other maps” button that hands the spot to whatever map apps you’ve got installed. (iPhones and iPads don’t offer that kind of chooser to a web page, so there the three named buttons are the way to pick — each opens a pin at the hotspot’s exact coordinates.)',
+    ],
+  },
+  {
     version: 'v35',
     date: '2026-07-18',
     changes: [

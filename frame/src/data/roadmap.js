@@ -39,8 +39,11 @@ export const ROADMAP = [
   // list from that request: the fussier, messier land-use layers.
   { title: 'More map landmarks',
     detail: 'closed / restricted areas and school campuses on the county map, where the data is clean enough to help rather than clutter — offline like the rest of the basemap.' },
-  { title: 'More navigation apps',
-    detail: 'a Waze button beside Apple and Google Maps (opens the Waze app if you have it, its website if not) — plus, on Android, an “open in any installed map app” option. iOS gives web links no such chooser, so there the explicit buttons stay the honest way to pick.' },
+  // v36 shipped "More navigation apps" — a Waze button beside Apple & Google
+  // Maps on every card and hotspot (opens the Waze app if installed, its website
+  // if not), plus an Android-only "Other maps" button that fires the OS chooser
+  // across every installed map app (geo: URI; iOS gives web links no chooser, so
+  // it's Android-only). Shared control: mapButtons() in ui/views.js.
   // v34 resolved "access notes: fill or drop" (Noah's 'drop' after we confirmed
   // no honest fill source — eBird hotspot info carries no access guidance, OSM
   // tags too sparse). It removed the false-promise "no curated access notes yet"
