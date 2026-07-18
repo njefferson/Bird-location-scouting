@@ -153,6 +153,33 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v36 SHIPPED 2026-07-18 (PR #44, squash 34e7545): "Navigation, reworked" —
+  MERGED to main on Noah's "Everything is perfect on my iPhone promote to main"
+  (his on-device gate SATISFIED, iPhone). Grew from the roadmap item "More
+  navigation apps" into a full nav pass. THREE things landed together:
+  (1) WAZE + ANDROID CHOOSER: hotspotMapLinks() (data/hotspots.js) gained `waze`
+  (https://waze.com/ul?ll=<lat>%2C<lng>&navigate=yes — app if installed, website
+  if not) and `geo` (geo:<lat>,<lng>?q=...(name) — Android's "open with" chooser).
+  (2) MAP LINKS MOVED OFF THE CARDS onto the LOCATION PAGE: the ranking card no
+  longer renders any map buttons; they live only on the hotspot detail
+  (renderHotspotDetail .access-box, under a new `.access-label` "Navigate here").
+  A shared mapButtons(h) helper in ui/views.js renders Apple/Google/Waze + (only
+  when isAndroid()) an "Other maps" geo: button — used by the detail page.
+  (3) THE WHOLE CARD IS A TAP-TO-OPEN NAVIGATION TILE → the location page; the
+  old "Species matrix" BUTTON IS GONE (that outdated term retired from the UI —
+  the #/matrix ROUTE is the Planner, unaffected). Card node is `div.card.tappable`
+  with an onclick that bails on inner controls (`e.target.closest('a,button,
+  input,textarea,select,label')`) so species links + the "birds likely" chip
+  still work; the LOCATION NAME is a real `<a.card-title-link href="#/hotspot/id">`
+  (the keyboard/SR path — no invalid nested-interactive since the card div isn't
+  itself a link). CSS: `.card.tappable` cursor+hover-lift+`:active` press (NOT
+  hue-only; reduced-motion kill-switch applies), `.card-title-link` inherits the
+  heading, underline on hover; removed dead `.card-actions` rule. sw.js →
+  frame-v36. Verified headless: 50 cards / 0 buttons, card-body tap → location
+  page, species-link tap → #/species (guard holds), detail shows Apple/Google/
+  Waze under "Navigate here", Android UA adds "Other maps" geo: link, contrast
+  gate green, zero pageerrors. ROADMAP now has ONE item: "More map landmarks".
+  NEEDS-HIS-HANDS: none — accepted on iPhone.
 - v35 SHIPPED 2026-07-18 (PR #43, squash 6d1e847): "Drop the access blurbs
   entirely" — MERGED to main on Noah's "Promote". Follow-through on v34: Noah
   confirmed the 30 seed `access` notes were GENERATED park summaries (fees/
