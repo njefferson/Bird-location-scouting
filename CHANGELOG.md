@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v40 — 2026-07-18
+- Sharing the app now shows a proper preview. When you send the link in Messages, WhatsApp, Slack or post it anywhere, it now unfurls into a card — the Frame icon, the name, and the tagline — instead of a bare URL. (The page had no preview image or share tags before; now it does.)
+
 ## v39 — 2026-07-18
 - Yellowstone birds now count. The app’s species list grew up in California, so on the Yellowstone maps a lot of northern birds were sitting in the data uncounted. This adds 99 Rocky-Mountain species — Trumpeter Swan, Barrow’s Goldeneye, Harlequin Duck, Dusky and Ruffed Grouse, Greater Sage-Grouse, the three-toed and black-backed woodpeckers, Boreal Owl, Calliope Hummingbird, the rosy-finches, Canada Jay, and the willow-and-sage songbirds — each with its type, size and habitat so it filters and ranks like every other bird. They were already in your downloaded data; now they show up in the counts, the rankings and the species search. (No new download — this just teaches the app to read what was already there.)
 
