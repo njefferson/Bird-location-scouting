@@ -157,9 +157,12 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   resolved the roadmap item "access notes: fill or drop" to DROP the placeholder.
   MERGED to main on Noah's "Promote the Main". FILL WAS RULED OUT (no honest
   source: eBird hotspot info carries no access/parking guidance, OSM tags too
-  sparse). KEY FACT Noah confirmed: the ~60 curated `access` notes are the
-  ORIGINAL SEED hotspots hard-coded in frame/src/data/hotspots.js (ARP/FOLSOM/
-  NATOMA/FOOTHILL constants + per-site strings) from the app's first iterations,
+  sparse). SUPERSEDED BY v35 — see the v35 entry above: v34 kept the 30 seed
+  blurbs (shown only where they existed); v35 dropped ALL 30 after Noah confirmed
+  they were generated park summaries, not his notes. KEY FACT: the 30 `access`
+  notes (NOT ~60 — that was a miscount) were the ORIGINAL SEED hotspots
+  hard-coded in frame/src/data/hotspots.js (ARP/FOLSOM/NATOMA/FOOTHILL constants
+  + per-site strings) from the app's genesis commit df04719 (2026-06-28),
   NOT anything he wrote recently; the ~300 data-built county hotspots
   (data/counties/*.json) have NO access field. CHANGE (frame/src/ui/views.js):
   the ranking-card "Access" button (card actions) and the hotspot-detail

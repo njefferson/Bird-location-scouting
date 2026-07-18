@@ -41,6 +41,8 @@ export const ROADMAP = [
     detail: 'closed / restricted areas and school campuses on the county map, where the data is clean enough to help rather than clutter — offline like the rest of the basemap.' },
   // v34 resolved "access notes: fill or drop" (Noah's 'drop' after we confirmed
   // no honest fill source — eBird hotspot info carries no access guidance, OSM
-  // tags too sparse). The false-promise "no curated access notes yet" placeholder
-  // is gone; the ~60 real curated notes stay, shown only where they exist.
+  // tags too sparse). It removed the false-promise "no curated access notes yet"
+  // placeholder and kept the 30 seed blurbs. v35 then dropped those 30 too:
+  // Noah confirmed they were generated park summaries, not verified guidance, so
+  // the app now carries NO access prose at all — Maps buttons + habitat chips only.
 ];
