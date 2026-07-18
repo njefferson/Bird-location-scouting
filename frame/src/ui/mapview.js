@@ -49,13 +49,17 @@ export function renderMapView(root, state, nav) {
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
-  if (!hotspots.length) {
-    root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
-    return;
-  }
+  // No hotspot data (not downloaded yet / empty region): explain it honestly —
+  // but STILL DRAW THE BASE MAP below. The geography (counties, lakes, rivers,
+  // park boundaries) is app code and always available offline; only the pins
+  // need data. A text wall where a place should be reads as broken (Noah,
+  // v38 staging: "why is there no empty base map already there?").
+  const empty = !hotspots.length;
+  if (empty) root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
   // Same empty-working-set guard the Cards and Planner use — never render a map
-  // of silent-zero pins when a list/facet mode leaves nothing to count.
-  const modeNote = emptyModeNote(spec);
+  // of silent-zero pins when a list/facet mode leaves nothing to count. (Here a
+  // bare map WOULD mislead — the data exists, the active mode filtered it out.)
+  const modeNote = empty ? null : emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
 
   // Which map canvas this region draws on (california | yellowstone) — its own
@@ -187,7 +191,8 @@ export function renderMapView(root, state, nav) {
   // this month. Say exactly that. The ⓘ jumps to the PLANNER in reports mode —
   // the site × month table already exists there; the report counts (the numbers
   // behind the dots) live in it rather than in a duplicate popup.
-  root.append(el('div.legend-row', {}, [
+  // (With no data there are no pins — the dead-end above explains, no legend.)
+  if (!empty) root.append(el('div.legend-row', {}, [
     el('p.legend', {}, spec.weigh
       ? `Orange pins mark the spots that have historically reported the most shootable birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`
       : `Orange pins mark the spots that have historically reported the most birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`),
