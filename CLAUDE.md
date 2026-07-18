@@ -153,6 +153,19 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- PRECACHE FOOTPRINT (2026-07-18, check-in after the Yellowstone/Yosemite
+  full-depth captures): sw.js now precaches 7 county files = ~16.6 MB of offline
+  data (Home 067 3.79 + 017 1.64 + 061 1.98; Yosemite 043 2.11 + 109 1.94;
+  Yellowstone park 029 2.09 + 039 3.03), plus small app code/fonts. Grew because
+  Yosemite/Yellowstone counties went FULL_DEPTH and the park counties are
+  precached for offline-in-the-park. Humboldt (023, 6 MB) is still deliberately
+  NOT precached. FLAGGED TO NOAH: the first-load/install download is ~16-17 MB;
+  fine on wifi, and it's the price of true offline in three parks, but if the
+  cellular install feel matters, the Yosemite/Yellowstone park counties are the
+  ones to drop from precache (they'd then cache on first visit like Humboldt).
+  Data capture itself is DONE & correct — see v37/v38/v39 facts (all 5 GYE
+  counties 254-308 spp each via the full-taxonomy build; Yosemite pair 268-271
+  spp; every county built 2026-07-18 at full depth).
 - v39 SHIPPED 2026-07-18 (PR #47, squash fb745f7): "Yellowstone birds now count"
   — the species-curation pass v38 flagged as its natural follow-up. MERGED on
   Noah's "promote to main". Added 99 Rocky-Mountain / Greater-Yellowstone species
