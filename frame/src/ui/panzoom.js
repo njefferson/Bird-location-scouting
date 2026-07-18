@@ -100,6 +100,12 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
       cullItems = [];
       for (const el of svg.querySelectorAll('path, circle, text')) {
         if (el.closest('defs, clipPath')) continue;
+        // Hotspot NAME labels are owned by mapview's declutter pass (which shows
+        // only a non-overlapping in-view subset using LIVE positions). Culling
+        // them here off a bbox measured once — at one zoom, with a font size that
+        // changes with zoom — wrongly hid a label the declutter wanted shown (a
+        // solo offshore pin's name vanished as Noah zoomed in). Leave them be.
+        if (el.classList.contains('pin-name')) continue;
         let bb; try { bb = el.getBBox(); } catch { continue; }
         if (!bb || (bb.width === 0 && bb.height === 0)) continue;
         cullItems.push({ el, x1: bb.x, y1: bb.y, x2: bb.x + bb.width, y2: bb.y + bb.height, off: false });

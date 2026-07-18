@@ -497,8 +497,15 @@ table.species-table tr[onclick] { cursor: pointer; }
   y: calc(var(--cy, 0) * 1px - var(--h, 7.5) * .5px * var(--fk, 1.3));
   rx: calc(var(--h, 7.5) * .5px * var(--fk, 1.3)); }
 .lm-dot { r: calc(2.2px * var(--fk, 1.3)); stroke-width: calc(.6px * var(--fk, 1.3)); }
-.hotspot-map .pin { r: calc(var(--pr, 3) * 1px * var(--fp, 1)); stroke-width: calc(.5px * var(--fp, 1)); }
-.hotspot-map .you-dot { r: calc(var(--pr, 2.4) * 1px * var(--fp, 1)); stroke-width: calc(1px * var(--fp, 1)); }
+/* Hold each pin at a constant ON-SCREEN size as you zoom, via a TRANSFORM — not
+   the CSS `r` geometry property. Safari/WebKit ignores CSS r/cx/cy, so `r:
+   calc(--pr*--fp)` did nothing on iPad: pins fell back to their fixed `r`
+   ATTRIBUTE and ballooned with zoom (giant blobs that lagged the map to a halt
+   AND grew big enough to cover their own labels — Noah's deep-zoom screenshot).
+   scale(--fp) around each pin's own centre works in every engine; the base size
+   is the `r` attribute set in JS. stroke scales with the transform too. */
+.hotspot-map .pin, .hotspot-map .you-dot {
+  transform: scale(var(--fp, 1)); transform-box: fill-box; transform-origin: center; }
 
 /* Hotspot names: every dot has one in the DOM, but they're hidden by default —
    mapview's declutter pass adds .lbl-show to the non-overlapping subset it wants
@@ -572,10 +579,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 .hotspot-map .pin { cursor: pointer; fill: var(--card); fill-opacity: .78;
   stroke: color-mix(in srgb, var(--ink) 52%, transparent); stroke-width: .4; }
 .hotspot-map .pin.hot { fill: var(--score-hot); fill-opacity: 1;
-  /* A firmer dark edge: the hot/plain FILL hues sit 2.6:1 apart, so the size
-     step + this stroke carry the state for grayscale / colour-blind eyes. */
-  stroke: #06160f; stroke-width: calc(1px * var(--fp, 1));
-  r: calc(var(--pr, 3) * 1.5px * var(--fp, 1)); }
+  /* A firmer dark edge + a bigger dot (via a larger scale, not CSS r) so the hot
+     tier pops for grayscale / colour-blind eyes. */
+  stroke: #06160f; stroke-width: .6;
+  transform: scale(calc(var(--fp, 1) * 1.5)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
 
