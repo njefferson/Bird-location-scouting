@@ -105,6 +105,10 @@ function plain(html) {
 // non-commercial / no-derivatives / fair-use, and require a recognisable free tag.
 function isFree(licenseShort) {
   const l = (licenseShort || '').toLowerCase();
+  // Explicit allow (Noah's call, 2026-07-18): Commons "Copyrighted free use" —
+  // the copyright holder permits use by anyone for any purpose. Checked before
+  // the /copyright/ reject below (which would otherwise catch the word).
+  if (/copyrighted free use/.test(l)) return true;
   if (/nc\b|non-?commercial|nd\b|no-?deriv|fair use|copyright|all rights/.test(l)) return false;
   return /cc0|cc[ -]?by|public domain|pdm|no restrictions|gfdl|attribution/.test(l);
 }
