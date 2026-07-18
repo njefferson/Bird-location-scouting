@@ -344,6 +344,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 .access-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 12px; font-size: 13px; }
 .access-box .btn { margin-top: 8px; }
+.access-note { margin: 0 0 4px; }
 .access-links { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* species search */

@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v34 — 2026-07-17
+- Honest access notes. Most hotspots used to show “no curated access notes for this hotspot yet” — a promise the app was never going to keep, since those notes are hand-written and most spots will never get one. That placeholder is gone: the Access button and note now appear only where a real, curated note actually exists (the well-known spots like the American River Parkway, Folsom, Effie Yeaw). Everywhere else, the Apple/Google Maps buttons are right there to get you there — no empty promise.
+
 ## v33 — 2026-07-17
 - More accessibility polish, finishing the pass. The small print grew up: species-group captions, filter-picker state words, the “here this month” label and the category labels are now a readable size instead of sub-legible fine print. A “Skip to content” link appears when you Tab into the app, so keyboard users jump straight to the view. And the little 12-month trend graphs now describe themselves to a screen reader — “peaks in June” — instead of being a silent picture.
 

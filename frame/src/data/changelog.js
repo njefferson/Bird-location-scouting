@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v34',
+    date: '2026-07-17',
+    changes: [
+      'Honest access notes. Most hotspots used to show “no curated access notes for this hotspot yet” — a promise the app was never going to keep, since those notes are hand-written and most spots will never get one. That placeholder is gone: the Access button and note now appear only where a real, curated note actually exists (the well-known spots like the American River Parkway, Folsom, Effie Yeaw). Everywhere else, the Apple/Google Maps buttons are right there to get you there — no empty promise.',
+    ],
+  },
+  {
     version: 'v33',
     date: '2026-07-17',
     changes: [
