@@ -262,6 +262,18 @@ export function renderMapView(root, state, nav) {
   const progDone = (ms) => { progTxt.textContent = `updated ·${(ms / 1000).toFixed(1)}s`; clearTimeout(progHideT); progHideT = setTimeout(() => { prog.hidden = true; }, 1400); };
   const progHide = () => { clearTimeout(progHideT); prog.hidden = true; };
 
+  // HOLD-TO-LOAD line (Noah's design): while the box is quiet but fingers are
+  // (or appear) still down, a thin bar fills over ~3s; at full, the swap runs
+  // anyway — the affordance for "pause to load without lifting", and the
+  // self-heal for iOS's swallowed pointerups (which otherwise gate loading
+  // forever). Hidden the moment the box moves or the swap starts.
+  const holdFill = el('span.map-hold-fill');
+  const holdEl = el('div.map-hold', { 'aria-hidden': 'true', hidden: true }, [holdFill]);
+  wrap.append(holdEl);
+  const holdShow = (f) => { holdEl.hidden = false; holdFill.style.width = `${Math.min(100, f * 100).toFixed(0)}%`; };
+  const holdHide = () => { holdEl.hidden = true; };
+  const HOLD_MS = 2700; // + the 280ms settle ≈ Noah's "up to 3 seconds"
+
   // DEBUG WINDOW (Noah's ask) — tap the scale bar to overlay live map internals
   // to screenshot mid-freeze: zoom + viewBox, mounted/total per data type, a
   // frame-jank meter, a tick counter (its number STOPS when the main thread is
@@ -369,14 +381,26 @@ ${dbgLog.join('\n')}`;
   // Abandonable at every slice boundary: any box movement bumps the generation
   // and the queue dies.
   const OPS = 40;
-  let syncT = 0, swapGen = 0, swapRaf = 0, swapActive = false;
+  let syncT = 0, swapGen = 0, swapRaf = 0, swapActive = false, holdStart = 0;
   function startSwap() {
     // "The box has stopped" requires the FINGERS OFF THE GLASS, not just a
     // quiet timer: human pinches pause >90ms between strokes constantly, and
     // timer-only settling fired swap after swap mid-gesture (Noah's debug
     // screenshot: swaps at 7.9/8.0/8.2s + a vars write, all while pinching).
-    // While touching, just check back soon; the swap runs after release.
-    if (pz && pz.isGesturing()) { clearTimeout(syncT); syncT = setTimeout(startSwap, 150); return; }
+    // While touching, the hold line fills; short of full it just checks back
+    // soon (the swap normally runs on release) — but a FULL line (~3s of quiet
+    // with fingers down) loads anyway: Noah's pause-to-load, and the escape
+    // hatch when iOS never delivered the pointerup.
+    if (pz && pz.isGesturing()) {
+      if (!holdStart) holdStart = performance.now();
+      const held = performance.now() - holdStart;
+      if (held < HOLD_MS) {
+        holdShow(held / HOLD_MS);
+        clearTimeout(syncT); syncT = setTimeout(startSwap, 120); return;
+      }
+      dbgEvent('hold-load'); // line full — load with fingers down
+    }
+    holdStart = 0; holdHide();
     const gen = ++swapGen;
     const vb = svg.viewBox.baseVal;
     if (!vb || !vb.width) return;
@@ -475,6 +499,7 @@ ${dbgLog.join('\n')}`;
       swapGen++;
       if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; swapActive = false; dbgEvent('abandon'); }
       progHide();
+      holdStart = 0; holdHide();
       clearTimeout(syncT);
       syncT = setTimeout(startSwap, 280);
     },

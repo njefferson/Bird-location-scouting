@@ -196,6 +196,24 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   }
 
   const pts = new Map(); // pointerId → {x,y}
+  // STUCK-POINTER HYGIENE: iOS Safari can swallow pointerup/pointercancel
+  // entirely (system gestures, the screenshot chord, palm rejection). A leaked
+  // entry made isGesturing() true forever and permanently gated the hotspot
+  // map's loading (Noah sat at ×71 for minutes — tick alive, no swap ever ran).
+  // Catch ups/cancels anywhere in the document (bubble phase, after the svg's
+  // own handlers) and purge everything when the page loses visibility. The
+  // listeners self-remove once this map instance leaves the document.
+  const docDrop = (e) => {
+    if (!svg.isConnected) { document.removeEventListener('pointerup', docDrop); document.removeEventListener('pointercancel', docDrop); document.removeEventListener('visibilitychange', docVis); return; }
+    pts.delete(e.pointerId);
+  };
+  const docVis = () => {
+    if (!svg.isConnected) { document.removeEventListener('pointerup', docDrop); document.removeEventListener('pointercancel', docDrop); document.removeEventListener('visibilitychange', docVis); return; }
+    if (document.hidden) pts.clear();
+  };
+  document.addEventListener('pointerup', docDrop);
+  document.addEventListener('pointercancel', docDrop);
+  document.addEventListener('visibilitychange', docVis);
   let moved = false, downX = 0, downY = 0, lastDist = null, lastMid = null, multi = false;
   // Re-derive the pinch anchor (distance + midpoint) from the CURRENT first two
   // pointers whenever the pointer set changes. Without this, lifting one finger
@@ -288,6 +306,9 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     // Fingers on the glass? "The box has stopped" must NEVER be declared while
     // touching — a human pinch is full of >90ms micro-pauses, and a timer alone
     // kept firing swaps mid-gesture (Noah's debug-window screenshot).
+    // NB: iOS can swallow pointerup/cancel outright (system gestures, the
+    // screenshot chord), leaking an entry here — the document-level cleanup
+    // below plus the map's 3s hold-load keep that from gating loads forever.
     isGesturing() { return pts.size > 0; },
     // Force the viewport-cull list to rebuild on the next frame. Labels that
     // were display:none when the list was first built (e.g. pin names, hidden
