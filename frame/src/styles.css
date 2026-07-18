@@ -500,13 +500,15 @@ table.species-table tr[onclick] { cursor: pointer; }
 .hotspot-map .pin { r: calc(var(--pr, 3) * 1px * var(--fp, 1)); stroke-width: calc(.5px * var(--fp, 1)); }
 .hotspot-map .you-dot { r: calc(var(--pr, 2.4) * 1px * var(--fp, 1)); stroke-width: calc(1px * var(--fp, 1)); }
 
-/* Hotspot names: hidden until zoomed past ~2× the opening view (mapview toggles
-   .pin-names-on), then every dot says which hotspot it is. */
-.hotspot-map .pin-names { display: none; }
-.hotspot-map.pin-names-on .pin-names { display: inline; }
-.pin-name { fill: var(--ink); fill-opacity: .85; text-anchor: middle; font-family: var(--sans);
-  font-weight: 600; paint-order: stroke; stroke: var(--label-halo); stroke-width: .3em;
-  stroke-opacity: .85; stroke-linejoin: round; }
+/* Hotspot names: every dot has one in the DOM, but they're hidden by default —
+   mapview's declutter pass adds .lbl-show to the non-overlapping subset it wants
+   visible for the current view (so a dense county never paints all 597 at once,
+   which was unreadable and slow). The viewport cull can still hide an on-screen
+   label if it scrolls off (inline visibility wins over the class). */
+.pin-name { visibility: hidden; fill: var(--ink); fill-opacity: .9; text-anchor: middle;
+  font-family: var(--sans); font-weight: 600; paint-order: stroke; stroke: var(--label-halo);
+  stroke-width: .34em; stroke-opacity: .9; stroke-linejoin: round; }
+.hotspot-map .pin-name.lbl-show { visibility: visible; }
 
 /* Deep-zoom declutter (mapview adds .map-deep past 48x): when one lake fills
    the screen, the letters get out of the way — landmark and county names hide,
@@ -564,13 +566,16 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Two states only: ordinary spots are quiet uniform dots; the month's HOT tier
    is a solid --score-hot dot, a third larger, drawn on top of its neighbours. */
-.hotspot-map .pin { cursor: pointer; stroke: #06160f; stroke-width: .5;
-  fill: var(--card); }
-.hotspot-map .pin.hot { fill: var(--score-hot);
+/* Plain pins are a soft, semi-transparent dot so a dense cluster reads as a
+   light stipple instead of a solid black mass (Noah's Humboldt screenshot); the
+   hot tier keeps a firm dark edge + a bigger dot so it still pops on top. */
+.hotspot-map .pin { cursor: pointer; fill: var(--card); fill-opacity: .78;
+  stroke: color-mix(in srgb, var(--ink) 52%, transparent); stroke-width: .4; }
+.hotspot-map .pin.hot { fill: var(--score-hot); fill-opacity: 1;
   /* A firmer dark edge: the hot/plain FILL hues sit 2.6:1 apart, so the size
      step + this stroke carry the state for grayscale / colour-blind eyes. */
-  stroke-width: calc(1px * var(--fp, 1));
-  r: calc(var(--pr, 3) * 1.35px * var(--fp, 1)); }
+  stroke: #06160f; stroke-width: calc(1px * var(--fp, 1));
+  r: calc(var(--pr, 3) * 1.5px * var(--fp, 1)); }
 .hotspot-map .pin:hover { stroke: var(--ink); }
 .hotspot-map .you-dot { fill: var(--slate); stroke: var(--card); stroke-width: 1; pointer-events: none; }
 

@@ -117,11 +117,13 @@ export function renderMapView(root, state, nav) {
   const homeZoom = W / home.w;
   svg.style.setProperty('--pcap', homeZoom.toFixed(3));
   // Sized so the opening county view reads as dots, not blobs (0.012 merged
-  // dense clusters into a solid mass on iPad — Noah's screenshot).
-  const r = Math.max(2, home.w * 0.008);
+  // dense clusters into a solid mass on iPad — Noah's screenshot). Smaller still
+  // for a dense county (Humboldt's 597 spots) so clusters read as a stipple.
+  const r = Math.max(1.6, home.w * 0.006);
   const pinNames = document.createElementNS(SVG_NS, 'g');
   pinNames.setAttribute('class', 'pin-names');
   pinNames.setAttribute('aria-hidden', 'true');
+  const nmById = {}; // id → {el, x, y, name}, gathered for the declutter pass
   for (const h of hotspots) {
     const [x, y] = latLngToMap(h.lat, h.lng, area);
     const div = divById[h.id] ?? 0;
@@ -148,7 +150,11 @@ export function renderMapView(root, state, nav) {
     nm.style.setProperty('--fs', '4.5');
     nm.textContent = h.name;
     pinNames.append(nm);
+    nmById[h.id] = { el: nm, x, y, name: h.name };
   }
+  // Labels in RANK order (best spots first) so the declutter pass names the
+  // spots worth photographing before the long tail.
+  const labelItems = ranked.map((rk) => nmById[rk.hotspot.id]).filter(Boolean);
 
   // Re-append the hot pins so they draw ON TOP of the ordinary dots — in a
   // dense cluster the standout spot must never be buried under its neighbours.
@@ -161,22 +167,49 @@ export function renderMapView(root, state, nav) {
   appendCountyLabels(svg, Object.keys(A.shapes));
 
   wrap.append(svg);
+
+  // LABEL DECLUTTER — the fix for "cannot read the screen for words" on a dense
+  // county. Every dot has a name in the DOM (hidden by default), but painting
+  // all 597 at once is unreadable AND slow. So on each settle we reveal only a
+  // NON-OVERLAPPING subset: walk the pins best-first, and show a label only if
+  // it's in view and its box clears every label already shown, up to a cap.
+  // Zoomed out, no labels; zoom in and more of the tail earns a name as the
+  // crowd thins. Cheap: it runs debounced on settle, over stored coordinates.
+  const LABEL_MAX = 36, CHAR_W = 0.56, LINE_H = 1.25, LABEL_ON = homeZoom * 2.4;
+  function relabel() {
+    const vb = svg.viewBox.baseVal;
+    if (!vb || !vb.width) return;
+    const zf = W / vb.width;
+    const fk = parseFloat(svg.style.getPropertyValue('--fk')) || 1;
+    const fs = 4.5 * fk; // on-screen-capped label size, in user units
+    if (zf < LABEL_ON) { for (const it of labelItems) it.el.classList.remove('lbl-show'); return; }
+    const vx1 = vb.x, vy1 = vb.y, vx2 = vb.x + vb.width, vy2 = vb.y + vb.height;
+    const placed = [];
+    let shown = 0;
+    for (const it of labelItems) {
+      let show = false;
+      if (shown < LABEL_MAX && it.x >= vx1 && it.x <= vx2 && it.y >= vy1 && it.y <= vy2) {
+        const w = Math.max(6, it.name.length * fs * CHAR_W), h = fs * LINE_H;
+        const lx1 = it.x - w / 2, lx2 = it.x + w / 2;
+        const ly1 = it.y + fs * 1.7 - h / 2, ly2 = ly1 + h;
+        let clash = false;
+        for (const p of placed) { if (!(lx2 < p.x1 || lx1 > p.x2 || ly2 < p.y1 || ly1 > p.y2)) { clash = true; break; } }
+        if (!clash) { show = true; placed.push({ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }); shown++; }
+      }
+      it.el.classList.toggle('lbl-show', show);
+    }
+  }
+  let relabelT = 0;
+
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
-    // Hotspot names appear once you're zoomed past ~4× the opening view. At 2×
-    // most of the region was still in frame, so hundreds of names flooded on at
-    // once and papered over the map (Noah's screenshot); by 4× the view holds
-    // few enough pins for names to help rather than bury.
     onZoom: (z) => {
-      const on = z >= homeZoom * 4;
-      if (on !== svg.classList.contains('pin-names-on')) {
-        svg.classList.toggle('pin-names-on', on);
-        // The names just (dis)appeared — remeasure so the deep-zoom cull covers
-        // them instead of painting every label each frame.
-        pz.invalidateCull();
-      }
       svg.classList.toggle('map-deep', z >= 48); // one-lake scale: declutter
+      // Recompute the visible label set after the gesture settles (fires on pan
+      // and zoom); debounced so it never runs mid-frame.
+      clearTimeout(relabelT);
+      relabelT = setTimeout(relabel, 110);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
@@ -185,6 +218,7 @@ export function renderMapView(root, state, nav) {
   });
   wrap.append(pz.controls());
   root.append(wrap);
+  relabelT = setTimeout(relabel, 160); // initial pass once the viewBox is set
 
   // Honest label: this is PAST-SEASONS frequency, not live activity — these
   // spots aren't "hot right now", they've historically reported the most in
