@@ -10,7 +10,7 @@ import { el, clear } from './dom.js';
 import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
-import { appendBasemap, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
+import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots, hotTierCount } from '../model/scoring.js';
@@ -79,21 +79,25 @@ export function renderMapView(root, state, nav) {
     `Map of ${region.name} hotspots — pins need a pointer; the Planner tab lists the same spots as a keyboard-accessible table.`);
 
   // County fills: the far counties dim, the active region's counties tinted.
+  // (Always mounted — 63 simple polygons is the cheap, stable ground layer.)
   const inRegion = new Set(region.counties);
   for (const code of Object.keys(A.shapes)) {
     const path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', A.shapes[code]);
     path.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
-    path.__bb = bboxOfD(A.shapes[code]); // precomputed for the cull (no getBBox)
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = COUNTIES[code]?.name || code;
     path.append(title);
     svg.append(path);
   }
 
-  // Orientation landmarks (rivers, roads, lakes, parks) — the generated layers
-  // are per-area; California's ship since v20, Yellowstone's since v38.
-  appendBasemap(svg, 'bm-hotspot', area);
+  // Orientation landmarks (rivers, roads, lakes, parks) — VIRTUALISED: the group
+  // is mounted here for z-order, but its pieces live in a data list and only the
+  // ones inside the current view are ever in the DOM (see sync() below). Zoomed
+  // out, the view holds the whole county so everything mounts — same picture as
+  // before; zoomed in, the DOM holds just the local geometry.
+  const bmGroup = basemapShell(svg, 'bm-hotspot', area);
+  const bmItems = basemapItems(area).map((it) => ({ ...it, el: null, on: false }));
 
   // Re-stroke the region's counties ON TOP of the basemap so their outline is
   // always complete (neighbours drawn later can't paint over it) and the region
@@ -133,75 +137,81 @@ export function renderMapView(root, state, nav) {
   // dense clusters into a solid mass on iPad — Noah's screenshot). Smaller still
   // for a dense county (Humboldt's 597 spots) so clusters read as a stipple.
   const r = Math.max(1.6, home.w * 0.006);
-  const pinNames = document.createElementNS(SVG_NS, 'g');
-  pinNames.setAttribute('class', 'pin-names');
-  pinNames.setAttribute('aria-hidden', 'true');
-  const nmById = {}; // id → {el, x, y, name}, gathered for the declutter pass
-  for (const { h, x, y } of pos) {
-    const div = divById[h.id] ?? 0;
+
+  // PINS + NAMES are VIRTUALISED too: plain data records here; sync() below
+  // mounts only the ones inside the current view and removes them as they leave.
+  // Two pin groups so the hot tier always draws ON TOP of ordinary dots in a
+  // dense cluster; both sit under the label layers (original z-order).
+  const gPins = document.createElementNS(SVG_NS, 'g');
+  const gPinsHot = document.createElementNS(SVG_NS, 'g');
+  svg.append(gPins, gPinsHot);
+  const nmById = {};
+  const pinItems = pos.map(({ h, x, y }) => {
+    const it = {
+      x, y, hot: hotIds.has(h.id), id: h.id, name: h.name,
+      title: `${h.name} · ${MONTHS[state.monthIdx]} · ${divById[h.id] ?? 0} species likely`,
+      el: null, on: false,
+    };
+    nmById[h.id] = { x, y, name: h.name, el: null, on: false };
+    return it;
+  });
+  function makePin(it) {
     const pin = document.createElementNS(SVG_NS, 'circle');
-    pin.setAttribute('cx', x.toFixed(1));
-    pin.setAttribute('cy', y.toFixed(1));
+    pin.setAttribute('cx', it.x.toFixed(1));
+    pin.setAttribute('cy', it.y.toFixed(1));
     pin.setAttribute('r', r.toFixed(1));
-    pin.setAttribute('class', hotIds.has(h.id) ? 'pin hot' : 'pin');
+    pin.setAttribute('class', it.hot ? 'pin hot' : 'pin');
     pin.style.setProperty('--pr', r.toFixed(1));
-    pin.__bb = [x - r, y - r, x + r, y + r]; // precomputed for the cull (no getBBox)
-    pin.dataset.id = h.id;
+    pin.dataset.id = it.id;
     const title = document.createElementNS(SVG_NS, 'title');
-    title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} · ${div} species likely`;
+    title.textContent = it.title;
     pin.append(title);
-    svg.append(pin);
-    // The pin's NAME — hidden until you zoom in past ~2× the opening view,
-    // then every dot says which hotspot it is (the "which point is Ice House?"
-    // problem). dy is in em so the gap tracks the capped label size.
-    const nm = document.createElementNS(SVG_NS, 'text');
-    nm.setAttribute('x', x.toFixed(1));
-    nm.setAttribute('y', y.toFixed(1));
-    nm.setAttribute('dy', '1.7em');
-    nm.setAttribute('class', 'pin-name');
-    nm.setAttribute('font-size', '4.5');
-    nm.style.setProperty('--fs', '4.5');
-    nm.textContent = h.name;
-    pinNames.append(nm);
-    nmById[h.id] = { el: nm, x, y, name: h.name };
+    return pin;
   }
   // Labels in RANK order (best spots first) so the declutter pass names the
   // spots worth photographing before the long tail.
   const labelItems = ranked.map((rk) => nmById[rk.hotspot.id]).filter(Boolean);
-
-  // Re-append the hot pins so they draw ON TOP of the ordinary dots — in a
-  // dense cluster the standout spot must never be buried under its neighbours.
-  svg.querySelectorAll('.pin.hot').forEach((p) => svg.append(p));
+  function makeLabel(it) {
+    const nm = document.createElementNS(SVG_NS, 'text');
+    nm.setAttribute('x', it.x.toFixed(1));
+    nm.setAttribute('y', it.y.toFixed(1));
+    nm.setAttribute('dy', '1.7em');
+    nm.setAttribute('class', 'pin-name lbl-show');
+    nm.setAttribute('font-size', '4.5');
+    nm.style.setProperty('--fs', '4.5');
+    nm.textContent = it.name;
+    return nm;
+  }
 
   // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
   // county names — all pointer-transparent, all size-capped by --zf.
   appendLandmarkLabels(svg, area);
+  const pinNames = document.createElementNS(SVG_NS, 'g');
+  pinNames.setAttribute('class', 'pin-names');
+  pinNames.setAttribute('aria-hidden', 'true');
   svg.append(pinNames);
   appendCountyLabels(svg, Object.keys(A.shapes));
 
   wrap.append(svg);
 
-  // LABEL DECLUTTER — the fix for "cannot read the screen for words" on a dense
-  // county. Every dot has a name in the DOM (hidden by default), but painting
-  // all 597 at once is unreadable AND slow. So on each settle we reveal only a
-  // NON-OVERLAPPING subset: walk the pins best-first, and show a label only if
-  // it's in view and its box clears every label already shown, up to a cap.
-  // Zoomed out, no labels; zoom in and more of the tail earns a name as the
-  // crowd thins. Cheap: it runs debounced on settle, over stored coordinates.
+  // VIRTUALISATION — the map's core loading rule (Noah's): the DOM only ever
+  // holds what's inside the window. On each settle, sync() walks the data lists
+  // and MOUNTS the basemap pieces and pins whose boxes intersect the view (with
+  // a margin so a small pan doesn't hit blank edge), and REMOVES the ones that
+  // left. Zoom out and the detail releases; zoom in somewhere else and that
+  // area's geometry mounts. Nothing region-wide is ever built up front except
+  // the plain data arrays. Labels ride the same pass: only the non-overlapping,
+  // best-first subset in view exists at all (cap LABEL_MAX).
   const LABEL_MAX = 36, CHAR_W = 0.56, LINE_H = 1.25, LABEL_ON = homeZoom * 2.4;
-  function relabel() {
-    const vb = svg.viewBox.baseVal;
-    if (!vb || !vb.width) return;
-    const zf = W / vb.width;
+  function relabel(vb, zf) {
     const fk = parseFloat(svg.style.getPropertyValue('--fk')) || 1;
     const fs = 4.5 * fk; // on-screen-capped label size, in user units
-    if (zf < LABEL_ON) { for (const it of labelItems) it.el.classList.remove('lbl-show'); return; }
-    const vx1 = vb.x, vy1 = vb.y, vx2 = vb.x + vb.width, vy2 = vb.y + vb.height;
     const placed = [];
     let shown = 0;
     for (const it of labelItems) {
       let show = false;
-      if (shown < LABEL_MAX && it.x >= vx1 && it.x <= vx2 && it.y >= vy1 && it.y <= vy2) {
+      if (zf >= LABEL_ON && shown < LABEL_MAX &&
+          it.x >= vb.x && it.x <= vb.x + vb.width && it.y >= vb.y && it.y <= vb.y + vb.height) {
         const w = Math.max(6, it.name.length * fs * CHAR_W), h = fs * LINE_H;
         const lx1 = it.x - w / 2, lx2 = it.x + w / 2;
         const ly1 = it.y + fs * 1.7 - h / 2, ly2 = ly1 + h;
@@ -209,20 +219,42 @@ export function renderMapView(root, state, nav) {
         for (const p of placed) { if (!(lx2 < p.x1 || lx1 > p.x2 || ly2 < p.y1 || ly1 > p.y2)) { clash = true; break; } }
         if (!clash) { show = true; placed.push({ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }); shown++; }
       }
-      it.el.classList.toggle('lbl-show', show);
+      if (show && !it.on) { if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; }
+      else if (!show && it.on) { it.el.remove(); it.on = false; }
     }
   }
-  let relabelT = 0;
+  function sync() {
+    const vb = svg.viewBox.baseVal;
+    if (!vb || !vb.width) return;
+    const zf = W / vb.width;
+    const mx = vb.width * 0.35, my = vb.height * 0.35; // pan headroom
+    const x1 = vb.x - mx, y1 = vb.y - my, x2 = vb.x + vb.width + mx, y2 = vb.y + vb.height + my;
+    for (const it of bmItems) {
+      const b = it.bb;
+      const on = b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
+      if (on && !it.on) { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } bmGroup.append(it.el); it.on = true; }
+      else if (!on && it.on) { it.el.remove(); it.on = false; }
+    }
+    for (const it of pinItems) {
+      const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
+      if (on && !it.on) { if (!it.el) it.el = makePin(it); (it.hot ? gPinsHot : gPins).append(it.el); it.on = true; }
+      else if (!on && it.on) { it.el.remove(); it.on = false; }
+    }
+    relabel(vb, zf);
+  }
+  let syncT = 0;
 
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
-
+    // This map manages its own DOM (mount/unmount by view) — the generic
+    // visibility cull would fight it and cache detached nodes.
+    viewCull: false,
     onZoom: () => {
-      // Recompute the visible label set after the gesture settles (fires on pan
-      // and zoom); debounced so it never runs mid-frame, but short enough that
-      // labels catch up quickly after a pinch (they used to lag noticeably).
-      clearTimeout(relabelT);
-      relabelT = setTimeout(relabel, 70);
+      // Re-sync the mounted set after the gesture settles (fires on pan and
+      // zoom); debounced so it never runs mid-frame, short enough that the
+      // world fills in quickly after a pinch.
+      clearTimeout(syncT);
+      syncT = setTimeout(sync, 70);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
@@ -231,7 +263,7 @@ export function renderMapView(root, state, nav) {
   });
   wrap.append(pz.controls());
   root.append(wrap);
-  relabelT = setTimeout(relabel, 160); // initial pass once the viewBox is set
+  syncT = setTimeout(sync, 0); // initial mount for the opening view
 
   // Honest label: this is PAST-SEASONS frequency, not live activity — these
   // spots aren't "hot right now", they've historically reported the most in

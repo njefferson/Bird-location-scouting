@@ -30,7 +30,7 @@ function textTier() {
   catch { return 1; }
 }
 
-export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
+export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null, viewCull = true } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
@@ -63,7 +63,7 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     svg.style.setProperty('--fc', (Math.min(zf, 2.6) / zf * tx).toFixed(4));
     svg.style.setProperty('--fp', (Math.min(zf, pcap) / zf).toFixed(4));
     svg.style.setProperty('--fb', (Math.min(zf, 4) / zf).toFixed(4));
-    cull(zf);
+    if (viewCull) cull(zf); // maps that mount/unmount their own DOM opt out
     if (onZoom) onZoom(zf);
   };
   const setVB = () => { if (!raf) raf = requestAnimationFrame(applyVB); };

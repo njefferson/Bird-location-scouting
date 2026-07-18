@@ -12,7 +12,7 @@ export const CHANGELOG = [
     version: 'v42',
     date: '2026-07-18',
     changes: [
-      'The map behaves at full zoom. Zooming way in used to bog it down until it stopped responding, swell the dots into big blobs, and — on a lone spot far off the coast — make its name vanish just as you closed in on it. All three are fixed: the dots hold a steady size no matter how far you zoom (so it stays smooth), and a spot keeps its name as you zoom right into it.',
+      'The map behaves at full zoom. Zooming way in used to bog it down until it stopped responding, swell the dots into big blobs, and — on a lone spot far off the coast — make its name vanish just as you closed in on it. All fixed, and the map now works the way a map should: it only ever draws what’s inside your window. Zoom in and just that area’s coastline, roads and pins are built; pan and the picture follows you; zoom out and the detail is released again. No more pauses mid-zoom, and the dots hold a steady size no matter how far in you go.',
     ],
   },
   {

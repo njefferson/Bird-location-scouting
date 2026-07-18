@@ -66,35 +66,48 @@ function path(d, cls) {
 }
 
 // Split a long polyline ("M x y L x y …", the only commands the basemap uses)
-// into shorter OVERLAPPING pieces, and append each as its own <path>. A single
-// coastline path spans the whole coast, so its bounding box always overlaps the
-// view and the viewport cull can never drop it — Safari then re-tessellates the
-// entire thing every frame at deep zoom (the lockup). Chunked, each piece has a
-// small bbox, so off-screen pieces cull and only what's actually on screen draws.
-// Fills are NOT chunked (a fill needs its closed ring); they're bounded and cull
-// whole. maxPts keeps each piece cheap while overlapping one point for continuity.
-function appendPolyline(g, d, cls, maxPts = 20) {
+// into shorter OVERLAPPING pieces. A single coastline path spans the whole
+// coast, so it can never be excluded by a viewport test; chunked, each piece
+// has a small bbox and only the pieces in view need to exist at all. Fills are
+// NOT chunked (a fill needs its closed ring); they're bounded and test whole.
+function chunkPolyline(out, d, cls, maxPts = 20) {
   const nums = d.match(/-?[0-9.]+/g);
-  if (!nums || nums.length <= maxPts * 2) { g.append(path(d, cls)); return; }
+  if (!nums || nums.length <= maxPts * 2) { out.push({ d, cls, bb: bboxOfD(d) }); return; }
   for (let i = 0; i + 3 < nums.length; i += (maxPts - 1) * 2) {
     const seg = nums.slice(i, i + maxPts * 2);
     if (seg.length < 4) break;
     let piece = `M${seg[0]} ${seg[1]}`;
     for (let j = 2; j + 1 < seg.length; j += 2) piece += `L${seg[j]} ${seg[j + 1]}`;
-    g.append(path(piece, cls));
+    out.push({ d: piece, cls, bb: bboxOfD(piece) });
   }
 }
 
 /**
- * Append the landmark backdrop to an SVG, clipped to the county silhouette.
- * `id` must be unique per SVG (it names the clipPath). Returns the <g> so a
- * caller can toggle it. Idempotent-ish: pass a fresh id per map instance.
+ * The basemap as DATA: [{d, cls, bb}] draw-ordered (fills first, then lines,
+ * lines chunked). The hotspot map mounts ONLY the items intersecting its view
+ * (virtualisation — the DOM never holds the whole county's geometry); the
+ * region picker mounts them all (its view is always the whole state).
  */
-export function appendBasemap(svg, id = 'bm', area = 'california') {
+export function basemapItems(area = 'california') {
   const L = LAYERS[area];
+  const items = [];
+  for (const d of L.PARKS) items.push({ d, cls: 'bm-park', bb: bboxOfD(d) });
+  for (const d of L.LAKES) items.push({ d, cls: 'bm-lake', bb: bboxOfD(d) });
+  if (area === 'california') for (const s of WATER_SHAPES) items.push({ d: s.d, cls: 'bm-lake', bb: bboxOfD(s.d) });
+  for (const d of L.RIVERS) chunkPolyline(items, d, 'bm-river');
+  for (const d of L.COASTLINE) chunkPolyline(items, d, 'bm-coast');
+  for (const d of L.ROADS) chunkPolyline(items, d, 'bm-road');
+  return items;
+}
+
+/**
+ * The basemap SHELL: defs + a decimated county clip + an empty group, ready for
+ * items to be mounted into. `id` must be unique per SVG (names the clipPath).
+ */
+export function basemapShell(svg, id = 'bm', area = 'california') {
   const shapes = MAP_AREAS[area].shapes;
-  // Clip everything to the union of county shapes, so landmarks never spill
-  // into the empty ocean / out-of-region background.
+  // Clip to the county silhouette so landmarks never spill into the empty
+  // ocean / out-of-region background. Decimated: a clip doesn't need every point.
   const defs = document.createElementNS(SVG_NS, 'defs');
   const clip = document.createElementNS(SVG_NS, 'clipPath');
   clip.setAttribute('id', id);
@@ -106,17 +119,17 @@ export function appendBasemap(svg, id = 'bm', area = 'california') {
   g.setAttribute('class', 'basemap');
   g.setAttribute('clip-path', `url(#${id})`);
   g.setAttribute('aria-hidden', 'true');
-  // Fills first (parks, lakes — including the OSM reservoir shorelines), then
-  // lines over them (rivers, coast, roads).
-  for (const d of L.PARKS) g.append(path(d, 'bm-park'));
-  for (const d of L.LAKES) g.append(path(d, 'bm-lake'));
-  if (area === 'california') for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
-  // Lines are chunked so off-screen pieces cull (see appendPolyline); fills above
-  // stay whole.
-  for (const d of L.RIVERS) appendPolyline(g, d, 'bm-river');
-  for (const d of L.COASTLINE) appendPolyline(g, d, 'bm-coast');
-  for (const d of L.ROADS) appendPolyline(g, d, 'bm-road');
   svg.append(g);
+  return g;
+}
+
+/**
+ * Append the full landmark backdrop (the region picker's whole-state view —
+ * everything is always in frame there, so no virtualisation).
+ */
+export function appendBasemap(svg, id = 'bm', area = 'california') {
+  const g = basemapShell(svg, id, area);
+  for (const it of basemapItems(area)) g.append(path(it.d, it.cls));
   return g;
 }
 
