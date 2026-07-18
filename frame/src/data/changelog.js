@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v35',
+    date: '2026-07-18',
+    changes: [
+      'Dropped the last of the access blurbs. A handful of well-known spots still showed a short “access” description — paved trails, day-use fees, where to park. Those were generic park summaries with no verified source behind them, and a wrong fee or a closed gate is the worst thing to be confident about when you’re deciding where to drive at dawn. So they’re gone. Getting-there is the Apple/Google Maps buttons on every hotspot, and the habitat chips (oak, lake, marsh…) tell you what kind of place it is. The app no longer states an access fact it can’t stand behind.',
+    ],
+  },
+  {
     version: 'v34',
     date: '2026-07-17',
     changes: [

@@ -5,6 +5,9 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v35 — 2026-07-18
+- Dropped the last of the access blurbs. A handful of well-known spots still showed a short “access” description — paved trails, day-use fees, where to park. Those were generic park summaries with no verified source behind them, and a wrong fee or a closed gate is the worst thing to be confident about when you’re deciding where to drive at dawn. So they’re gone. Getting-there is the Apple/Google Maps buttons on every hotspot, and the habitat chips (oak, lake, marsh…) tell you what kind of place it is. The app no longer states an access fact it can’t stand behind.
+
 ## v34 — 2026-07-17
 - Honest access notes. Most hotspots used to show “no curated access notes for this hotspot yet” — a promise the app was never going to keep, since those notes are hand-written and most spots will never get one. That placeholder is gone: the Access button and note now appear only where a real, curated note actually exists (the well-known spots like the American River Parkway, Folsom, Effie Yeaw). Everywhere else, the Apple/Google Maps buttons are right there to get you there — no empty promise.
 
