@@ -219,7 +219,9 @@ function card(r, state, nav) {
 
   const head = el('div.card-head', {}, [
     el('div.card-head-main', {}, [
-      el('h2', {}, h.name),
+      // The location name is a real link to the location page — the keyboard /
+      // screen-reader path to the same place the whole-card tap opens.
+      el('h2', {}, el('a.card-title-link', { href: `#/hotspot/${h.id}` }, h.name)),
       el('div.tags', {}, [
         trustBadge(r.trust),
         nBadge(r.n),
@@ -243,15 +245,16 @@ function card(r, state, nav) {
       ]))
     : el('span.dim', {}, 'No birds notably present this month.'));
 
-  const actions = el('div.card-actions', {}, [
-    ...mapButtons(h),
-    el('button.btn', { onclick: () => nav.go(`#/hotspot/${h.id}`) }, 'Species matrix'),
-    // No "Access" button: the app carries no access prose (the old seed blurbs
-    // were generated park summaries, not verified guidance — dropped in v35).
-    // Getting-there is the Maps buttons above; habitat chips carry the flavor.
-  ]);
-
-  const node = el('div.card', {}, [head, guildRow, habs, species, actions]);
+  // The whole card is a navigation tile: tap anywhere to open the location page
+  // (where the Apple / Google / Waze links now live). Taps that land on an inner
+  // control — the location-name link, a species link, the "birds likely" chip —
+  // are left to that control; everything else opens the location.
+  const node = el('div.card.tappable', {
+    onclick: (e) => {
+      if (e.target.closest('a, button, input, textarea, select, label')) return;
+      nav.go(`#/hotspot/${h.id}`);
+    },
+  }, [head, guildRow, habs, species]);
   node._hotspot = h;
   return node;
 }
@@ -464,10 +467,11 @@ export function renderHotspotDetail(root, state, nav, hotspotId) {
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
-  // Getting-there only: the app carries no access prose (v35 dropped the
-  // generated seed blurbs). Apple / Google / Waze (+ Android's any-map chooser)
-  // is how you get there.
+  // Getting-there lives HERE on the location page now (moved off the ranking
+  // cards). Apple / Google / Waze (+ Android's any-map chooser) is how you get
+  // there; the app carries no access prose (v35 dropped the generated blurbs).
   root.append(el('div.access-box', {}, [
+    el('p.access-label', {}, 'Navigate here'),
     el('div.access-links', {}, mapButtons(h)),
   ]));
 

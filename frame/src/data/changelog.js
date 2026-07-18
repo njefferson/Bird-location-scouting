@@ -12,7 +12,8 @@ export const CHANGELOG = [
     version: 'v36',
     date: '2026-07-18',
     changes: [
-      'More ways to navigate. Every hotspot — on the ranking cards and the detail page — now has a Waze button next to Apple Maps and Google Maps. It opens the Waze app if you have it, or the Waze website if you don’t. On Android there’s also an “Other maps” button that hands the spot to whatever map apps you’ve got installed. (iPhones and iPads don’t offer that kind of chooser to a web page, so there the three named buttons are the way to pick — each opens a pin at the hotspot’s exact coordinates.)',
+      'Navigation, reworked. Tap a hotspot card anywhere to open its location page — the whole card is the button now, so the old “Species matrix” button is gone.',
+      'The map links moved to the location page, where they belong. Open a spot, then pick how you drive there: Apple Maps, Google Maps, or — new — Waze (it opens the Waze app if you have it, the Waze website if you don’t). On Android the location page also has an “Other maps” button that hands the spot to whatever map apps you’ve got installed. (iPhones and iPads don’t offer that kind of chooser to a web page, so there the named buttons are the way to pick.) Each one opens a pin at the hotspot’s exact coordinates.',
     ],
   },
   {
