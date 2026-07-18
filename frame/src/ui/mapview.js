@@ -11,7 +11,7 @@ import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
 import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
-import { mapLog } from './maplog.js';
+import { mapLog, getMapLog } from './maplog.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots, hotTierCount } from '../model/scoring.js';
@@ -235,7 +235,7 @@ export function renderMapView(root, state, nav) {
   const scaleTxt = el('span.map-scale-txt');
   wrap.append(el('div.map-scale', {
     'aria-hidden': 'true', title: 'Map diagnostics',
-    onclick: () => dbgSet(dbgPre.hidden), // tap the scale = toggle the data window
+    onclick: () => dbgSet(dbgBox.hidden), // tap the scale = toggle the data window
   }, [scaleBar, scaleTxt]));
   const NICE_MI = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
   function updateScale(vb, zf, ms) {
@@ -296,8 +296,20 @@ export function renderMapView(root, state, nav) {
     mapLog(msg); // every event also lands in the persistent runtime log
   };
   mapLog(`== map open ${region.id} ${hotspots.length} spots ==`);
-  const dbgPre = el('pre.map-debug', { hidden: true, 'aria-hidden': 'true' });
-  wrap.append(dbgPre);
+  const dbgPre = el('pre.map-debug', {});
+  // Copy-log lives IN the window too (Noah): right after a repro, one tap here
+  // grabs the persistent trace without leaving the map. Tap-only like the rest
+  // of the overlay (off tab order); the accessible path stays in Settings.
+  const dbgCopy = el('button.map-debug-copy', {
+    tabindex: '-1',
+    onclick: async () => {
+      try { await navigator.clipboard.writeText(getMapLog() || '(log empty)'); dbgCopy.textContent = 'copied ✓'; }
+      catch { dbgCopy.textContent = 'copy failed'; }
+      setTimeout(() => { dbgCopy.textContent = 'copy log'; }, 1400);
+    },
+  }, 'copy log');
+  const dbgBox = el('div.map-debug-box', { hidden: true, 'aria-hidden': 'true' }, [dbgPre, dbgCopy]);
+  wrap.append(dbgBox);
   let dbgTimer = 0, dbgRaf = 0, dbgTick = 0, dbgLast = 0, dbgWorst = 0, dbgWorstAt = 0;
   function dbgFrame(now) {
     dbgTick++;
@@ -327,7 +339,7 @@ tick ${dbgTick}  worst frame ${dbgWorst.toFixed(0)}ms/2s
 ${dbgLog.join('\n')}`;
   }
   function dbgSet(on) {
-    dbgPre.hidden = !on;
+    dbgBox.hidden = !on;
     clearInterval(dbgTimer); cancelAnimationFrame(dbgRaf); dbgTimer = 0; dbgRaf = 0;
     if (on) { dbgLast = 0; dbgRaf = requestAnimationFrame(dbgFrame); dbgTimer = setInterval(dbgRender, 250); dbgRender(); }
     try { localStorage.setItem(DBG_KEY, on ? '1' : '0'); } catch { /* private mode */ }

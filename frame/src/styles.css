@@ -535,13 +535,18 @@ table.species-table tr[onclick] { cursor: pointer; }
 .map-hold-fill { display: block; height: 100%; width: 0; background: var(--accent); }
 
 /* Diagnostics window (tap the scale bar): live internals over the map for
-   screenshot-debugging a freeze. pre keeps the fixed layout; pointer-events
-   none so it never eats a gesture. */
-.map-debug { position: absolute; top: 10px; left: 10px; margin: 0; padding: 8px 10px;
-  border-radius: 7px; pointer-events: none; white-space: pre; text-align: left;
+   screenshot-debugging a freeze. The box positions the overlay and stays
+   pointer-events none so it never eats a gesture; only the copy-log button
+   inside takes taps (grab the runtime trace without leaving the map). */
+.map-debug-box { position: absolute; top: 10px; left: 10px; padding: 8px 10px;
+  border-radius: 7px; pointer-events: none; text-align: left;
   background: color-mix(in srgb, var(--card) 90%, transparent);
-  border: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px;
-  line-height: 1.45; color: var(--ink); }
+  border: 1px solid var(--line); }
+.map-debug { margin: 0; white-space: pre;
+  font-family: var(--mono); font-size: 10.5px; line-height: 1.45; color: var(--ink); }
+.map-debug-copy { display: block; margin-top: 6px; padding: 3px 8px; pointer-events: auto;
+  border-radius: 6px; border: 1px solid var(--line); cursor: pointer;
+  background: var(--card); font-family: var(--mono); font-size: 10.5px; color: var(--ink); }
 .map-scale-bar { display: inline-block; height: 5px; min-width: 12px;
   border: 1.5px solid var(--ink); border-top: none; }
 .map-scale-zf { color: var(--dim); }
