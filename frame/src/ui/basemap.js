@@ -10,10 +10,16 @@
 // caller draws county fills first, then calls appendBasemap(), then draws its
 // own selection outlines / pins, then appendCountyLabels() last.
 // =============================================================================
-import { COUNTY_SHAPES } from '../data/county-shapes.js';
+import { MAP_AREAS } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
-import { COASTLINE, RIVERS, LAKES, ROADS, PARKS, RIVER_LABELS, LAKE_LABELS, ROAD_LABELS, PARK_LABELS, WATER_POINTS, REFUGE_POINTS } from '../data/basemap.js';
+import * as CA_LAYERS from '../data/basemap.js';
+import * as YS_LAYERS from '../data/yellowstone-basemap.js';
 import { WATER_SHAPES } from '../data/water-shapes.js';
+
+// Per-area landmark layers (v38): same export shape from both generated
+// modules, picked by map area. The OSM water shorelines (WATER_SHAPES) are a
+// California-only curation, so they ride only that area's basemap.
+const LAYERS = { california: CA_LAYERS, yellowstone: YS_LAYERS };
 
 // Curated waters that have a real OSM shoreline — those render as actual lakes,
 // so they get no marker dot (the shape IS the marker; the name still labels it).
@@ -34,13 +40,15 @@ function path(d, cls) {
  * `id` must be unique per SVG (it names the clipPath). Returns the <g> so a
  * caller can toggle it. Idempotent-ish: pass a fresh id per map instance.
  */
-export function appendBasemap(svg, id = 'bm') {
+export function appendBasemap(svg, id = 'bm', area = 'california') {
+  const L = LAYERS[area];
+  const shapes = MAP_AREAS[area].shapes;
   // Clip everything to the union of county shapes, so landmarks never spill
   // into the empty ocean / out-of-region background.
   const defs = document.createElementNS(SVG_NS, 'defs');
   const clip = document.createElementNS(SVG_NS, 'clipPath');
   clip.setAttribute('id', id);
-  for (const code of Object.keys(COUNTY_SHAPES)) clip.append(path(COUNTY_SHAPES[code], 'clip-c'));
+  for (const code of Object.keys(shapes)) clip.append(path(shapes[code], 'clip-c'));
   defs.append(clip);
   svg.append(defs);
 
@@ -50,12 +58,12 @@ export function appendBasemap(svg, id = 'bm') {
   g.setAttribute('aria-hidden', 'true');
   // Fills first (parks, lakes — including the OSM reservoir shorelines), then
   // lines over them (rivers, coast, roads).
-  for (const d of PARKS) g.append(path(d, 'bm-park'));
-  for (const d of LAKES) g.append(path(d, 'bm-lake'));
-  for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
-  for (const d of RIVERS) g.append(path(d, 'bm-river'));
-  for (const d of COASTLINE) g.append(path(d, 'bm-coast'));
-  for (const d of ROADS) g.append(path(d, 'bm-road'));
+  for (const d of L.PARKS) g.append(path(d, 'bm-park'));
+  for (const d of L.LAKES) g.append(path(d, 'bm-lake'));
+  if (area === 'california') for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
+  for (const d of L.RIVERS) g.append(path(d, 'bm-river'));
+  for (const d of L.COASTLINE) g.append(path(d, 'bm-coast'));
+  for (const d of L.ROADS) g.append(path(d, 'bm-road'));
   svg.append(g);
   return g;
 }
@@ -81,14 +89,15 @@ function textLabel(l, cls, size, dy) {
  * and scaled in viewBox units, like the county labels — quiet statewide, readable
  * as you pinch in. Draw this UNDER the county labels (county names win).
  */
-export function appendLandmarkLabels(svg) {
+export function appendLandmarkLabels(svg, area = 'california') {
+  const L = LAYERS[area];
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('class', 'landmark-labels');
   g.setAttribute('aria-hidden', 'true');
 
-  for (const l of PARK_LABELS) g.append(textLabel(l, 'lm-park', 5.5));
-  for (const l of LAKE_LABELS) g.append(textLabel(l, 'lm-water', 5.5));
-  for (const l of RIVER_LABELS) g.append(textLabel(l, 'lm-water lm-river', 5));
+  for (const l of L.PARK_LABELS) g.append(textLabel(l, 'lm-park', 5.5));
+  for (const l of L.LAKE_LABELS) g.append(textLabel(l, 'lm-water', 5.5));
+  for (const l of L.RIVER_LABELS) g.append(textLabel(l, 'lm-water lm-river', 5));
 
   // Curated points (reservoirs, refuges — county-verified at build time):
   // a small dot at the true position, the name just beneath it.
@@ -98,11 +107,11 @@ export function appendLandmarkLabels(svg) {
     c.setAttribute('class', cls);
     return c;
   };
-  for (const l of WATER_POINTS) {
+  for (const l of L.WATER_POINTS) {
     if (!SHAPED.has(l.t)) g.append(dot(l, 'lm-dot lm-dot-water'));
     g.append(textLabel(l, 'lm-water', 4.5, SHAPED.has(l.t) ? '0.35em' : '1.5em'));
   }
-  for (const l of REFUGE_POINTS) {
+  for (const l of L.REFUGE_POINTS) {
     g.append(dot(l, 'lm-dot lm-dot-park'));
     g.append(textLabel(l, 'lm-park', 4.5, '1.5em'));
   }
@@ -110,7 +119,7 @@ export function appendLandmarkLabels(svg) {
   // Road shields: a pill in the ROAD colour (so the number reads as part of the
   // road it sits on), major routes only, de-collided at build time. The rect's
   // geometry is mirrored into CSS vars so the pill counter-scales with the text.
-  for (const l of ROAD_LABELS) {
+  for (const l of L.ROAD_LABELS) {
     const fs = 4.5, h = fs + 3, w = Math.max(h, l.t.length * fs * 0.62 + 3.6);
     const shield = document.createElementNS(SVG_NS, 'g');
     shield.setAttribute('class', 'lm-shield');
@@ -135,7 +144,7 @@ export function appendLandmarkLabels(svg) {
  * (paint-order stroke) so they read over both pale counties and the landmarks.
  * `codes` defaults to every county; pass a subset to label only those.
  */
-export function appendCountyLabels(svg, codes = Object.keys(COUNTY_SHAPES)) {
+export function appendCountyLabels(svg, codes = Object.keys(MAP_AREAS.california.shapes)) {
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('class', 'county-labels');
   g.setAttribute('aria-hidden', 'true');

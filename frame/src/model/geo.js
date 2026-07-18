@@ -10,20 +10,25 @@
 //     picking a region)
 // =============================================================================
 
-import { COUNTY_SHAPES, MAP_PROJECTION } from '../data/county-shapes.js';
+import { MAP_AREAS, areaOfCounty } from '../data/map-areas.js';
 
-/** Project a lat/lng into county-map viewBox coordinates → [x, y]. */
-export function latLngToMap(lat, lng) {
-  const { kx, minX, minY, scale } = MAP_PROJECTION;
+/** Project a lat/lng into a map area's viewBox coordinates → [x, y].
+ * Each area (california, yellowstone — see data/map-areas.js) has its own
+ * projection; the default keeps every pre-v38 call site meaning what it did. */
+export function latLngToMap(lat, lng, area = 'california') {
+  const { kx, minX, minY, scale } = MAP_AREAS[area].projection;
   return [(lng * kx - minX) * scale, (-lat - minY) * scale];
 }
 
 // Parse a county's path string ('M x y L x y … Z', possibly several M…Z parts)
-// into rings of [x, y] points. Cached — shapes are static.
+// into rings of [x, y] points. Cached — shapes are static. The county's own
+// area supplies the shape (codes are unique across areas), so every ring-based
+// helper below (centroid, bbox, point-in-county) is area-correct for free.
 const _rings = {};
 export function countyRings(code) {
   if (_rings[code]) return _rings[code];
-  const d = COUNTY_SHAPES[code];
+  const area = areaOfCounty(code);
+  const d = area && MAP_AREAS[area].shapes[code];
   if (!d) return (_rings[code] = []);
   const rings = d.split('M').filter(Boolean).map((part) =>
     part.replace(/Z/g, '').split('L').map((pair) => {
@@ -45,9 +50,12 @@ function inRings(x, y, rings) {
   return inside;
 }
 
-/** Is this lat/lng inside the given county? */
+/** Is this lat/lng inside the given county? Projects with the county's own
+ * area, so auto-switch works standing in Gardiner MT as well as Sacramento. */
 export function pointInCounty(lat, lng, code) {
-  const [x, y] = latLngToMap(lat, lng);
+  const area = areaOfCounty(code);
+  if (!area) return false;
+  const [x, y] = latLngToMap(lat, lng, area);
   return inRings(x, y, countyRings(code));
 }
 

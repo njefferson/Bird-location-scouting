@@ -7,7 +7,7 @@
 // dot is drawn too — asking for permission stays a Settings decision.
 // =============================================================================
 import { el, clear } from './dom.js';
-import { COUNTY_SHAPES, MAP_VIEWBOX } from '../data/county-shapes.js';
+import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
 import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
@@ -49,16 +49,24 @@ export function renderMapView(root, state, nav) {
     monthSelector(state, (i) => nav.setMonth(i)),
   ]));
 
-  if (!hotspots.length) {
-    root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
-    return;
-  }
+  // No hotspot data (not downloaded yet / empty region): explain it honestly —
+  // but STILL DRAW THE BASE MAP below. The geography (counties, lakes, rivers,
+  // park boundaries) is app code and always available offline; only the pins
+  // need data. A text wall where a place should be reads as broken (Noah,
+  // v38 staging: "why is there no empty base map already there?").
+  const empty = !hotspots.length;
+  if (empty) root.append(regionDeadEnd(nav, 'Nothing to map for this region'));
   // Same empty-working-set guard the Cards and Planner use — never render a map
-  // of silent-zero pins when a list/facet mode leaves nothing to count.
-  const modeNote = emptyModeNote(spec);
+  // of silent-zero pins when a list/facet mode leaves nothing to count. (Here a
+  // bare map WOULD mislead — the data exists, the active mode filtered it out.)
+  const modeNote = empty ? null : emptyModeNote(spec);
   if (modeNote) { root.append(modeNote); return; }
 
-  const { w: W, h: H } = MAP_VIEWBOX;
+  // Which map canvas this region draws on (california | yellowstone) — its own
+  // viewBox, projection and county shapes. See data/map-areas.js.
+  const area = areaOfRegion(region);
+  const A = MAP_AREAS[area];
+  const { w: W, h: H } = A.viewBox;
   const wrap = el('div.map-wrap.map-tall');
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'county-map hotspot-map');
@@ -71,9 +79,9 @@ export function renderMapView(root, state, nav) {
 
   // County fills: the far counties dim, the active region's counties tinted.
   const inRegion = new Set(region.counties);
-  for (const code of Object.keys(COUNTY_SHAPES)) {
+  for (const code of Object.keys(A.shapes)) {
     const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', COUNTY_SHAPES[code]);
+    path.setAttribute('d', A.shapes[code]);
     path.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = COUNTIES[code]?.name || code;
@@ -81,15 +89,16 @@ export function renderMapView(root, state, nav) {
     svg.append(path);
   }
 
-  // Orientation landmarks (rivers, roads, lakes, parks), clipped to the state.
-  appendBasemap(svg, 'bm-hotspot');
+  // Orientation landmarks (rivers, roads, lakes, parks) — the generated layers
+  // are per-area; California's ship since v20, Yellowstone's since v38.
+  appendBasemap(svg, 'bm-hotspot', area);
 
   // Re-stroke the region's counties ON TOP of the basemap so their outline is
   // always complete (neighbours drawn later can't paint over it) and the region
   // reads as a distinct, fully-outlined block above the landmarks.
   for (const code of region.counties) {
     const o = document.createElementNS(SVG_NS, 'path');
-    o.setAttribute('d', COUNTY_SHAPES[code]);
+    o.setAttribute('d', A.shapes[code]);
     o.setAttribute('class', 'county-outline region');
     svg.append(o);
   }
@@ -114,7 +123,7 @@ export function renderMapView(root, state, nav) {
   pinNames.setAttribute('class', 'pin-names');
   pinNames.setAttribute('aria-hidden', 'true');
   for (const h of hotspots) {
-    const [x, y] = latLngToMap(h.lat, h.lng);
+    const [x, y] = latLngToMap(h.lat, h.lng, area);
     const div = divById[h.id] ?? 0;
     const pin = document.createElementNS(SVG_NS, 'circle');
     pin.setAttribute('cx', x.toFixed(1));
@@ -147,9 +156,9 @@ export function renderMapView(root, state, nav) {
 
   // Landmark names (roads, rivers, lakes, parks), then hotspot names, then
   // county names — all pointer-transparent, all size-capped by --zf.
-  appendLandmarkLabels(svg);
+  appendLandmarkLabels(svg, area);
   svg.append(pinNames);
-  appendCountyLabels(svg);
+  appendCountyLabels(svg, Object.keys(A.shapes));
 
   wrap.append(svg);
   const pz = attachPanZoom(wrap, svg, {
@@ -182,7 +191,8 @@ export function renderMapView(root, state, nav) {
   // this month. Say exactly that. The ⓘ jumps to the PLANNER in reports mode —
   // the site × month table already exists there; the report counts (the numbers
   // behind the dots) live in it rather than in a duplicate popup.
-  root.append(el('div.legend-row', {}, [
+  // (With no data there are no pins — the dead-end above explains, no legend.)
+  if (!empty) root.append(el('div.legend-row', {}, [
     el('p.legend', {}, spec.weigh
       ? `Orange pins mark the spots that have historically reported the most shootable birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency × photo weight, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`
       : `Orange pins mark the spots that have historically reported the most birds in ${MONTHS[state.monthIdx]} (past seasons’ Σ frequency, discounted for thin coverage — not live sightings). Tap a pin to open it; pinch to zoom, pan with two fingers (one finger scrolls the page) or drag with a mouse.`),
@@ -198,7 +208,7 @@ export function renderMapView(root, state, nav) {
     if (st.state !== 'granted' || !svg.isConnected) return;
     navigator.geolocation.getCurrentPosition((pos) => {
       if (!svg.isConnected) return;
-      const [x, y] = latLngToMap(pos.coords.latitude, pos.coords.longitude);
+      const [x, y] = latLngToMap(pos.coords.latitude, pos.coords.longitude, area);
       const me = document.createElementNS(SVG_NS, 'circle');
       me.setAttribute('cx', x.toFixed(1));
       me.setAttribute('cy', y.toFixed(1));

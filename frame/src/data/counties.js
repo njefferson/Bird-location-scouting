@@ -126,4 +126,8 @@ export const REGIONS = [
   // the region park-focused. Both files are PRECACHED in sw.js (small, ~470 KB)
   // so the region works offline in a park with famously poor cell signal.
   { id: 'yosemite', name: 'Yosemite', counties: ['US-CA-043', 'US-CA-109'] },
+  // Yellowstone (v38): the 5 Greater-Yellowstone counties — the park proper
+  // (Park/Teton WY), both road entrances' gateway counties (Gallatin/Park MT)
+  // and Island Park (Fremont ID). Draws on its own map area (data/map-areas.js).
+  { id: 'yellowstone', name: 'Yellowstone', counties: ['US-WY-029', 'US-WY-039', 'US-MT-031', 'US-MT-067', 'US-ID-043'] },
 ];
