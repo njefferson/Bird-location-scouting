@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v40',
+    date: '2026-07-18',
+    changes: [
+      'Sharing the app now shows a proper preview. When you send the link in Messages, WhatsApp, Slack or post it anywhere, it now unfurls into a card — the Frame icon, the name, and the tagline — instead of a bare URL. (The page had no preview image or share tags before; now it does.)',
+    ],
+  },
+  {
     version: 'v39',
     date: '2026-07-18',
     changes: [

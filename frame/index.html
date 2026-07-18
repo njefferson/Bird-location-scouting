@@ -16,7 +16,27 @@
     })();
   </script>
   <title>Frame — bird photography hotspot planner</title>
-  <meta name="description" content="Where to go, in which month, to photograph which birds — ranked by photographic opportunity across your California &amp; Nevada regions." />
+  <meta name="description" content="Where to go, in which month, to photograph which birds — ranked by photographic opportunity. Free, offline, no account." />
+  <!-- Social / link-preview cards (Open Graph + Twitter). Absolute URLs: link
+       crawlers (iMessage, WhatsApp, Facebook, Twitter/X, Slack) fetch these
+       over the network and don't run the service worker, so the image must be a
+       real file at the production origin (frame/social-preview.png → served at
+       the site root). Update social-preview.png via scripts card + headless
+       screenshot; keep it 1200×630. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Frame" />
+  <meta property="og:title" content="Frame — bird photography hotspot planner" />
+  <meta property="og:description" content="Where to go, in which month, to photograph which birds — ranked by photographic opportunity. Free, offline, no account, no install." />
+  <meta property="og:url" content="https://bird-location-scouting.pages.dev/" />
+  <meta property="og:image" content="https://bird-location-scouting.pages.dev/social-preview.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Frame — a warm-lit bird by the water inside camera framing marks, beside the wordmark and tagline." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Frame — bird photography hotspot planner" />
+  <meta name="twitter:description" content="Where to go, in which month, to photograph which birds. Free, offline, no account." />
+  <meta name="twitter:image" content="https://bird-location-scouting.pages.dev/social-preview.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
