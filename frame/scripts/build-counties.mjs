@@ -130,6 +130,17 @@ async function build(args) {
   if (!ok) { console.error('Aborting build: fix the unresolved species names above, then rebuild.'); process.exit(1); }
   const map = JSON.parse(await readFile(TAX_PATH, 'utf8'));
   const nameToCode = Object.fromEntries(Object.entries(map).map(([n, c]) => [n.toLowerCase(), c]));
+  // FULL-taxonomy fallback: store EVERY real species a hotspot reports, not
+  // just the curated list. The bar-chart download is login-gated behind a
+  // cookie that dies in days — the data is the perishable asset, the curated
+  // list is just today's lens. Without this, a county downloaded before its
+  // region's species were curated (Yellowstone, 2026-07-18) would silently
+  // miss its specialties and need a whole new cookie window to fix. Extra
+  // codes in freqByMonth are inert to the app (views iterate the curated
+  // SPECIES); category==='species' keeps spuhs/slashes/hybrids out.
+  const fullTax = await api('/v2/ref/taxonomy/ebird?fmt=json');
+  const fullByName = new Map(fullTax.filter((t) => t.category === 'species')
+    .map((t) => [t.comName.toLowerCase(), t.speciesCode]));
   await mkdir(OUT_DIR, { recursive: true });
 
   let built = 0, skipped = 0, failedCharts = 0;
@@ -157,8 +168,11 @@ async function build(args) {
         const text = await fetchBarchart(h.locId, { cookie });
         const { freqByName, sampleSize } = parseBarchart(text);
         const freqByMonth = {};
+        let curated = 0;
         for (const [name, months] of Object.entries(freqByName)) {
-          const sc = nameToCode[name.toLowerCase()];
+          const key = name.toLowerCase();
+          const sc = nameToCode[key] || fullByName.get(key);
+          if (nameToCode[key]) curated++;
           if (sc) freqByMonth[sc] = months.map((x) => Math.round(x * 1000) / 1000);
         }
         hotspots.push({
@@ -170,7 +184,7 @@ async function build(args) {
           freqByMonth,
           checklistsByMonth: sampleSize || null,
         });
-        console.log(`  ${h.locId} ${h.locName}: ${Object.keys(freqByMonth).length} of our species`);
+        console.log(`  ${h.locId} ${h.locName}: ${Object.keys(freqByMonth).length} species stored (${curated} curated)`);
       } catch (e) {
         failedCharts++;
         console.warn(`  ${h.locId} ${h.locName}: ${e.message} — hotspot dropped`);

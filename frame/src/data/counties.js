@@ -1,6 +1,7 @@
 // =============================================================================
 // COUNTY VOCABULARY — every county the planner can cover: all 58 California
-// counties plus the 5 Nevada counties ringing Lake Tahoe / Reno.
+// counties, the 5 Nevada counties ringing Lake Tahoe / Reno, and the 5
+// Greater-Yellowstone counties (WY/MT/ID — data-only for now, see below).
 // =============================================================================
 // Keys are eBird region codes (US-<state>-<3-digit county FIPS>), which is also
 // how the per-county data files are named (data/counties/<code>.json) and how
@@ -88,6 +89,17 @@ export const COUNTIES = {
   'US-NV-029': { name: 'Storey (NV)' },
   'US-NV-031': { name: 'Washoe (NV)' },
   'US-NV-510': { name: 'Carson City (NV)' },
+  // --- Greater Yellowstone (data captured 2026-07-18 while a cookie was live;
+  // see the FULL-taxonomy fallback in build-counties.mjs — these carry EVERY
+  // species, so later species-list curation needs no rebuild). NO region/map
+  // UI yet: county-shapes.js + MAP_PROJECTION are California-fitted, so these
+  // have no shapes and can't be picked on the map — the Yellowstone REGION is
+  // a separate, larger piece of work (projection, shapes, basemap, species).
+  'US-WY-029': { name: 'Park (WY)', depth: FULL_DEPTH },      // Yellowstone NE: Mammoth, Lamar, Canyon, Lake
+  'US-WY-039': { name: 'Teton (WY)', depth: FULL_DEPTH },     // Yellowstone S + Grand Teton NP, Jackson
+  'US-MT-031': { name: 'Gallatin (MT)', depth: FULL_DEPTH },  // West Yellowstone entrance, park NW corner
+  'US-MT-067': { name: 'Park (MT)', depth: FULL_DEPTH },      // Gardiner / north entrance, Paradise Valley
+  'US-ID-043': { name: 'Fremont (ID)', depth: FULL_DEPTH },   // Island Park / Harriman SP, Bechler corner
 };
 
 export function countyDepth(code) {
