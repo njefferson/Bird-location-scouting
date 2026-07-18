@@ -361,6 +361,29 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn.labelled .mark-ico, .seen-btn.labelled .mark-ico { display: inline-flex; align-items: center; }
 .star-btn.labelled .mark-ico svg { width: 18px; height: 18px; }
 .seen-btn.labelled .mark-ico { font-size: 16px; line-height: 1; }
+/* Install ("add to home screen") — banner + steps. Banner mirrors .freshbar but
+   in the accent family (an invitation, not a warning). */
+.installbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
+  border: 1px solid var(--accent); background: var(--accent-wash); }
+.install-ico { flex: 0 0 auto; color: var(--accent-ink); display: inline-grid; place-content: center; }
+.install-ico svg { display: block; }
+.install-msg { flex: 1 1 180px; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.install-msg strong { font-weight: 700; color: var(--accent-ink); }
+.install-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
+.install-dialog { border: none; border-radius: 14px; padding: 0; max-width: 420px; width: calc(100% - 32px);
+  background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,.28); }
+.install-dialog::backdrop { background: rgba(0,0,0,.4); }
+.install-body { padding: 22px 20px; }
+.install-body h2 { font-size: 18px; margin: 0 0 12px; padding-right: 30px; }
+.install-body p { font-size: 14px; margin: 8px 0; }
+.install-body .btn.primary { margin-bottom: 12px; }
+.install-steps { margin: 8px 0; padding-left: 22px; font-size: 14px; }
+.install-steps li { margin: 7px 0; line-height: 1.4; }
+.inline-ico { display: inline-flex; vertical-align: -3px; color: var(--accent-ink); }
+.install-done { color: var(--facet-mode-ink, var(--accent-ink)); font-weight: 600; font-size: 14px; }
+.setting .install-steps strong, .install-body .install-steps strong { color: var(--accent-ink); }
+
 .star-btn.labelled.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); }
 /* seen-on: the slate cue is the wash + border; text stays --ink so it clears AA
    (slate-on-slate-wash is only 3.8:1 in the light theme). */

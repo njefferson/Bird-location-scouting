@@ -16,6 +16,7 @@ import { mountAbout } from './ui/about.js';
 import { mountThemeToggle } from './ui/theme.js';
 import { maybeShowWhatsNew } from './ui/whatsnew.js';
 import { loadThumbs } from './ui/thumbs.js';
+import { installBanner } from './ui/install.js';
 
 const state = {
   monthIdx: new Date().getMonth(), // default = current month (§5)
@@ -170,6 +171,9 @@ function render(opts = {}) {
   // main view (just under the region pills), not only the ranked ones. Null
   // while the data is fresh or the user has dismissed this build date.
   const fresh = freshnessBanner(nav); if (fresh) app.prepend(fresh);
+  // "Add to home screen" nudge for new users (hidden once installed/dismissed).
+  // Not on Settings, which carries the permanent step-by-step section instead.
+  if (h !== '#/settings') { const inst = installBanner(nav); if (inst) app.prepend(inst); }
   app.prepend(renderRegionBar());
 }
 
