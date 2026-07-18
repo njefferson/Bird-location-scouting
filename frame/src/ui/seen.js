@@ -38,15 +38,20 @@ function primaryHabitat(s) {
  * A "seen" toggle for one species. `onToggle(nowSeen)` lets the caller update
  * its own surrounding UI (dimming, counts) without a full re-render.
  */
-export function seenButton(s, onToggle) {
-  const btn = el('button.seen-btn', {
+export function seenButton(s, onToggle, opts = {}) {
+  const labelled = !!opts.label;
+  const btn = el('button.seen-btn' + (labelled ? '.labelled' : ''), {
     'aria-label': isSeen(s.name) ? `Remove ${s.name} from your seen list` : `Mark ${s.name} as seen`,
     title: isSeen(s.name) ? 'On your life list — tap to remove' : 'Mark as seen',
   });
+  const icon = labelled ? el('span.mark-ico', { 'aria-hidden': 'true' }) : null;
+  const label = labelled ? el('span.mark-label') : null;
+  if (labelled) btn.append(icon, label);
   const paint = () => {
     const on = isSeen(s.name);
     btn.classList.toggle('on', on);
-    btn.textContent = on ? '✓' : '＋';
+    if (labelled) { icon.textContent = on ? '✓' : '＋'; label.textContent = on ? 'On life list' : 'Mark seen'; }
+    else btn.textContent = on ? '✓' : '＋';
     btn.title = on ? 'On your life list — tap to remove' : 'Mark as seen';
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   };
@@ -189,7 +194,7 @@ export function renderSeen(root, state, nav) {
     const node = el('div.tg-row.seen-row', { class: isSeen(s.name) ? 'on' : '' }, [
       seenButton(s, () => { node.classList.toggle('on', isSeen(s.name)); repaintSummary(); }),
       el('div.tg-row-main', {}, [
-        speciesThumb(s, 40),
+        speciesThumb(s, 40, () => { state.speciesQuery = s.name; nav.go('#/species'); }),
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),

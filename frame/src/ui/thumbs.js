@@ -43,10 +43,15 @@ function guildGlyph(s, px) {
 
 /**
  * Leading avatar for a species — photo when available, guild silhouette when not.
- * @param s     species object (uses s.code, s.guild)
- * @param size  box size in px (default 30)
+ * @param s      species object (uses s.code, s.guild)
+ * @param size   box size in px (default 30)
+ * @param onOpen optional click handler — when given, the photo becomes a tap
+ *               target (pointer only) that opens the species, mirroring the
+ *               species-name link. Kept aria-hidden / off the tab order: it's a
+ *               decorative duplicate of an accessible name link (or the Species
+ *               search), so it adds a touch shortcut without keyboard clutter.
  */
-export function speciesThumb(s, size = 30) {
+export function speciesThumb(s, size = 30, onOpen = null) {
   const box = el('span.sp-thumb', { 'aria-hidden': 'true', style: `--thumb:${size}px` });
   if (s && s.code && THUMBS && THUMBS[s.code]) {
     const img = el('img.sp-thumb-img', {
@@ -59,6 +64,10 @@ export function speciesThumb(s, size = 30) {
   } else {
     box.classList.add('is-fallback');
     box.append(guildGlyph(s, size));
+  }
+  if (onOpen) {
+    box.classList.add('clickable');
+    box.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); onOpen(); });
   }
   return box;
 }
