@@ -189,7 +189,7 @@ export function renderSeen(root, state, nav) {
     const node = el('div.tg-row.seen-row', { class: isSeen(s.name) ? 'on' : '' }, [
       seenButton(s, () => { node.classList.toggle('on', isSeen(s.name)); repaintSummary(); }),
       el('div.tg-row-main', {}, [
-        speciesThumb(s, 34),
+        speciesThumb(s, 40),
         el('span.tg-name', {}, s.name),
         el('span.chip', {}, STATUS_LABEL[s.status] || s.status),
       ]),

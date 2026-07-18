@@ -534,7 +534,7 @@ function speciesFacetRow(s) {
   const parts = speciesFacetIcons(s).map((fi) =>
     fi.facet === 'guild' ? (GUILDS[fi.key]?.short || fi.label) : fi.label);
   return el('span.sp-facet-line', {}, [
-    speciesThumb(s, 26),
+    speciesThumb(s, 40),
     el('span.sp-facet-note', {}, parts.length ? `(${parts.join(' · ')})` : ''),
   ]);
 }
@@ -660,6 +660,7 @@ export function renderSpecies(root, state, nav) {
 function speciesPanel(s, state, nav, onFacetChange) {
   const panel = el('div.sp-panel', { class: isSeen(s.name) ? 'is-seen' : '' });
   const head = el('div.sp-head', {}, [
+    speciesThumb(s, 56),
     starButton(s),
     seenButton(s, () => panel.classList.toggle('is-seen', isSeen(s.name))),
     el('h2', {}, s.name),
