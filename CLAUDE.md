@@ -153,6 +153,41 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v39 SHIPPED 2026-07-18 (PR #47, squash fb745f7): "Yellowstone birds now count"
+  — the species-curation pass v38 flagged as its natural follow-up. MERGED on
+  Noah's "promote to main". Added 99 Rocky-Mountain / Greater-Yellowstone species
+  to src/data/species.js (SPECIES now 272; taxonomy.json 173→272) — the northern
+  birds the region's data reports but the CA-grown curated list didn't count.
+  CHOSEN FROM THE REGION'S OWN DATA, not guessed: new `codes` command in
+  build-counties.mjs lists species present-but-uncounted, resolved code→name vs
+  the live eBird taxonomy, sorted by peak freq (run via dump-codes.yml — needs
+  only the API token, no cookie). Each species authored with full facets
+  (guild/size/nest/behavior/habitat + note); eastern/pelagic vagrants in the data
+  deliberately EXCLUDED. NO DATA REBUILD/COOKIE NEEDED — v37's full-taxonomy
+  capture already stored every species by code; only taxonomy.json (name→code)
+  needed regenerating, done by NEW sync-taxonomy.yml (validate names — hard gate,
+  exit 1 on a typo — → rewrite taxonomy.json → commit+deploy the branch it runs
+  on; dispatch it on staging then promote). sw.js → frame-v39. WHY CALIFORNIA IS
+  SAFE (verified, and the KEY correctness fact): every hotspot has real
+  freqByMonth, so inference.js's model path NEVER fires — a species counts only
+  where eBird actually reports it, else a real 0 (inference.js step 1b). No
+  phantom presence. A few added species also occur in CA (Killdeer, American
+  Crow, House Sparrow, Am. White Pelican) and were genuinely missing from the CA
+  count before — they now count there too from real data (a gain, not a
+  regression). GOTCHAs: (1) species NAMES must exactly match eBird comName or
+  validate fails the job — authored from the dump's exact strings (e.g. "Western
+  Warbling Vireo" not "Warbling Vireo"=wewvir2, "Northern Yellow Warbler",
+  "Canada Jay", "American Goshawk", "Northern House Wren"). (2) apostrophe names
+  use double-quotes in species.js (`name: "Barrow's Goldeneye"`) — a
+  `grep "name: '"` miscounts them. (3) workflow_dispatch needs the workflow file
+  on the DEFAULT branch (main) to be dispatchable on another ref — so
+  sync-taxonomy.yml was landed on main first, then dispatched on staging.
+  Verified headless on the deployed staging build: search finds Trumpeter
+  Swan/Boreal Owl, YS hotspots 55-95 species likely (real data), CA Home
+  unchanged (50 cards/~70 likely), schema clean (no dup names, all facet vocab
+  valid), zero pageerrors. REUSABLE: `codes`+`sync-taxonomy` make curating any
+  future region's specialties a quick no-rebuild job. NEEDS-HIS-HANDS: a birder's
+  eye on the facet calls (size/nest/behavior) + notes — my authoring.
 - v38 SHIPPED 2026-07-18 (PR #46, squash 9512dfa): "YELLOWSTONE" — the app's
   FIRST REGION OUTSIDE CALIFORNIA, for Noah's daughter's trip (his "I was wrong
   about Yosemite. My daughter is going to Yellowstone"). MERGED on his
