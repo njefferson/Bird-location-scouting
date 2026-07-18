@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v37',
+    date: '2026-07-18',
+    changes: [
+      'Yosemite is now a built-in region. Tap the new “Yosemite” pill at the top to move the whole planner into the park — Yosemite Valley, Wawona, El Portal and Big Meadow on the west side, Tuolumne Meadows, Hetch Hetchy and Hodgdon Meadow up high. Like Home, it ships with the app and is stored on your device, so it works offline — which matters in a park where cell signal is thin. (Open the app once with a connection to pick up this update; after that it’s there without one.)',
+    ],
+  },
+  {
     version: 'v36',
     date: '2026-07-18',
     changes: [

@@ -104,4 +104,12 @@ export const COUNTY_CODES = Object.keys(COUNTIES);
 export const REGIONS = [
   { id: 'home', name: 'Home', counties: ['US-CA-067', 'US-CA-017', 'US-CA-061'] },
   { id: 'humboldt', name: 'Humboldt', counties: ['US-CA-023'] },
+  // Yosemite: Mariposa + Tuolumne hold every road-accessible park hotspot —
+  // Mariposa the Valley (Yosemite Valley, Wawona, El Portal, Big Meadow) and
+  // Tuolumne the high country (Tuolumne Meadows, Hetch Hetchy, Hodgdon Meadow).
+  // The park's Madera/Mono portions are trail-only wilderness; those counties'
+  // top spots are foothill/east-side, not the park, so they're left out to keep
+  // the region park-focused. Both files are PRECACHED in sw.js (small, ~470 KB)
+  // so the region works offline in a park with famously poor cell signal.
+  { id: 'yosemite', name: 'Yosemite', counties: ['US-CA-043', 'US-CA-109'] },
 ];

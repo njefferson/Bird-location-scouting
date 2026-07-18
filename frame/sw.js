@@ -1,6 +1,6 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v36';
+const CACHE = 'frame-v37';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
@@ -9,6 +9,10 @@ const ASSETS = [
   './src/model/inference.js', './src/model/scoring.js', './src/model/facets.js', './src/model/photo.js', './src/model/ebird.js', './src/model/regions.js', './src/model/geo.js', './src/model/targets.js', './src/model/seen.js', './src/model/lists.js', './src/model/freshness.js',
   './data/taxonomy.json',
   './data/counties/US-CA-067.json', './data/counties/US-CA-017.json', './data/counties/US-CA-061.json',
+  // Yosemite region (Mariposa + Tuolumne) — precached so it works offline in a
+  // park with poor cell signal. Small (~470 KB); unlike Humboldt (6 MB) it's
+  // cheap to ship. If these counties ever go full-depth, revisit precaching them.
+  './data/counties/US-CA-043.json', './data/counties/US-CA-109.json',
 ];
 
 const PRECACHED = new Set(ASSETS.map((u) => new URL(u, self.registration.scope).href));
