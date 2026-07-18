@@ -1,0 +1,28 @@
+# Dev aid: dump the species PRESENT in a region's county data but not yet in the
+# curated list (data/taxonomy.json), resolved code→common-name against the live
+# eBird taxonomy. Powers the species-curation pass (v39, Yellowstone) — codes are
+# never hand-typed into species.js, so this turns the codes already in the data
+# into authoritative names. Needs only EBIRD_API_TOKEN (no cookie); ~10 s.
+name: Dump uncounted species
+
+on:
+  workflow_dispatch:
+    inputs:
+      counties:
+        description: 'Space-separated county codes (e.g. "US-WY-029 US-WY-039 US-MT-031 US-MT-067 US-ID-043")'
+        type: string
+        required: true
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Dump uncounted species (code → name, by peak frequency)
+        env:
+          EBIRD_API_TOKEN: ${{ secrets.EBIRD_API_TOKEN }}
+          COUNTIES: ${{ inputs.counties }}
+        run: node frame/scripts/build-counties.mjs codes $COUNTIES

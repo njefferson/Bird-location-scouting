@@ -240,17 +240,50 @@ async function probe() {
   }
 }
 
+// --- codes: dump code → common name for species PRESENT in the given counties'
+// data but NOT yet in the curated list (data/taxonomy.json). A dev aid for the
+// species-curation pass (v39, Yellowstone): the county files store every real
+// species by eBird CODE, but codes must never be hand-typed into species.js —
+// so this resolves them to NAMES against the live taxonomy (needs only
+// EBIRD_API_TOKEN), sorted by peak frequency in the region, so the highest-
+// value uncounted birds are authored first. Read-only; writes nothing.
+async function dumpCodes(args) {
+  if (!token) { console.error('Set EBIRD_API_TOKEN.'); process.exit(1); }
+  const codes = args.filter((a) => /^US-/.test(a));
+  if (!codes.length) { console.error('Usage: codes US-WY-029 US-WY-039 …'); process.exit(1); }
+  const curated = new Set(Object.values(JSON.parse(await readFile(TAX_PATH, 'utf8'))));
+  const tax = await api('/v2/ref/taxonomy/ebird?fmt=json');
+  const nameByCode = new Map(tax.map((t) => [t.speciesCode, { name: t.comName, cat: t.category }]));
+  const peak = new Map();
+  for (const code of codes) {
+    const d = JSON.parse(await readFile(path.join(OUT_DIR, `${code}.json`), 'utf8'));
+    for (const h of d.hotspots) for (const [sc, months] of Object.entries(h.freqByMonth || {})) {
+      const p = months.length ? Math.max(...months) : 0;
+      if (p > (peak.get(sc) || 0)) peak.set(sc, p);
+    }
+  }
+  const rows = [...peak.entries()]
+    .filter(([sc]) => !curated.has(sc))
+    .map(([sc, p]) => ({ sc, p, ...(nameByCode.get(sc) || { name: '?', cat: '?' }) }))
+    .filter((r) => r.cat === 'species')  // drop spuhs/slashes/hybrids
+    .sort((a, b) => b.p - a.p);
+  console.log(`# ${rows.length} species present in ${codes.join(',')} but NOT curated (by peak freq):`);
+  for (const r of rows) console.log(`${r.p.toFixed(2)}\t${r.sc}\t${r.name}`);
+}
+
 // --- main --------------------------------------------------------------------
 const [cmd, ...rest] = process.argv.slice(2);
 if (cmd === 'taxonomy') { const ok = await taxonomy(); process.exit(ok ? 0 : 1); }
 else if (cmd === 'validate') await validate();
 else if (cmd === 'build') await build(rest);
 else if (cmd === 'probe') await probe();
+else if (cmd === 'codes') await dumpCodes(rest);
 else {
-  console.log('Usage: build-counties.mjs <taxonomy | validate | build [--force] [regionCodes...] | probe>');
+  console.log('Usage: build-counties.mjs <taxonomy | validate | build [--force] [regionCodes...] | probe | codes [regionCodes...]>');
   console.log('  taxonomy  resolve species names → codes (writes data/taxonomy.json)');
   console.log('  validate  check every species name exists in the eBird taxonomy');
   console.log('  build     [default: all counties] enumerate hotspots + download bar charts');
   console.log('  probe     diagnostic: is the bar-chart endpoint public or login-gated?');
+  console.log('  codes     dump uncounted species (code→name) for the given counties');
   process.exit(1);
 }
