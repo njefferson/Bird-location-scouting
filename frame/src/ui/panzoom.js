@@ -71,7 +71,7 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // invalidate style for every mounted var() consumer, so they are written ONLY
   // once the box has stopped (trailing timer) — during the gesture the already-
   // drawn content simply scales with the viewBox, then snaps at rest.
-  let raf = 0, varsT = 0;
+  let raf = 0, varsT = 0, lastFp = 0;
   function writeVars() {
     const zf = W / vw;
     const tx = parseFloat(svg.style.getPropertyValue('--tx')) || 1.3;
@@ -89,7 +89,20 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     // (releases first, so the global text/pin restyle hits the smallest set) —
     // writing it here on a timer raced the swap and restyled the big pre-swap
     // set (the freeze Noah saw exactly when the text resized).
+    // EXCEPTION, pins only: with the cap fully stale, zooming in blew the
+    // mounted pins up into giant translucent rings (screen-sized overdraw
+    // Safari re-rasterised every gesture frame). --fp alone updates at ~8 Hz —
+    // circles, no text, a tiny restyle — keeping dots near-size mid-gesture.
     if (!deferVars) { clearTimeout(varsT); varsT = setTimeout(writeVars, 90); }
+    else {
+      const now = performance.now();
+      if (now - lastFp > 120) {
+        lastFp = now;
+        const zf = W / vw;
+        const pcap = parseFloat(svg.style.getPropertyValue('--pcap')) || 4;
+        svg.style.setProperty('--fp', (Math.min(zf, pcap) / zf).toFixed(4));
+      }
+    }
     if (viewCull) cull(W / vw); // maps that mount/unmount their own DOM opt out
     if (onZoom) onZoom(W / vw);
   };

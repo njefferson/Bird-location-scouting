@@ -527,6 +527,19 @@ table.species-table tr[onclick] { cursor: pointer; }
   border: 1.5px solid var(--ink); border-top: none; }
 .map-scale-zf { color: var(--dim); }
 
+/* Map update progress — per-type live counts while the stop-swap runs, above
+   the scale. The spinner animates transform on the compositor, so it keeps
+   turning even when the main thread is busy: spinner turning + counts stuck =
+   the stuck phase names the culprit; both frozen = renderer stall. */
+.map-progress { position: absolute; left: 10px; bottom: 38px; display: flex; align-items: center;
+  gap: 7px; padding: 4px 9px; border-radius: 7px; pointer-events: none;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink); }
+.map-progress-spin { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto;
+  border: 2px solid var(--track); border-top-color: var(--accent);
+  animation: mpspin .8s linear infinite; }
+@keyframes mpspin { to { transform: rotate(360deg); } }
+
 /* Deep-zoom PERFORMANCE: the map still draws everything IN VIEW — long lines are
    chunked (ui/basemap.js) so the viewport cull drops the off-screen pieces, fills
    cull whole by bbox, and every element's cull bbox is precomputed from its data

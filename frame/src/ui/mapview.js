@@ -228,7 +228,7 @@ export function renderMapView(root, state, nav) {
   const scaleTxt = el('span.map-scale-txt');
   wrap.append(el('div.map-scale', { 'aria-hidden': 'true' }, [scaleBar, scaleTxt]));
   const NICE_MI = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
-  function updateScale(vb, zf) {
+  function updateScale(vb, zf, ms) {
     const rect = svg.getBoundingClientRect();
     if (!rect.width) return;
     const pxPerUnit = Math.min(rect.width / vb.width, rect.height / vb.height);
@@ -238,8 +238,26 @@ export function renderMapView(root, state, nav) {
     for (const n of NICE_MI) { if (n / miPerPx <= maxPx) mi = n; else break; }
     scaleBar.style.width = `${Math.round(mi / miPerPx)}px`;
     scaleTxt.textContent = `${mi < 1 ? mi : Math.round(mi)} mi`;
-    scaleTxt.append(el('span.map-scale-zf', {}, ` ·×${zf >= 10 ? Math.round(zf) : zf.toFixed(1)}`));
+    // ×zoom + last update duration, small and dim: any screenshot pins the
+    // exact zoom AND how long the last swap took.
+    scaleTxt.append(el('span.map-scale-zf', {}, ` ·×${zf >= 10 ? Math.round(zf) : zf.toFixed(1)}${ms != null ? ` ·${(ms / 1000).toFixed(1)}s` : ''}`));
   }
+
+  // PROGRESS READOUT (Noah's ask) — while the map updates at rest, a small
+  // overlay shows each data type's live count ("free 120/300 · pins 40/210 ·
+  // labels 4/24"), updated once per slice. It's an HTML overlay OUTSIDE the
+  // SVG, so updating it never invalidates map rendering. The spinner runs on a
+  // compositor-driven CSS animation, which keeps turning even while the main
+  // thread is busy — so a screenshot distinguishes "working" (spinner turning,
+  // counts advancing), "main thread blocked" (spinner turning, counts stuck —
+  // the stuck phase names the culprit), and "renderer stalled" (both frozen).
+  const progTxt = el('span.map-progress-txt');
+  const prog = el('div.map-progress', { 'aria-hidden': 'true', hidden: true }, [el('span.map-progress-spin'), progTxt]);
+  wrap.append(prog);
+  let progHideT = 0;
+  const progUpdate = (text) => { prog.hidden = false; progTxt.textContent = text; };
+  const progDone = (ms) => { progTxt.textContent = `updated ·${(ms / 1000).toFixed(1)}s`; clearTimeout(progHideT); progHideT = setTimeout(() => { prog.hidden = true; }, 1400); };
+  const progHide = () => { clearTimeout(progHideT); prog.hidden = true; };
 
   // VIRTUALISATION — the map's core loading rule (Noah's): the DOM only ever
   // holds what's inside the window. When the box stops, startSwap() walks the data lists
@@ -250,25 +268,29 @@ export function renderMapView(root, state, nav) {
   // the plain data arrays. Labels ride the same pass: only the non-overlapping,
   // best-first subset in view exists at all (cap LABEL_MAX).
   const LABEL_MAX = 36, CHAR_W = 0.56, LINE_H = 1.25, LABEL_ON = homeZoom * 2.4;
-  function relabel(vb, zf) {
+  // Decide the label set for this height (pure JS, no DOM): which mounted
+  // labels must go, and which new ones to mount — the swap applies them sliced.
+  function planLabels(vb, zf) {
     const fk = parseFloat(svg.style.getPropertyValue('--fk')) || 1;
     const fs = 4.5 * fk; // on-screen-capped label size, in user units
-    const placed = [];
-    let shown = 0;
-    for (const it of labelItems) {
-      let show = false;
-      if (zf >= LABEL_ON && shown < LABEL_MAX &&
-          it.x >= vb.x && it.x <= vb.x + vb.width && it.y >= vb.y && it.y <= vb.y + vb.height) {
+    const placed = [], keep = new Set();
+    if (zf >= LABEL_ON) {
+      let shown = 0;
+      for (const it of labelItems) {
+        if (shown >= LABEL_MAX) break;
+        if (it.x < vb.x || it.x > vb.x + vb.width || it.y < vb.y || it.y > vb.y + vb.height) continue;
         const w = Math.max(6, it.name.length * fs * CHAR_W), h = fs * LINE_H;
         const lx1 = it.x - w / 2, lx2 = it.x + w / 2;
         const ly1 = it.y + fs * 1.7 - h / 2, ly2 = ly1 + h;
         let clash = false;
         for (const p of placed) { if (!(lx2 < p.x1 || lx1 > p.x2 || ly2 < p.y1 || ly1 > p.y2)) { clash = true; break; } }
-        if (!clash) { show = true; placed.push({ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }); shown++; }
+        if (!clash) { placed.push({ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }); keep.add(it); shown++; }
       }
-      if (show && !it.on) { if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; }
-      else if (!show && it.on) { it.el.remove(); it.on = false; }
     }
+    return {
+      hide: labelItems.filter((it) => it.on && !keep.has(it)),
+      show: [...keep].filter((it) => !it.on),
+    };
   }
   // THE SWAP, run ONLY when the box has stopped (Noah's rule — nothing happens
   // while the box moves): release everything that isn't in the box, mount what
@@ -319,25 +341,50 @@ export function renderMapView(root, state, nav) {
     for (const v of [lmVirt, ctyVirt]) {
       for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, v.group, ensureEl]); else toRemove.push(it); } }
     }
-    let ri = 0, mi = 0, varsDone = false;
+    // Per-type totals for the progress readout (pins vs map geometry vs names).
+    const isPin = (g) => g === gPins || g === gPinsHot;
+    const totPins = toMount.reduce((n, [, g]) => n + isPin(g), 0);
+    const totMap = toMount.length - totPins;
+    let ri = 0, mi = 0, mPins = 0, li = 0, varsDone = false, labelPlan = null;
+    const t0 = performance.now();
+    const progress = () => {
+      const parts = [];
+      if (toRemove.length) parts.push(`free ${ri}/${toRemove.length}`);
+      if (totMap) parts.push(`map ${Math.min(mi - mPins, totMap)}/${totMap}`);
+      if (totPins) parts.push(`pins ${mPins}/${totPins}`);
+      if (labelPlan && labelPlan.show.length) parts.push(`labels ${li}/${labelPlan.show.length}`);
+      progUpdate(parts.join(' · ') || 'updating…');
+    };
     const step = () => {
       swapRaf = 0;
-      if (gen !== swapGen) return; // box moved — abandon; the queue dies here
+      if (gen !== swapGen) { progHide(); return; } // box moved — abandon; queue dies
       let ops = 0;
-      while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
-      if (ri >= toRemove.length && !varsDone) { varsDone = true; pz.applyVars(); ops = OPS; } // the one restyle gets its own frame
-      else if (varsDone) {
+      if (ri < toRemove.length) {
+        while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
+      } else if (!varsDone) {
+        varsDone = true; pz.applyVars(); // the one restyle gets its own frame
+      } else if (mi < toMount.length) {
         const frags = new Map();
         while (mi < toMount.length && ops < OPS) {
           const [it, group, ensure] = toMount[mi++];
           let f = frags.get(group); if (!f) { f = document.createDocumentFragment(); frags.set(group, f); }
-          f.append(ensure(it)); it.on = true; ops++;
+          f.append(ensure(it)); it.on = true; if (isPin(group)) mPins++; ops++;
         }
         for (const [group, f] of frags) group.append(f);
+      } else if (!labelPlan) {
+        labelPlan = planLabels(vb, zf);
+        for (const it of labelPlan.hide) { it.el.remove(); it.on = false; } // removals are cheap
+      } else if (li < labelPlan.show.length) {
+        // Halo'd text is Safari's priciest paint — mount labels at the hardest cap.
+        while (li < labelPlan.show.length && ops < 8) { const it = labelPlan.show[li++]; if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; ops++; }
+      } else {
+        const ms = performance.now() - t0;
+        updateScale(vb, zf, ms);
+        progDone(ms);
+        return;
       }
-      if (ri < toRemove.length || !varsDone || mi < toMount.length) { swapRaf = requestAnimationFrame(step); return; }
-      relabel(vb, zf); // final slice: the ≤36 labels for this height
-      updateScale(vb, zf);
+      progress();
+      swapRaf = requestAnimationFrame(step);
     };
     step();
   }
@@ -352,9 +399,11 @@ export function renderMapView(root, state, nav) {
     deferVars: true,
     onZoom: () => {
       // NOTHING happens while the box moves — any in-flight swap is abandoned
-      // and freed IMMEDIATELY, and the one settle swap is pushed back.
+      // and freed IMMEDIATELY (its progress readout too), and the one settle
+      // swap is pushed back.
       swapGen++;
       if (swapRaf) { cancelAnimationFrame(swapRaf); swapRaf = 0; }
+      progHide();
       clearTimeout(syncT);
       syncT = setTimeout(startSwap, 90);
     },
