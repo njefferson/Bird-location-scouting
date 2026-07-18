@@ -12,7 +12,7 @@ export const CHANGELOG = [
     version: 'v39',
     date: '2026-07-18',
     changes: [
-      'Yellowstone birds now count. The app’s species list grew up in California, so on the Yellowstone maps a lot of northern birds were sitting in the data uncounted. This adds 83 Rocky-Mountain species — Trumpeter Swan, Barrow’s Goldeneye, Harlequin Duck, Dusky and Ruffed Grouse, Greater Sage-Grouse, the three-toed and black-backed woodpeckers, Boreal Owl, Calliope Hummingbird, the rosy-finches, Canada Jay, and the willow-and-sage songbirds — each with its type, size and habitat so it filters and ranks like every other bird. They were already in your downloaded data; now they show up in the counts, the rankings and the species search. (No new download — this just teaches the app to read what was already there.)',
+      'Yellowstone birds now count. The app’s species list grew up in California, so on the Yellowstone maps a lot of northern birds were sitting in the data uncounted. This adds 99 Rocky-Mountain species — Trumpeter Swan, Barrow’s Goldeneye, Harlequin Duck, Dusky and Ruffed Grouse, Greater Sage-Grouse, the three-toed and black-backed woodpeckers, Boreal Owl, Calliope Hummingbird, the rosy-finches, Canada Jay, and the willow-and-sage songbirds — each with its type, size and habitat so it filters and ranks like every other bird. They were already in your downloaded data; now they show up in the counts, the rankings and the species search. (No new download — this just teaches the app to read what was already there.)',
     ],
   },
   {
