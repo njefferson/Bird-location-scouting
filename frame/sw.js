@@ -1,13 +1,20 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-v40';
+const CACHE = 'frame-v41';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
-  './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js', './src/ui/theme.js', './src/ui/whatsnew.js', './src/ui/regionpicker.js', './src/ui/mapview.js', './src/ui/panzoom.js', './src/ui/basemap.js', './src/ui/scoreinfo.js', './src/ui/facetbar.js', './src/ui/photo.js', './src/ui/targets.js', './src/ui/seen.js', './src/ui/freshness.js',
+  './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js', './src/ui/theme.js', './src/ui/whatsnew.js', './src/ui/regionpicker.js', './src/ui/mapview.js', './src/ui/panzoom.js', './src/ui/basemap.js', './src/ui/scoreinfo.js', './src/ui/facetbar.js', './src/ui/photo.js', './src/ui/targets.js', './src/ui/seen.js', './src/ui/freshness.js', './src/ui/thumbs.js',
   './src/data/species.js', './src/data/facets.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js', './src/data/county-shapes.js', './src/data/basemap.js', './src/data/water-shapes.js', './src/data/map-areas.js', './src/data/yellowstone-shapes.js', './src/data/yellowstone-basemap.js',
   './src/model/inference.js', './src/model/scoring.js', './src/model/facets.js', './src/model/photo.js', './src/model/ebird.js', './src/model/regions.js', './src/model/geo.js', './src/model/targets.js', './src/model/seen.js', './src/model/lists.js', './src/model/freshness.js',
   './data/taxonomy.json',
+  // Species photo-thumbnail manifest (code -> credit). Small (~a few KB) and
+  // precached so the app knows offline which species have a photo. The images
+  // themselves (data/thumbs/*.webp, ~0.5 MB total) are DELIBERATELY not
+  // precached — they runtime-cache on first view (stale-while-revalidate, then
+  // carried forward across version bumps), keeping the install light. Offline
+  // before a photo's first view, the UI falls back to the guild silhouette.
+  './data/thumbs.json',
   './data/counties/US-CA-067.json', './data/counties/US-CA-017.json', './data/counties/US-CA-061.json',
   // Yosemite region (Mariposa + Tuolumne) — precached so it works offline in a
   // park with poor cell signal. ~3 MB since the full-depth data landed (v37);
