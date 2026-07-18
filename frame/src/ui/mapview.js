@@ -10,7 +10,7 @@ import { el, clear } from './dom.js';
 import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
-import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
+import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots, hotTierCount } from '../model/scoring.js';
@@ -79,17 +79,22 @@ export function renderMapView(root, state, nav) {
     `Map of ${region.name} hotspots — pins need a pointer; the Planner tab lists the same spots as a keyboard-accessible table.`);
 
   // County fills: the far counties dim, the active region's counties tinted.
-  // (Always mounted — 63 simple polygons is the cheap, stable ground layer.)
+  // VIRTUALISED like everything else (they were the last always-mounted giants:
+  // 63 full-canvas polygons repainted at map scale were most of what remained
+  // of the deep-zoom transitional 1.6-3s frames in Noah's readouts). The group
+  // keeps them at the bottom of the z-order; the swap mounts only in-box ones.
   const inRegion = new Set(region.counties);
-  for (const code of Object.keys(A.shapes)) {
-    const path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', A.shapes[code]);
-    path.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
+  const gCounty = document.createElementNS(SVG_NS, 'g');
+  svg.append(gCounty);
+  const countyItems = Object.keys(A.shapes).map((code) => {
+    const p = document.createElementNS(SVG_NS, 'path');
+    p.setAttribute('d', A.shapes[code]);
+    p.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = COUNTIES[code]?.name || code;
-    path.append(title);
-    svg.append(path);
-  }
+    p.append(title);
+    return { el: p, bb: bboxOfD(A.shapes[code]), on: false };
+  });
 
   // Orientation landmarks (rivers, roads, lakes, parks) — VIRTUALISED: the group
   // is mounted here for z-order, but its pieces live in a data list and only the
@@ -97,6 +102,7 @@ export function renderMapView(root, state, nav) {
   // out, the view holds the whole county so everything mounts — same picture as
   // before; zoomed in, the DOM holds just the local geometry.
   const bmGroup = basemapShell(svg, 'bm-hotspot', area);
+  const bmClip = bmGroup.getAttribute('clip-path');
   const bmItems = basemapItems(area).map((it) => ({ ...it, el: null, on: false }));
 
   // Re-stroke the region's counties ON TOP of the basemap so their outline is
@@ -414,6 +420,7 @@ ${dbgLog.join('\n')}`;
     const ensureBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } return it.el; };
     const ensurePin = (it) => (it.el || (it.el = makePin(it)));
     const ensureEl = (it) => it.el;
+    for (const it of countyItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, gCounty, ensureEl]); else toRemove.push(it); } }
     for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else toRemove.push(it); } }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
@@ -462,7 +469,12 @@ ${dbgLog.join('\n')}`;
       } else if (ri < toRemove.length) {
         while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
       } else if (!varsDone) {
-        varsDone = true; pz.applyVars(); dbgEvent('vars write'); // the one restyle gets its own frame
+        varsDone = true; pz.applyVars();
+        // Deep zoom: drop the basemap clip — Safari rasterises the clip
+        // geometry at map scale (huge offscreen surfaces), and inside a county
+        // there is nothing to clip away. Restored on the way back out.
+        if (zf >= 10) bmGroup.removeAttribute('clip-path'); else if (bmClip) bmGroup.setAttribute('clip-path', bmClip);
+        dbgEvent('vars write'); // the one restyle gets its own frame
       } else if (!labelPlan) {
         labelPlan = planLabels(vb, zf);
         for (const it of labelPlan.hide) { it.el.remove(); it.on = false; } // removals are cheap
