@@ -5,6 +5,10 @@ match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
 tell which build you're running. Source of truth: `frame/src/data/changelog.js`
 (rendered in-app under About → "What's new" and published to GitHub Releases).
 
+## v41 — 2026-07-18
+- Every bird now shows its face. Where each species used to sit behind a small grey silhouette of its group, there’s now an actual photo — a little rounded thumbnail — beside the name: in your target list, your life list, and each hotspot’s species table. 270 of the 272 birds have one; the two without a freely-licensed photo keep the old silhouette (as does any bird before its photo has loaded).
+- The photos come from Wikimedia Commons — freely-licensed images, each credited to its photographer under About → “Species photo credits”. (Not eBird’s photos: those belong to the people who took them and aren’t ours to bundle.) The whole set is about half a megabyte and loads quietly as you browse rather than all at once, so the app still installs light — and the silhouette always stands in when you’re offline and haven’t seen a bird’s photo yet.
+
 ## v40 — 2026-07-18
 - Sharing the app now shows a proper preview. When you send the link in Messages, WhatsApp, Slack or post it anywhere, it now unfurls into a card — the Frame icon, the name, and the tagline — instead of a bare URL. (The page had no preview image or share tags before; now it does.)
 

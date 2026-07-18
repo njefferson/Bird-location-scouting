@@ -34,8 +34,12 @@ on:
 permissions:
   contents: write
 
+# A DEDICATED group, NOT deploy-${ref}: deploy.yml uses deploy-${ref} with
+# cancel-in-progress:true, so sharing it means any push to the branch (which
+# triggers a deploy) CANCELS an in-flight thumbnail build mid-run. Its own final
+# wrangler step deploys the branch, so it doesn't need to serialise with deploy.
 concurrency:
-  group: deploy-${{ github.ref_name }}
+  group: thumbnails-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
