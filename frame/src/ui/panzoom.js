@@ -106,9 +106,13 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
         // changes with zoom — wrongly hid a label the declutter wanted shown (a
         // solo offshore pin's name vanished as Noah zoomed in). Leave them be.
         if (el.classList.contains('pin-name')) continue;
-        let bb; try { bb = el.getBBox(); } catch { continue; }
-        if (!bb || (bb.width === 0 && bb.height === 0)) continue;
-        cullItems.push({ el, x1: bb.x, y1: bb.y, x2: bb.x + bb.width, y2: bb.y + bb.height, off: false });
+        // Prefer a bbox precomputed from the geometry (basemap paths, pins) — it
+        // avoids a getBBox() layout storm over the whole county on the first deep
+        // zoom (the "it pauses like it's loading" freeze). Fall back to getBBox
+        // only for the few elements without one (e.g. text labels).
+        let b = el.__bb;
+        if (!b) { let bb; try { bb = el.getBBox(); } catch { continue; } if (!bb || (bb.width === 0 && bb.height === 0)) continue; b = [bb.x, bb.y, bb.x + bb.width, bb.y + bb.height]; }
+        cullItems.push({ el, x1: b[0], y1: b[1], x2: b[2], y2: b[3], off: false });
       }
     }
     const mx = vw * 0.25, my = vh * 0.25;

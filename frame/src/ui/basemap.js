@@ -28,10 +28,40 @@ import { countyCentroid } from '../model/geo.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+// Bounding box straight from the path's own numbers ("M x y L x y …"), stored on
+// the element as __bb = [x1,y1,x2,y2]. The viewport cull reads this instead of
+// calling getBBox() at runtime — measuring every element in the county on the
+// first deep zoom was a synchronous LAYOUT STORM that froze the app mid-gesture
+// (Noah: "it pauses like it's loading"). Computing it here, from data we already
+// have, moves that cost to load time and spreads it across element creation.
+export function bboxOfD(d) {
+  const n = d.match(/-?[0-9.]+/g);
+  if (!n || n.length < 2) return null;
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (let i = 0; i + 1 < n.length; i += 2) {
+    const x = +n[i], y = +n[i + 1];
+    if (x < x1) x1 = x; if (y < y1) y1 = y; if (x > x2) x2 = x; if (y > y2) y2 = y;
+  }
+  return [x1, y1, x2, y2];
+}
+
+// Coarsen a closed shape for use as a CLIP path only — clipping doesn't need
+// every point, and a lighter clip region is much cheaper for Safari to evaluate
+// each frame. Never used for anything visible.
+function decimateRing(d, keep = 4) {
+  const n = d.match(/-?[0-9.]+/g);
+  if (!n || n.length < keep * 4) return d;
+  let out = `M${n[0]} ${n[1]}`;
+  for (let i = 2 * keep; i + 1 < n.length; i += 2 * keep) out += `L${n[i]} ${n[i + 1]}`;
+  return out + 'Z';
+}
+
 function path(d, cls) {
   const p = document.createElementNS(SVG_NS, 'path');
   p.setAttribute('d', d);
   p.setAttribute('class', cls);
+  const bb = bboxOfD(d);
+  if (bb) p.__bb = bb;
   return p;
 }
 
@@ -68,7 +98,7 @@ export function appendBasemap(svg, id = 'bm', area = 'california') {
   const defs = document.createElementNS(SVG_NS, 'defs');
   const clip = document.createElementNS(SVG_NS, 'clipPath');
   clip.setAttribute('id', id);
-  for (const code of Object.keys(shapes)) clip.append(path(shapes[code], 'clip-c'));
+  for (const code of Object.keys(shapes)) clip.append(path(decimateRing(shapes[code]), 'clip-c'));
   defs.append(clip);
   svg.append(defs);
 

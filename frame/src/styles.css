@@ -518,11 +518,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .hotspot-map .pin-name.lbl-show { visibility: visible; }
 
 /* Deep-zoom PERFORMANCE: the map still draws everything IN VIEW — long lines are
-   chunked (ui/basemap.js) so the viewport cull drops the off-screen pieces, and
-   fills cull whole by bbox. The one thing we drop once zoomed in is the county
-   CLIP-PATH: Safari re-evaluates it against the whole basemap every frame (much
-   of the lockup), and inside a zoomed-in view there's nothing to clip away. */
-.map-unclip .basemap { clip-path: none !important; }
+   chunked (ui/basemap.js) so the viewport cull drops the off-screen pieces, fills
+   cull whole by bbox, and every element's cull bbox is precomputed from its data
+   (no getBBox layout storm). The clip stays on but uses a decimated, cheap region. */
 
 /* Rubber-band pulse when a pinch pushes past the zoom limit — feedback, not lag. */
 .county-map.pz-limit-in { animation: pzLimitIn .22s ease-out; }

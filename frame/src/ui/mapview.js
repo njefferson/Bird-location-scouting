@@ -10,7 +10,7 @@ import { el, clear } from './dom.js';
 import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
-import { appendBasemap, appendCountyLabels, appendLandmarkLabels } from './basemap.js';
+import { appendBasemap, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots, hotTierCount } from '../model/scoring.js';
@@ -84,6 +84,7 @@ export function renderMapView(root, state, nav) {
     const path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', A.shapes[code]);
     path.setAttribute('class', 'county' + (inRegion.has(code) ? ' region' : ' far'));
+    path.__bb = bboxOfD(A.shapes[code]); // precomputed for the cull (no getBBox)
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = COUNTIES[code]?.name || code;
     path.append(title);
@@ -144,6 +145,7 @@ export function renderMapView(root, state, nav) {
     pin.setAttribute('r', r.toFixed(1));
     pin.setAttribute('class', hotIds.has(h.id) ? 'pin hot' : 'pin');
     pin.style.setProperty('--pr', r.toFixed(1));
+    pin.__bb = [x - r, y - r, x + r, y + r]; // precomputed for the cull (no getBBox)
     pin.dataset.id = h.id;
     const title = document.createElementNS(SVG_NS, 'title');
     title.textContent = `${h.name} · ${MONTHS[state.monthIdx]} · ${div} species likely`;
@@ -215,18 +217,12 @@ export function renderMapView(root, state, nav) {
   const pz = attachPanZoom(wrap, svg, {
     W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
-    onZoom: (z) => {
-      // Zoomed in, DROP THE BASEMAP CLIP-PATH. Safari re-evaluates the county
-      // clip against the whole basemap group every frame, which is a big part of
-      // the deep-zoom lockup; once you're zoomed in, the view sits inside the
-      // county so there's nothing to clip away anyway. The heavy geometry itself
-      // is handled by chunked lines + the viewport cull (nothing is deleted —
-      // what's in view still draws). Kept off until you're past the region view.
-      svg.classList.toggle('map-unclip', z >= 12);
+    onZoom: () => {
       // Recompute the visible label set after the gesture settles (fires on pan
-      // and zoom); debounced so it never runs mid-frame.
+      // and zoom); debounced so it never runs mid-frame, but short enough that
+      // labels catch up quickly after a pinch (they used to lag noticeably).
       clearTimeout(relabelT);
-      relabelT = setTimeout(relabel, 110);
+      relabelT = setTimeout(relabel, 70);
     },
     onTap: (e) => {
       const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-id]');
