@@ -104,6 +104,7 @@ export function renderMapView(root, state, nav) {
   // before; zoomed in, the DOM holds just the local geometry.
   const bmGroup = basemapShell(svg, 'bm-hotspot', area);
   const bmClip = bmGroup.getAttribute('clip-path');
+  let clipOff = false; // current clip state — toggled only on change (see swap vars phase)
   const bmItems = basemapItems(area).map((it) => ({ ...it, el: null, on: false }));
 
   // Re-stroke the region's counties ON TOP of the basemap so their outline is
@@ -317,8 +318,17 @@ export function renderMapView(root, state, nav) {
     dbgLast = now;
     if (now - dbgWorstAt > 2000) { dbgWorst = d; dbgWorstAt = now; }
     else if (d > dbgWorst) dbgWorst = d;
+    // Any long frame lands in the trace — INCLUDING outside swaps (mid-gesture,
+    // at idle), which the swap's own gap events can't see. A swap-time stall
+    // shows as gap+jank at the same timestamp; a jank alone means the browser
+    // stalled with no swap running — a different suspect entirely.
+    if (d > 250) mapLog(`jank ${Math.round(d)}ms`);
     dbgRaf = requestAnimationFrame(dbgFrame);
   }
+  // Returning from the background resumes rAF with a huge stale delta — reset
+  // so it isn't logged as a phantom jank (the log's own "page hidden" line
+  // already marks the real story).
+  document.addEventListener('visibilitychange', () => { if (svg.isConnected) dbgLast = 0; });
   const dbgOn = (arr) => arr.reduce((n, it) => n + (it.on ? 1 : 0), 0);
   let dbgLive = false; // becomes true once the svg is actually in the document
   function dbgRender() {
@@ -434,28 +444,46 @@ ${dbgLog.join('\n')}`;
     const inBox = (b) => !!b && !(b[2] < x1 || b[0] > x2 || b[3] < y1 || b[1] > y2);
     // Decide everything now; queue only the DOM operations. Mount entries carry
     // their target group so a slice can batch all appends into one fragment.
+    // DEEP-ZOOM FREE DEFERRAL (from Noah's iPhone trace): the 3s lockup was a
+    // BROWSER stall ("gap 3042ms") right after the first free slice at ×256 —
+    // while the same free counts were cheap at ×21/×112 (258 and 304 frees in
+    // ~0.27s). Removals hand Safari a rendering bill that scales with zoom
+    // depth. So past FREE_HOLD_ZF the swap HOLDS its frees: the items stay
+    // mounted (invisible — they're outside the box) and are re-queued by the
+    // first shallower swap, where freeing is proven cheap. Bounded: a deep view
+    // is ≤1/32 of the county, so deep panning accumulates slowly, and zooming
+    // out re-uses the held nodes instead of remounting them.
+    const FREE_HOLD_ZF = 32;
+    const holdFrees = zf >= FREE_HOLD_ZF;
+    let held = 0;
+    const freeN = { p: 0, b: 0, c: 0, n: 0 }; // pins/basemap/county fills/names
     const toRemove = [], toMount = [];
+    const drop = (it, t) => { if (holdFrees) held++; else { toRemove.push(it); freeN[t]++; } };
     const ensureBm = (it) => { if (!it.el) { it.el = document.createElementNS(SVG_NS, 'path'); it.el.setAttribute('d', it.d); it.el.setAttribute('class', it.cls); } return it.el; };
     const ensurePin = (it) => (it.el || (it.el = makePin(it)));
     const ensureEl = (it) => it.el;
-    for (const it of countyItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, gCounty, ensureEl]); else toRemove.push(it); } }
-    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else toRemove.push(it); } }
+    for (const it of countyItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, gCounty, ensureEl]); else drop(it, 'c'); } }
+    for (const it of bmItems) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, bmGroup, ensureBm]); else drop(it, 'b'); } }
     for (const it of pinItems) {
       const on = it.x >= x1 - r && it.x <= x2 + r && it.y >= y1 - r && it.y <= y2 + r;
-      if (on !== it.on) { if (on) toMount.push([it, it.hot ? gPinsHot : gPins, ensurePin]); else toRemove.push(it); }
+      if (on !== it.on) { if (on) toMount.push([it, it.hot ? gPinsHot : gPins, ensurePin]); else drop(it, 'p'); }
     }
     for (const v of [lmVirt, ctyVirt]) {
-      for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, v.group, ensureEl]); else toRemove.push(it); } }
+      for (const it of v.items) { const on = inBox(it.bb); if (on !== it.on) { if (on) toMount.push([it, v.group, ensureEl]); else drop(it, 'n'); } }
     }
     // Per-type totals for the progress readout (pins vs map geometry vs names).
     const isPin = (g) => g === gPins || g === gPinsHot;
     const totPins = toMount.reduce((n, [, g]) => n + isPin(g), 0);
     const totMap = toMount.length - totPins;
-    let ri = 0, mi = 0, mPins = 0, li = 0, varsDone = false, labelPlan = null;
+    let ri = 0, mi = 0, mPins = 0, li = 0, lhi = 0, varsDone = false, labelPlan = null;
     const t0 = performance.now();
     if (swapActive) dbgEvent('superseded'); // a prior chain never finished
     swapActive = true;
-    dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length} mount ${toMount.length}`);
+    // The free breakdown ([p]ins [b]asemap [c]ounty fills [n]ames) tells the
+    // trace WHICH content type a free-phase stall follows; "hold" = frees
+    // deferred to a shallower swap (deep-zoom rule above).
+    const fb = ['p', 'b', 'c', 'n'].filter((k) => freeN[k]).map((k) => `${k}${freeN[k]}`).join(' ');
+    dbgEvent(`swap ×${zf.toFixed(0)} free ${toRemove.length}${fb ? `[${fb}]` : ''}${held ? ` hold ${held}` : ''} mount ${toMount.length}`);
     const progress = () => {
       const parts = [];
       if (totPins) parts.push(`pins ${mPins}/${totPins}`);
@@ -472,14 +500,15 @@ ${dbgLog.join('\n')}`;
     //   3. one sizing-var write (smallest set: frees already done).
     //   4. LABELS, hardest-capped (halo'd text is Safari's priciest paint).
     // Pins can't render mis-sized in phase 1: --fp refreshes ~8 Hz mid-gesture.
-    let prevStepEnd = 0;
+    let prevStepEnd = 0, lastPhase = 'start', lastOps = 0;
     const step = () => {
       swapRaf = 0;
       const s0 = performance.now();
       // The seconds go ONE of two places: inside our JS slice ("slice Nms") or
       // between our frames, where the browser pays style/layout/raster for the
-      // previous slice ("gap Nms"). Noah's 1.91s three-op swap will name which.
-      if (prevStepEnd && s0 - prevStepEnd > 250) dbgEvent(`gap ${Math.round(s0 - prevStepEnd)}ms`);
+      // previous slice ("gap Nms after <phase>"). Noah's ×256 trace answered:
+      // gap 3042ms after the first free slice — Safari's bill, not our JS.
+      if (prevStepEnd && s0 - prevStepEnd > 250) dbgEvent(`gap ${Math.round(s0 - prevStepEnd)}ms after ${lastPhase}(${lastOps})`);
       if (gen !== swapGen) { progHide(); swapActive = false; dbgEvent('swap abandoned'); return; } // box moved — queue dies
       let ops = 0, phase = 'mounts';
       if (mi < toMount.length) {
@@ -498,27 +527,37 @@ ${dbgLog.join('\n')}`;
         varsDone = true; pz.applyVars();
         // Deep zoom: drop the basemap clip — Safari rasterises the clip
         // geometry at map scale (huge offscreen surfaces), and inside a county
-        // there is nothing to clip away. Restored on the way back out.
-        if (zf >= 10) bmGroup.removeAttribute('clip-path'); else if (bmClip) bmGroup.setAttribute('clip-path', bmClip);
+        // there is nothing to clip away. Restored on the way back out. Toggled
+        // ONLY on an actual state change: re-setting the same attribute every
+        // swap can invalidate the clip raster all over again.
+        const wantClipOff = zf >= 10;
+        if (wantClipOff !== clipOff) {
+          clipOff = wantClipOff;
+          if (wantClipOff) bmGroup.removeAttribute('clip-path'); else if (bmClip) bmGroup.setAttribute('clip-path', bmClip);
+          dbgEvent(`clip ${wantClipOff ? 'off' : 'on'}`);
+        }
         dbgEvent('vars write'); // the one restyle gets its own frame
       } else if (!labelPlan) {
         phase = 'labelplan';
-        labelPlan = planLabels(vb, zf);
-        for (const it of labelPlan.hide) { it.el.remove(); it.on = false; } // removals are cheap
-      } else if (li < labelPlan.show.length) {
+        labelPlan = planLabels(vb, zf); // pure JS — the hides run SLICED below
+      } else if (lhi < labelPlan.hide.length || li < labelPlan.show.length) {
         phase = 'labels';
+        // Hides ride the same op cap as shows — "removals are cheap" died with
+        // the ×256 trace (removals are exactly what stalled the free phase).
+        while (lhi < labelPlan.hide.length && ops < 8) { const it = labelPlan.hide[lhi++]; it.el.remove(); it.on = false; ops++; }
         while (li < labelPlan.show.length && ops < 8) { const it = labelPlan.show[li++]; if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; ops++; }
       } else {
         const ms = performance.now() - t0;
         updateScale(vb, zf, ms);
         progDone(ms);
         swapActive = false;
-        dbgEvent(`done ${(ms / 1000).toFixed(2)}s labels ${labelPlan.show.length}`);
+        dbgEvent(`done ${(ms / 1000).toFixed(2)}s labels +${labelPlan.show.length}${labelPlan.hide.length ? ` -${labelPlan.hide.length}` : ''}`);
         return;
       }
       progress();
       const d = performance.now() - s0;
       if (d > 120) dbgEvent(`slice ${Math.round(d)}ms ${phase} ops ${ops}`);
+      lastPhase = phase; lastOps = ops;
       prevStepEnd = performance.now();
       swapRaf = requestAnimationFrame(step);
     };
