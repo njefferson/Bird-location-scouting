@@ -28,10 +28,11 @@ function homeBox(bbox, W, H, pad = 0.12) {
   const aspect = H / W;
   if (h / w > aspect) { const nw = h / aspect; x -= (nw - w) / 2; w = nw; }
   else { const nh = w * aspect; y -= (nh - h) / 2; h = nh; }
-  // Clamp into the map (panzoom clamps panning to [0, W-vw]).
-  w = Math.min(w, W); h = w * aspect;
-  x = Math.min(Math.max(x, 0), W - w);
-  y = Math.min(Math.max(y, 0), H - h);
+  // Cap the size to the canvas, but DON'T clamp x/y into [0,W] any more: coastal
+  // regions frame pelagic pins that sit west of the canvas (negative x), and the
+  // pan clamp now works off the pin bounds, so the opening view may start there.
+  if (w > W) { w = W; h = w * aspect; }
+  if (h > H) { h = H; w = h / aspect; }
   return { x, y, w, h };
 }
 
@@ -112,8 +113,19 @@ export function renderMapView(root, state, nav) {
   const ranked = rankHotspots(hotspots, state.monthIdx, { species: spec.species, weigh: spec.weigh });
   const hotIds = new Set(ranked.slice(0, hotTierCount(ranked)).map((r) => r.hotspot.id));
   const divById = Object.fromEntries(ranked.map((r) => [r.hotspot.id, r.diversity]));
-  const bbox = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
-  const home = homeBox(bbox, W, H);
+  // Project every pin up front and take their bounding box. Coastal counties
+  // have PELAGIC hotspots (e.g. Humboldt's "Offshore", "Eel River Canyon") that
+  // sit WEST of the county's land — off the built-in map canvas entirely (negative
+  // x). The view and the pan limits must be framed around the PINS, not just the
+  // county polygon, or those spots can never be scrolled to (they hid behind the
+  // old [0,W] pan clamp) and the coast can't be centred. — Noah's screenshots.
+  const pos = hotspots.map((h) => { const [x, y] = latLngToMap(h.lat, h.lng, area); return { h, x, y }; });
+  const cb = countiesBBox(region.counties) || { x: 0, y: 0, w: W, h: H };
+  let cx1 = cb.x, cy1 = cb.y, cx2 = cb.x + cb.w, cy2 = cb.y + cb.h;
+  for (const p of pos) { if (p.x < cx1) cx1 = p.x; if (p.y < cy1) cy1 = p.y; if (p.x > cx2) cx2 = p.x; if (p.y > cy2) cy2 = p.y; }
+  const content = { x: cx1, y: cy1, w: cx2 - cx1, h: cy2 - cy1 };
+  const bounds = { x1: cx1, y1: cy1, x2: cx2, y2: cy2 }; // pan limits (centre stays in here)
+  const home = homeBox(content, W, H);
   const homeZoom = W / home.w;
   svg.style.setProperty('--pcap', homeZoom.toFixed(3));
   // Sized so the opening county view reads as dots, not blobs (0.012 merged
@@ -124,8 +136,7 @@ export function renderMapView(root, state, nav) {
   pinNames.setAttribute('class', 'pin-names');
   pinNames.setAttribute('aria-hidden', 'true');
   const nmById = {}; // id → {el, x, y, name}, gathered for the declutter pass
-  for (const h of hotspots) {
-    const [x, y] = latLngToMap(h.lat, h.lng, area);
+  for (const { h, x, y } of pos) {
     const div = divById[h.id] ?? 0;
     const pin = document.createElementNS(SVG_NS, 'circle');
     pin.setAttribute('cx', x.toFixed(1));
@@ -202,7 +213,7 @@ export function renderMapView(root, state, nav) {
   let relabelT = 0;
 
   const pz = attachPanZoom(wrap, svg, {
-    W, H, home, maxZoom: 256, // deep enough that Ice House alone fills the screen
+    W, H, home, bounds, maxZoom: 256, // deep enough that Ice House alone fills the screen
 
     onZoom: (z) => {
       svg.classList.toggle('map-deep', z >= 48); // one-lake scale: declutter
