@@ -8,6 +8,7 @@ import { openIconInfo } from './scoreinfo.js';
 import { facetFilterPanel, facetBar, facetIconButton } from './facetbar.js';
 import { speciesThumb } from './thumbs.js';
 import { installSettingsBody } from './install.js';
+import { getMapLog, clearMapLog } from './maplog.js';
 import { photoChip } from './photo.js';
 import { SPECIES } from '../data/species.js';
 import { GUILDS, GUILD_KEYS, speciesFacetIcons, facetSvg } from '../data/facets.js';
@@ -747,6 +748,24 @@ export function renderSettings(root, state, nav) {
 
   // --- Install (always here, so the steps survive dismissing the banner) -----
   form.append(section('Install this app', installSettingsBody()));
+
+  // --- Map diagnostics (Noah): the persistent runtime log, copyable ---------
+  form.append(section('Map diagnostics', [
+    el('p.dim', {}, 'A running log of the map’s loading engine — kept on this device across reloads (last 300 events). If the map ever freezes or stutters, come here right after and Copy the log into a report.'),
+    el('div.diag-actions', {}, [
+      el('button.btn', {
+        onclick: async (ev) => {
+          const b = ev.target;
+          try { await navigator.clipboard.writeText(getMapLog() || '(log empty)'); b.textContent = 'Copied ✓'; }
+          catch { b.textContent = 'Copy failed'; }
+          setTimeout(() => { b.textContent = 'Copy log'; }, 1600);
+        },
+      }, 'Copy log'),
+      el('button.btn.ghost', {
+        onclick: (ev) => { clearMapLog(); const b = ev.target; b.textContent = 'Cleared'; setTimeout(() => { b.textContent = 'Clear'; }, 1200); },
+      }, 'Clear'),
+    ]),
+  ]));
 
   // --- Regions + their data (v14/v16) ---------------------------------------
   const saved = savedRegions();

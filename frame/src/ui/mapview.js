@@ -11,6 +11,7 @@ import { MAP_AREAS, areaOfRegion } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import { attachPanZoom } from './panzoom.js';
 import { basemapShell, basemapItems, appendCountyLabels, appendLandmarkLabels, bboxOfD } from './basemap.js';
+import { mapLog } from './maplog.js';
 import { latLngToMap, countiesBBox } from '../model/geo.js';
 import { getHotspots, activeRegion } from '../model/regions.js';
 import { rankHotspots, hotTierCount } from '../model/scoring.js';
@@ -289,7 +290,12 @@ export function renderMapView(root, state, nav) {
   const DBG_KEY = 'frame.mapDebug';
   const dbgLog = [];
   const dbgT0 = performance.now();
-  const dbgEvent = (msg) => { dbgLog.push(`${((performance.now() - dbgT0) / 1000).toFixed(1)} ${msg}`); if (dbgLog.length > 6) dbgLog.shift(); };
+  const dbgEvent = (msg) => {
+    dbgLog.push(`${((performance.now() - dbgT0) / 1000).toFixed(1)} ${msg}`);
+    if (dbgLog.length > 6) dbgLog.shift();
+    mapLog(msg); // every event also lands in the persistent runtime log
+  };
+  mapLog(`== map open ${region.id} ${hotspots.length} spots ==`);
   const dbgPre = el('pre.map-debug', { hidden: true, 'aria-hidden': 'true' });
   wrap.append(dbgPre);
   let dbgTimer = 0, dbgRaf = 0, dbgTick = 0, dbgLast = 0, dbgWorst = 0, dbgWorstAt = 0;
@@ -454,10 +460,16 @@ ${dbgLog.join('\n')}`;
     //   3. one sizing-var write (smallest set: frees already done).
     //   4. LABELS, hardest-capped (halo'd text is Safari's priciest paint).
     // Pins can't render mis-sized in phase 1: --fp refreshes ~8 Hz mid-gesture.
+    let prevStepEnd = 0;
     const step = () => {
       swapRaf = 0;
+      const s0 = performance.now();
+      // The seconds go ONE of two places: inside our JS slice ("slice Nms") or
+      // between our frames, where the browser pays style/layout/raster for the
+      // previous slice ("gap Nms"). Noah's 1.91s three-op swap will name which.
+      if (prevStepEnd && s0 - prevStepEnd > 250) dbgEvent(`gap ${Math.round(s0 - prevStepEnd)}ms`);
       if (gen !== swapGen) { progHide(); swapActive = false; dbgEvent('swap abandoned'); return; } // box moved — queue dies
-      let ops = 0;
+      let ops = 0, phase = 'mounts';
       if (mi < toMount.length) {
         const frags = new Map();
         while (mi < toMount.length && ops < OPS) {
@@ -467,8 +479,10 @@ ${dbgLog.join('\n')}`;
         }
         for (const [group, f] of frags) group.append(f);
       } else if (ri < toRemove.length) {
+        phase = 'frees';
         while (ri < toRemove.length && ops < OPS) { const it = toRemove[ri++]; it.el.remove(); it.on = false; ops++; }
       } else if (!varsDone) {
+        phase = 'vars';
         varsDone = true; pz.applyVars();
         // Deep zoom: drop the basemap clip — Safari rasterises the clip
         // geometry at map scale (huge offscreen surfaces), and inside a county
@@ -476,9 +490,11 @@ ${dbgLog.join('\n')}`;
         if (zf >= 10) bmGroup.removeAttribute('clip-path'); else if (bmClip) bmGroup.setAttribute('clip-path', bmClip);
         dbgEvent('vars write'); // the one restyle gets its own frame
       } else if (!labelPlan) {
+        phase = 'labelplan';
         labelPlan = planLabels(vb, zf);
         for (const it of labelPlan.hide) { it.el.remove(); it.on = false; } // removals are cheap
       } else if (li < labelPlan.show.length) {
+        phase = 'labels';
         while (li < labelPlan.show.length && ops < 8) { const it = labelPlan.show[li++]; if (!it.el) it.el = makeLabel(it); pinNames.append(it.el); it.on = true; ops++; }
       } else {
         const ms = performance.now() - t0;
@@ -489,6 +505,9 @@ ${dbgLog.join('\n')}`;
         return;
       }
       progress();
+      const d = performance.now() - s0;
+      if (d > 120) dbgEvent(`slice ${Math.round(d)}ms ${phase} ops ${ops}`);
+      prevStepEnd = performance.now();
       swapRaf = requestAnimationFrame(step);
     };
     step();
