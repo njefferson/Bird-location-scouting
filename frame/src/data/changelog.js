@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.0.1',
+    date: '2026-07-19',
+    changes: [
+      'Release numbers now tell you what kind of change you got. Three numbers, like 3.0.1: the first climbs only when Frame itself changes shape (a new version), the middle when Frame learns to do something new (a capability), and the last for refinements and fixes (an iteration). The story so far reads as version 3 — the original planner, then the photographer-first rebuild, then going beyond California. The old single build numbers (v42, v43) retire; this release, the numbering itself, is an iteration: 3.0.1.',
+    ],
+  },
+  {
     version: 'v43',
     date: '2026-07-19',
     changes: [

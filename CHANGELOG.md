@@ -1,9 +1,16 @@
 # Changelog
 
-Release notes for **Frame** (bird-location-scouting). Newest first. Versions
-match the service-worker cache name (`frame-v<n>` in `frame/sw.js`) so you can
-tell which build you're running. Source of truth: `frame/src/data/changelog.js`
-(rendered in-app under About → "What's new" and published to GitHub Releases).
+Release notes for **Frame** (bird-location-scouting). Newest first. Release
+numbers are `version.capability.iteration` — the first slot bumps for a
+milestone that changes what Frame is, the middle for a new capability, the
+last for a refinement or fix (entries through v43 predate the scheme and keep
+their old single build numbers). The number matches the service-worker cache
+name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
+running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
+About → "What's new" and published to GitHub Releases).
+
+## 3.0.1 — 2026-07-19
+- Release numbers now tell you what kind of change you got. Three numbers, like 3.0.1: the first climbs only when Frame itself changes shape (a new version), the middle when Frame learns to do something new (a capability), and the last for refinements and fixes (an iteration). The story so far reads as version 3 — the original planner, then the photographer-first rebuild, then going beyond California. The old single build numbers (v42, v43) retire; this release, the numbering itself, is an iteration: 3.0.1.
 
 ## v43 — 2026-07-19
 - The app now makes room for the phone’s clock. Installed on an iPhone, the top of the screen — the region pills, and the header as you scrolled — used to run right underneath the clock, battery and camera cutout. Everything now starts below them, and scrolled content passes cleanly behind the status bar instead of colliding with it.

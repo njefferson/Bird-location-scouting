@@ -25,11 +25,14 @@ jobs:
           node --input-type=module <<'EOF'
           import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
           const lines = readFileSync('CHANGELOG.md', 'utf8').split('\n');
-          // Newest section is the first "## vN <sep> YYYY-MM-DD" heading; its body
-          // runs until the next "## " heading (or end of file). The separator is
-          // tolerant (em-dash, en-dash, or hyphen) and spacing is flexible so a
-          // stray edit to the heading punctuation can't silently skip a release.
-          const HEAD = /^##\s+(v\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})/;
+          // Newest section is the first "## <number> <sep> YYYY-MM-DD" heading; its
+          // body runs until the next "## " heading (or end of file). The number is
+          // either the current version.capability.iteration triplet (e.g. 3.0.1) or
+          // a legacy single build number (vN) so backfill dispatches still parse.
+          // The separator is tolerant (em-dash, en-dash, or hyphen) and spacing is
+          // flexible so a stray edit to the heading punctuation can't silently skip
+          // a release.
+          const HEAD = /^##\s+(v\d+|\d+\.\d+\.\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})/;
           const start = lines.findIndex((l) => HEAD.test(l));
           if (start === -1) { console.error('No "## vN — date" section found in CHANGELOG.md'); process.exit(1); }
           const [, ver, date] = lines[start].match(HEAD);
