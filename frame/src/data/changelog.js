@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: 'v43',
+    date: '2026-07-19',
+    changes: [
+      'The app now makes room for the phone’s clock. Installed on an iPhone, the top of the screen — the region pills, and the header as you scrolled — used to run right underneath the clock, battery and camera cutout. Everything now starts below them, and scrolled content passes cleanly behind the status bar instead of colliding with it.',
+    ],
+  },
+  {
     version: 'v42',
     date: '2026-07-18',
     changes: [
