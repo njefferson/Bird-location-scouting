@@ -95,6 +95,24 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   path; it is quarterly and takes a minute. Never propose credential
   automation for eBird again.
 
+## RELEASE TAXONOMY (Noah, 2026-07-19, explicit): STOP CALLING EVERY RELEASE A
+## "VERSION". Releases are one of three kinds, and titles/changelogs/PRs/chat
+## must say which:
+## - VERSION — a milestone that changes what Frame IS (rare; e.g. photo-first
+##   ranking, going multi-region).
+## - CAPABILITY — Frame can now do something it couldn't (e.g. species photos,
+##   install guidance, a new region).
+## - ITERATION — a refinement or fix of something that exists (e.g. the
+##   status-bar fix, map performance, the share-card repair).
+## MECHANICS: the running number stays as a plain BUILD number — sw.js CACHE
+## 'frame-v<n>' and the corner stamp are build identifiers for screenshots and
+## cache-busting, not a "new version" claim; keep bumping n per release as
+## before. Label the kind in: PR titles ("Build N, an iteration — ..."),
+## release/changelog headings, Project-facts entries, and conversation. First
+## applied: build 43 (PR #52). NOT YET DECIDED (ask before building): whether
+## the in-app corner stamp / About "What's new" display should surface the
+## kind too — that's a product change behind his acceptance gate.
+
 ## The user's product taste (from his written summary, 2026-07-05)
 - Visuals: maximum saturation, gentle contrast, shadows alive — never crush
   shadow detail for punch.
@@ -153,6 +171,29 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- BUILD 43 (ITERATION) SHIPPED 2026-07-19 (PR #52, squash 7b586b2): "The app
+  makes room for the iPhone's clock" — MERGED on Noah's "Merge" (staging URL
+  handed over first; the same message set the RELEASE TAXONOMY rule above —
+  this is the first release recorded under it). His screenshot from the
+  INSTALLED iPhone app: region pills under the status-bar clock/battery,
+  Dynamic Island over content. ROOT CAUSE: index.html opts into full-bleed
+  (viewport-fit=cover + black-translucent), but only the BOTTOM safe area was
+  handled; at the top only the ⓘ/moon corner buttons used
+  env(safe-area-inset-top) (why they sat right in his screenshot). Surfaced
+  now because the app newly reached his iPhone (v41 install banner); iPad has
+  no cutout. FIX (frame/src/styles.css, all env(safe-area-inset-top), zero
+  effect at inset 0): body padding-top; fixed body::before strip (height =
+  inset, --bg, z 10) backs the status bar so scrolled rows pass BEHIND the
+  clock; .bar sticks at the inset instead of 0; .ver-tag + .skip-link:focus
+  offset too. sw.js → frame-v43 (styles.css is precached). VERIFIED: headless
+  with a simulated 59px inset (sed a stylesheet copy, env()→constant — the
+  reusable trick, headless Chromium has no real insets): pills y=73, sticky
+  bar pins at y=59 scrolled, only the backdrop paints in the strip; real
+  stylesheet at inset 0 pixel-identical to v42; contrast gate green; zero
+  pageerrors. NEEDS-HIS-HANDS: the installed-iPhone look (his gate item —
+  he merged from the staging screenshot handoff without reporting back the
+  on-device check; if the top inset still looks off on his phone that's
+  follow-up, not regression).
 - SHARE-CARD FIX SHIPPED 2026-07-19 (PR #51, squash 846647f, no version bump —
   no app/sw/index.html change): the v40 og:image card (frame/social-preview.png)
   had shipped with a BLANK tile where the Frame icon belongs (Noah's pasted-link
