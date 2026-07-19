@@ -153,6 +153,20 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- SHARE-CARD FIX SHIPPED 2026-07-19 (PR #51, squash 846647f, no version bump —
+  no app/sw/index.html change): the v40 og:image card (frame/social-preview.png)
+  had shipped with a BLANK tile where the Frame icon belongs (Noah's pasted-link
+  screenshot). ROOT CAUSE: gen-social-preview.mjs renders in a setContent() page
+  (origin about:blank) and loaded the icon via a file:// <img> src — Chromium
+  refuses file:// subresources from about:blank SILENTLY, so the image never
+  painted but its CSS border-radius+box-shadow did (a convincing empty square).
+  Not a regression: the card was born broken in v40; pre-v40 previews fell back
+  to the correct apple-touch-icon ("it used to be correct"). FIX: icon embedded
+  as a base64 data URI + the generator now HARD-FAILS (exit 1, no PNG) unless
+  img.complete && naturalWidth>0 — a blank card can't be committed again. PNG
+  regenerated + visually verified. Merged on Noah's "Merge" (staging URL handed
+  over first). GOTCHA told to Noah: iMessage/social apps CACHE link previews —
+  old threads keep the blank card; fresh pastes show the fix.
 - v42 SHIPPED 2026-07-19 (PR #50, squash f7bc4a6): "The map behaves at full
   zoom" — MERGED on Noah's "Promote. It's the best so far" AFTER his on-device
   deep-zoom repro (his gate, satisfied on iPhone+iPad; his pasted runtime logs
