@@ -30,7 +30,7 @@ function textTier() {
   catch { return 1; }
 }
 
-export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null } = {}) {
+export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, maxZoom = 8, onTap = null, onZoom = null, viewCull = true, deferVars = false } = {}) {
   const HOME = home || { x: 0, y: 0, w: W, h: H };
   let vx = HOME.x, vy = HOME.y, vw = HOME.w, vh = HOME.h;
 
@@ -38,8 +38,18 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // it; the bars are invisible tan-on-tan). All finger math MUST use this box,
   // not the element box — using the element width made the map move only ~55%
   // of the finger on iPad ("finger moves further than the page").
+  // The element rect is CACHED (300ms): getBoundingClientRect on every finger
+  // move forced a synchronous layout against that frame's writes — a read/write
+  // thrash on every pointermove that Safari couldn't keep up with. The rect
+  // can't change mid-gesture (two-finger input is preventDefaulted).
+  let rectCache = null, rectAt = 0;
+  function svgRect() {
+    const now = performance.now();
+    if (!rectCache || now - rectAt > 300) { rectCache = svg.getBoundingClientRect(); rectAt = now; }
+    return rectCache;
+  }
   function contentBox() {
-    const r = svg.getBoundingClientRect();
+    const r = svgRect();
     const s = Math.min(r.width / vw, r.height / vh); // screen px per viewBox unit
     const cw = vw * s, ch = vh * s;
     return { left: r.left + (r.width - cw) / 2, top: r.top + (r.height - ch) / 2, cw, ch, s };
@@ -51,10 +61,18 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   // names, --fp pins, --fb boundary dashes) are computed HERE as plain numbers —
   // Safari mis-renders min()/division-by-var inside CSS calc (fat black pins on
   // iPad), so CSS only ever multiplies by these.
-  let raf = 0;
-  const applyVB = () => {
-    raf = 0;
-    svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
+  // THE FRAME BUDGET RULE: the ONLY per-frame write is the viewBox. The sizing
+  // vars invalidate style for every element that uses var() — writing them each
+  // frame made Safari recompute every mounted pin's transform 60×/s (the
+  // continuous drag Noah felt). They now update on a coarse cadence (~10 Hz +
+  // a trailing settle), so content scales with the map for a beat, then snaps —
+  // how real map apps behave during a pinch.
+  // WHILE THE BOX MOVES, NOTHING ELSE HAPPENS (Noah's rule). The sizing vars
+  // invalidate style for every mounted var() consumer, so they are written ONLY
+  // once the box has stopped (trailing timer) — during the gesture the already-
+  // drawn content simply scales with the viewBox, then snaps at rest.
+  let raf = 0, varsT = 0, lastFp = 0;
+  function writeVars() {
     const zf = W / vw;
     const tx = parseFloat(svg.style.getPropertyValue('--tx')) || 1.3;
     const pcap = parseFloat(svg.style.getPropertyValue('--pcap')) || 4;
@@ -63,8 +81,30 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
     svg.style.setProperty('--fc', (Math.min(zf, 2.6) / zf * tx).toFixed(4));
     svg.style.setProperty('--fp', (Math.min(zf, pcap) / zf).toFixed(4));
     svg.style.setProperty('--fb', (Math.min(zf, 4) / zf).toFixed(4));
-    cull(zf);
-    if (onZoom) onZoom(zf);
+  }
+  const applyVB = () => {
+    raf = 0;
+    svg.setAttribute('viewBox', `${vx.toFixed(3)} ${vy.toFixed(3)} ${vw.toFixed(3)} ${vh.toFixed(3)}`); // 3dp: at 256x zoom, 0.1-unit rounding was a visible jump
+    // deferVars: the hotspot map SEQUENCES this write inside its stop-swap
+    // (releases first, so the global text/pin restyle hits the smallest set) —
+    // writing it here on a timer raced the swap and restyled the big pre-swap
+    // set (the freeze Noah saw exactly when the text resized).
+    // EXCEPTION, pins only: with the cap fully stale, zooming in blew the
+    // mounted pins up into giant translucent rings (screen-sized overdraw
+    // Safari re-rasterised every gesture frame). --fp alone updates at ~8 Hz —
+    // circles, no text, a tiny restyle — keeping dots near-size mid-gesture.
+    if (!deferVars) { clearTimeout(varsT); varsT = setTimeout(writeVars, 90); }
+    else {
+      const now = performance.now();
+      if (now - lastFp > 120) {
+        lastFp = now;
+        const zf = W / vw;
+        const pcap = parseFloat(svg.style.getPropertyValue('--pcap')) || 4;
+        svg.style.setProperty('--fp', (Math.min(zf, pcap) / zf).toFixed(4));
+      }
+    }
+    if (viewCull) cull(W / vw); // maps that mount/unmount their own DOM opt out
+    if (onZoom) onZoom(W / vw);
   };
   const setVB = () => { if (!raf) raf = requestAnimationFrame(applyVB); };
   // Without explicit bounds (the region picker), keep the view inside the canvas
@@ -100,9 +140,19 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
       cullItems = [];
       for (const el of svg.querySelectorAll('path, circle, text')) {
         if (el.closest('defs, clipPath')) continue;
-        let bb; try { bb = el.getBBox(); } catch { continue; }
-        if (!bb || (bb.width === 0 && bb.height === 0)) continue;
-        cullItems.push({ el, x1: bb.x, y1: bb.y, x2: bb.x + bb.width, y2: bb.y + bb.height, off: false });
+        // Hotspot NAME labels are owned by mapview's declutter pass (which shows
+        // only a non-overlapping in-view subset using LIVE positions). Culling
+        // them here off a bbox measured once — at one zoom, with a font size that
+        // changes with zoom — wrongly hid a label the declutter wanted shown (a
+        // solo offshore pin's name vanished as Noah zoomed in). Leave them be.
+        if (el.classList.contains('pin-name')) continue;
+        // Prefer a bbox precomputed from the geometry (basemap paths, pins) — it
+        // avoids a getBBox() layout storm over the whole county on the first deep
+        // zoom (the "it pauses like it's loading" freeze). Fall back to getBBox
+        // only for the few elements without one (e.g. text labels).
+        let b = el.__bb;
+        if (!b) { let bb; try { bb = el.getBBox(); } catch { continue; } if (!bb || (bb.width === 0 && bb.height === 0)) continue; b = [bb.x, bb.y, bb.x + bb.width, bb.y + bb.height]; }
+        cullItems.push({ el, x1: b[0], y1: b[1], x2: b[2], y2: b[3], off: false });
       }
     }
     const mx = vw * 0.25, my = vh * 0.25;
@@ -146,6 +196,24 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   }
 
   const pts = new Map(); // pointerId → {x,y}
+  // STUCK-POINTER HYGIENE: iOS Safari can swallow pointerup/pointercancel
+  // entirely (system gestures, the screenshot chord, palm rejection). A leaked
+  // entry made isGesturing() true forever and permanently gated the hotspot
+  // map's loading (Noah sat at ×71 for minutes — tick alive, no swap ever ran).
+  // Catch ups/cancels anywhere in the document (bubble phase, after the svg's
+  // own handlers) and purge everything when the page loses visibility. The
+  // listeners self-remove once this map instance leaves the document.
+  const docDrop = (e) => {
+    if (!svg.isConnected) { document.removeEventListener('pointerup', docDrop); document.removeEventListener('pointercancel', docDrop); document.removeEventListener('visibilitychange', docVis); return; }
+    pts.delete(e.pointerId);
+  };
+  const docVis = () => {
+    if (!svg.isConnected) { document.removeEventListener('pointerup', docDrop); document.removeEventListener('pointercancel', docDrop); document.removeEventListener('visibilitychange', docVis); return; }
+    if (document.hidden) pts.clear();
+  };
+  document.addEventListener('pointerup', docDrop);
+  document.addEventListener('pointercancel', docDrop);
+  document.addEventListener('visibilitychange', docVis);
   let moved = false, downX = 0, downY = 0, lastDist = null, lastMid = null, multi = false;
   // Re-derive the pinch anchor (distance + midpoint) from the CURRENT first two
   // pointers whenever the pointer set changes. Without this, lifting one finger
@@ -231,6 +299,17 @@ export function attachPanZoom(wrap, svg, { W, H, home = null, bounds = null, max
   const ctl = {
     reset() { vx = HOME.x; vy = HOME.y; vw = HOME.w; vh = HOME.h; setVB(); },
     zoomAtCenter(f) { zoomAt(centerX(), centerY(), f); },
+    // For deferVars maps: write the sizing vars NOW (called mid-swap, after
+    // releases, so the global restyle covers the fewest elements).
+    applyVars() { clearTimeout(varsT); writeVars(); },
+    zoom() { return W / vw; },
+    // Fingers on the glass? "The box has stopped" must NEVER be declared while
+    // touching — a human pinch is full of >90ms micro-pauses, and a timer alone
+    // kept firing swaps mid-gesture (Noah's debug-window screenshot).
+    // NB: iOS can swallow pointerup/cancel outright (system gestures, the
+    // screenshot chord), leaking an entry here — the document-level cleanup
+    // below plus the map's 3s hold-load keep that from gating loads forever.
+    isGesturing() { return pts.size > 0; },
     // Force the viewport-cull list to rebuild on the next frame. Labels that
     // were display:none when the list was first built (e.g. pin names, hidden
     // until you zoom in) get a zero bbox and are skipped forever otherwise —

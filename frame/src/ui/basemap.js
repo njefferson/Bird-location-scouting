@@ -28,27 +28,159 @@ import { countyCentroid } from '../model/geo.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+// Bounding box straight from the path's own numbers ("M x y L x y …"), stored on
+// the element as __bb = [x1,y1,x2,y2]. The viewport cull reads this instead of
+// calling getBBox() at runtime — measuring every element in the county on the
+// first deep zoom was a synchronous LAYOUT STORM that froze the app mid-gesture
+// (Noah: "it pauses like it's loading"). Computing it here, from data we already
+// have, moves that cost to load time and spreads it across element creation.
+export function bboxOfD(d) {
+  const n = d.match(/-?[0-9.]+/g);
+  if (!n || n.length < 2) return null;
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (let i = 0; i + 1 < n.length; i += 2) {
+    const x = +n[i], y = +n[i + 1];
+    if (x < x1) x1 = x; if (y < y1) y1 = y; if (x > x2) x2 = x; if (y > y2) y2 = y;
+  }
+  return [x1, y1, x2, y2];
+}
+
+// ---------------------------------------------------------------------------
+// FILL CLIPPING (v42 deep-zoom fix). WebKit rasterises an SVG fill by the
+// element's own extent, not the visible sliver: at ×256 a county-spanning
+// polygon becomes a ~30k-pixel surface and the first paint at that depth
+// blocks the main thread for seconds (Noah's iPhone trace: gap 8-9s with ZERO
+// DOM ops in flight). The cure is to never hand Safari a giant fill at deep
+// zoom — the map swaps it for a polygon CLIPPED IN JS to a box around the
+// view (tiny extent, paints in microseconds), identical inside the viewport.
+// These helpers do that: parse the generated "M x y L x y … Z" geometry into
+// rings, clip rings to a box (Sutherland–Hodgman), and serialise back.
+// ---------------------------------------------------------------------------
+
+// Rings of [x,y] pairs from generated path data. Absolute M/L/Z only — the
+// only commands our generators emit; anything else returns null and the
+// caller paints the original geometry unclipped.
+export function parseRings(d) {
+  if (/[^MLZ0-9.,\s-]/.test(d)) return null;
+  const rings = [];
+  for (const seg of d.split('M').slice(1)) {
+    const n = seg.match(/-?[0-9.]+/g);
+    if (!n || n.length < 6) continue;
+    const ring = [];
+    for (let i = 0; i + 1 < n.length; i += 2) ring.push([+n[i], +n[i + 1]]);
+    rings.push(ring);
+  }
+  return rings.length ? rings : null;
+}
+
+// Sutherland–Hodgman: each ring clipped against the box's four half-planes.
+// Correct for the flat-colour fills we draw (holes aren't in the data).
+export function clipRingsToBox(rings, x1, y1, x2, y2) {
+  const planes = [
+    [(p) => p[0] >= x1, (a, b) => [x1, a[1] + (b[1] - a[1]) * (x1 - a[0]) / (b[0] - a[0])]],
+    [(p) => p[0] <= x2, (a, b) => [x2, a[1] + (b[1] - a[1]) * (x2 - a[0]) / (b[0] - a[0])]],
+    [(p) => p[1] >= y1, (a, b) => [a[0] + (b[0] - a[0]) * (y1 - a[1]) / (b[1] - a[1]), y1]],
+    [(p) => p[1] <= y2, (a, b) => [a[0] + (b[0] - a[0]) * (y2 - a[1]) / (b[1] - a[1]), y2]],
+  ];
+  const out = [];
+  for (const ring of rings) {
+    let poly = ring;
+    for (const [inside, cross] of planes) {
+      const next = [];
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        const ain = inside(a), bin = inside(b);
+        if (ain) { next.push(a); if (!bin) next.push(cross(a, b)); }
+        else if (bin) next.push(cross(a, b));
+      }
+      poly = next;
+      if (!poly.length) break;
+    }
+    if (poly.length >= 3) out.push(poly);
+  }
+  return out;
+}
+
+export function ringsToD(rings) {
+  let d = '';
+  for (const ring of rings) {
+    d += `M${ring[0][0].toFixed(2)} ${ring[0][1].toFixed(2)}`;
+    for (let i = 1; i < ring.length; i++) d += `L${ring[i][0].toFixed(2)} ${ring[i][1].toFixed(2)}`;
+    d += 'Z';
+  }
+  return d;
+}
+
+// Coarsen a closed shape for use as a CLIP path only — clipping doesn't need
+// every point, and a lighter clip region is much cheaper for Safari to evaluate
+// each frame. Never used for anything visible.
+function decimateRing(d, keep = 4) {
+  const n = d.match(/-?[0-9.]+/g);
+  if (!n || n.length < keep * 4) return d;
+  let out = `M${n[0]} ${n[1]}`;
+  for (let i = 2 * keep; i + 1 < n.length; i += 2 * keep) out += `L${n[i]} ${n[i + 1]}`;
+  return out + 'Z';
+}
+
 function path(d, cls) {
   const p = document.createElementNS(SVG_NS, 'path');
   p.setAttribute('d', d);
   p.setAttribute('class', cls);
+  const bb = bboxOfD(d);
+  if (bb) p.__bb = bb;
   return p;
 }
 
+// Split a long polyline ("M x y L x y …", the only commands the basemap uses)
+// into shorter OVERLAPPING pieces. A single coastline path spans the whole
+// coast, so it can never be excluded by a viewport test; chunked, each piece
+// has a small bbox and only the pieces in view need to exist at all. Fills are
+// NOT chunked (a fill needs its closed ring); they're bounded and test whole.
+function chunkPolyline(out, d, cls, maxPts = 20) {
+  const nums = d.match(/-?[0-9.]+/g);
+  if (!nums || nums.length <= maxPts * 2) { out.push({ d, cls, bb: bboxOfD(d) }); return; }
+  for (let i = 0; i + 3 < nums.length; i += (maxPts - 1) * 2) {
+    const seg = nums.slice(i, i + maxPts * 2);
+    if (seg.length < 4) break;
+    let piece = `M${seg[0]} ${seg[1]}`;
+    for (let j = 2; j + 1 < seg.length; j += 2) piece += `L${seg[j]} ${seg[j + 1]}`;
+    out.push({ d: piece, cls, bb: bboxOfD(piece) });
+  }
+}
+
 /**
- * Append the landmark backdrop to an SVG, clipped to the county silhouette.
- * `id` must be unique per SVG (it names the clipPath). Returns the <g> so a
- * caller can toggle it. Idempotent-ish: pass a fresh id per map instance.
+ * The basemap as DATA: [{d, cls, bb}] draw-ordered (fills first, then lines,
+ * lines chunked). The hotspot map mounts ONLY the items intersecting its view
+ * (virtualisation — the DOM never holds the whole county's geometry); the
+ * region picker mounts them all (its view is always the whole state).
  */
-export function appendBasemap(svg, id = 'bm', area = 'california') {
+export function basemapItems(area = 'california') {
   const L = LAYERS[area];
+  const items = [];
+  // Fills carry fill:1 — the hotspot map's deep zoom substitutes them with a
+  // view-clipped copy (see parseRings/clipRingsToBox above); lines never need
+  // it, chunkPolyline already bounds their extents.
+  for (const d of L.PARKS) items.push({ d, cls: 'bm-park', bb: bboxOfD(d), fill: 1 });
+  for (const d of L.LAKES) items.push({ d, cls: 'bm-lake', bb: bboxOfD(d), fill: 1 });
+  if (area === 'california') for (const s of WATER_SHAPES) items.push({ d: s.d, cls: 'bm-lake', bb: bboxOfD(s.d), fill: 1 });
+  for (const d of L.RIVERS) chunkPolyline(items, d, 'bm-river');
+  for (const d of L.COASTLINE) chunkPolyline(items, d, 'bm-coast');
+  for (const d of L.ROADS) chunkPolyline(items, d, 'bm-road');
+  return items;
+}
+
+/**
+ * The basemap SHELL: defs + a decimated county clip + an empty group, ready for
+ * items to be mounted into. `id` must be unique per SVG (names the clipPath).
+ */
+export function basemapShell(svg, id = 'bm', area = 'california') {
   const shapes = MAP_AREAS[area].shapes;
-  // Clip everything to the union of county shapes, so landmarks never spill
-  // into the empty ocean / out-of-region background.
+  // Clip to the county silhouette so landmarks never spill into the empty
+  // ocean / out-of-region background. Decimated: a clip doesn't need every point.
   const defs = document.createElementNS(SVG_NS, 'defs');
   const clip = document.createElementNS(SVG_NS, 'clipPath');
   clip.setAttribute('id', id);
-  for (const code of Object.keys(shapes)) clip.append(path(shapes[code], 'clip-c'));
+  for (const code of Object.keys(shapes)) clip.append(path(decimateRing(shapes[code]), 'clip-c'));
   defs.append(clip);
   svg.append(defs);
 
@@ -56,15 +188,17 @@ export function appendBasemap(svg, id = 'bm', area = 'california') {
   g.setAttribute('class', 'basemap');
   g.setAttribute('clip-path', `url(#${id})`);
   g.setAttribute('aria-hidden', 'true');
-  // Fills first (parks, lakes — including the OSM reservoir shorelines), then
-  // lines over them (rivers, coast, roads).
-  for (const d of L.PARKS) g.append(path(d, 'bm-park'));
-  for (const d of L.LAKES) g.append(path(d, 'bm-lake'));
-  if (area === 'california') for (const s of WATER_SHAPES) g.append(path(s.d, 'bm-lake'));
-  for (const d of L.RIVERS) g.append(path(d, 'bm-river'));
-  for (const d of L.COASTLINE) g.append(path(d, 'bm-coast'));
-  for (const d of L.ROADS) g.append(path(d, 'bm-road'));
   svg.append(g);
+  return g;
+}
+
+/**
+ * Append the full landmark backdrop (the region picker's whole-state view —
+ * everything is always in frame there, so no virtualisation).
+ */
+export function appendBasemap(svg, id = 'bm', area = 'california') {
+  const g = basemapShell(svg, id, area);
+  for (const it of basemapItems(area)) g.append(path(it.d, it.cls));
   return g;
 }
 
