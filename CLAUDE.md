@@ -153,6 +153,44 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- v42 SHIPPED 2026-07-19 (PR #50, squash f7bc4a6): "The map behaves at full
+  zoom" — MERGED on Noah's "Promote. It's the best so far" AFTER his on-device
+  deep-zoom repro (his gate, satisfied on iPhone+iPad; his pasted runtime logs
+  drove the diagnosis across two rounds). Fixes the v41 known follow-up (deep-
+  zoom lag/freeze, ballooning pins, vanishing offshore label). sw.js → frame-v42.
+  ROOT CAUSE (the durable lesson, falsified two cheaper theories first): WebKit
+  rasterises an SVG fill by the ELEMENT'S OWN EXTENT, not the visible sliver —
+  at ×256 a county-spanning fill is a ~30k-px-wide surface, built on FIRST PAINT
+  AT EACH NEW DEPTH, blocking the main thread 8-9 s. Round-1 logs blamed DOM
+  frees; round-2 logs falsified that (stalls with `free 0 hold N`, one over a
+  nearly-empty view) and pinned first-paint-at-depth. FIX — deep-zoom fill
+  substitution (mapview.js): past ×32, any in-view fill much larger than the
+  window swaps for a copy CLIPPED IN JS (Sutherland–Hodgman against a box 3× the
+  view; artificial edges a full viewport off-screen) — pixel-identical inside
+  the viewport, microseconds to paint; real geometry restores on zoom-out;
+  full↔sub swaps are ATOMIC within one mount slice (giant shape leaves the tree
+  the same frame its stand-in lands); log lines show `sub N`. THE FULL v42
+  LEDGER (all in mapview.js/panzoom.js/maplog.js unless noted): true map
+  virtualisation (DOM only holds what's in the window — pins, labels, basemap,
+  county fills; per-item cull bboxes precomputed at load); sliced, abandonable,
+  mounts-before-frees stop-swap that runs only when fingers are OFF the glass;
+  3s hold-to-load line (Noah's design) so pausing mid-gesture loads under your
+  fingers; deep-zoom free deferral; deep-zoom basemap-clip drop; pointer-leak
+  self-heal; non-scaling county strokes; transform:scale() pins with a steady
+  size cap; pin repaint capped ~8 Hz mid-gesture; corner SCALE BAR (miles +
+  live ×zoom during gestures + last swap duration) that doubles as the tap
+  target for a DIAGNOSTICS WINDOW with in-window Copy-log; per-type progress
+  readout + compositor spinner during swaps; tiny corner version stamp
+  (.ver-tag, renders CHANGELOG[0].version — screenshot-identifiable builds);
+  persistent RUNTIME LOG (ui/maplog.js, localStorage frame.mapLog, last 300
+  events, written synchronously so a force-killed tab keeps the pre-freeze
+  tail; also Settings → Map diagnostics). VERIFIED (this session, on the merged
+  tree): headless ×4→×256 zoom logs `swap ×256 … sub 2`, swaps 0.04-0.10 s at
+  depth (was 8-9 s), 3 .fill-sub nodes in DOM, clean restore, zero pageerrors.
+  SANDBOX GOTCHA (new): pages.dev is NO LONGER reachable from the session
+  sandbox (proxy tunnel refused) — verify deployed builds by serving frame/
+  locally (python3 -m http.server + playwright-core from npm; identical code,
+  there is no build step).
 - PRECACHE FOOTPRINT (2026-07-18, check-in after the Yellowstone/Yosemite
   full-depth captures): sw.js now precaches 7 county files = ~16.6 MB of offline
   data (Home 067 3.79 + 017 1.64 + 061 1.98; Yosemite 043 2.11 + 109 1.94;
@@ -214,10 +252,9 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   PIN bbox (county bbox ∪ all pin positions), and panzoom takes a `bounds` option:
   when set, clampPan lets the view CENTRE reach anywhere in bounds (edge/offshore
   pins can be centred) instead of the old [0,W] canvas clamp (region picker passes
-  NO bounds → unchanged). homeBox no longer clamps to [0,W]. KNOWN FOLLOW-UP
-  (v42, Noah flagged post-merge): deep zoom is still laggy/unresponsive (pins
-  appear to lose their --fp size cap and balloon), and an offshore label vanished
-  as he zoomed closer when it was the only pin in view.
+  NO bounds → unchanged). homeBox no longer clamps to [0,W]. The known follow-up
+  (deep-zoom lag, ballooning pins, vanishing offshore label) was FIXED by v42 —
+  see the v42 entry.
 - v39 SHIPPED 2026-07-18 (PR #47, squash fb745f7): "Yellowstone birds now count"
   — the species-curation pass v38 flagged as its natural follow-up. MERGED on
   Noah's "promote to main". Added 99 Rocky-Mountain / Greater-Yellowstone species
