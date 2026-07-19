@@ -13,12 +13,18 @@
 // uses a system serif (Georgia/DejaVu) — fine at card size.
 // =============================================================================
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import pw from '/opt/node22/lib/node_modules/playwright/index.js';
 
 const { chromium } = pw;
 const FRAME = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const iconURL = pathToFileURL(path.join(FRAME, 'icon.svg')).href;
+// Inline the icon as a data URI: a setContent() page is about:blank, and
+// Chromium refuses file:// subresources from it — a file:// <img> src fails
+// SILENTLY, leaving the box-shadowed .icon square empty (the v40 card shipped
+// that way). A data URI has no origin to refuse.
+const iconURL = 'data:image/svg+xml;base64,' +
+  readFileSync(path.join(FRAME, 'icon.svg')).toString('base64');
 
 const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -48,6 +54,14 @@ const b = await chromium.launch();
 const p = await b.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 }).then((c) => c.newPage());
 await p.setContent(html, { waitUntil: 'networkidle' });
 await p.waitForTimeout(200);
+// Hard gate: the icon must have actually rendered. Guards against ever again
+// committing a card with a blank tile where the icon should be.
+const iconOk = await p.$eval('img.icon', (i) => i.complete && i.naturalWidth > 0);
+if (!iconOk) {
+  await b.close();
+  console.error('FAIL: icon.svg did not render in the card — not writing the PNG.');
+  process.exit(1);
+}
 const out = path.join(FRAME, 'social-preview.png');
 await p.screenshot({ path: out });
 await b.close();
