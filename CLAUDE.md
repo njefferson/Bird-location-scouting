@@ -104,14 +104,18 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 ##   install guidance, a new region).
 ## - ITERATION — a refinement or fix of something that exists (e.g. the
 ##   status-bar fix, map performance, the share-card repair).
-## MECHANICS: the running number stays as a plain BUILD number — sw.js CACHE
-## 'frame-v<n>' and the corner stamp are build identifiers for screenshots and
-## cache-busting, not a "new version" claim; keep bumping n per release as
-## before. Label the kind in: PR titles ("Build N, an iteration — ..."),
-## release/changelog headings, Project-facts entries, and conversation. First
-## applied: build 43 (PR #52). NOT YET DECIDED (ask before building): whether
-## the in-app corner stamp / About "What's new" display should surface the
-## kind too — that's a product change behind his acceptance gate.
+## NUMBERING (Noah, 2026-07-19, follow-up ask): release numbers are the
+## triplet VERSION.CAPABILITY.ITERATION (e.g. 3.0.1) — bump the slot matching
+## the release's kind and ZERO the slots after it. Seed: the app as of build
+## 43 = 3.0.0 (era 1 the original planner, era 2 the photographer-first
+## rebuild at v24, era 3 multi-region at v37/38); the numbering change itself
+## shipped as iteration 3.0.1. sw.js CACHE = 'frame-<x.y.z>' and
+## changelog.js/CHANGELOG.md headings carry the same triplet (bump together);
+## the corner stamp renders it via CHANGELOG[0].version. release.yml's heading
+## regex accepts the triplet AND legacy vN (don't break backfills). Entries
+## v43 and older keep their historical numbers. Label the kind in PR titles
+## ("3.1.0, a capability — ..."), changelog headings, Project-facts entries,
+## and conversation.
 
 ## The user's product taste (from his written summary, 2026-07-05)
 - Visuals: maximum saturation, gentle contrast, shadows alive — never crush
@@ -957,7 +961,8 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   EBIRD_API_TOKEN + EBIRD_COOKIE secrets. Fails fast (~2s) on a dead cookie;
   partial progress is committed; resume skips built counties.
 - Releases: auto-published from CHANGELOG.md top section on merge to main.
-  Version = service-worker CACHE name (`frame-v<n>`); bump both together.
+  Release number = service-worker CACHE name (`frame-<x.y.z>`, legacy
+  `frame-v<n>` through v43); bump both together.
 - `keepalive.yml` commits a monthly heartbeat so GitHub's 60-day inactivity
   rule can never pause the scheduled workflows.
 - Git: work on the designated `claude/*` branch; PR + merge to main; a
