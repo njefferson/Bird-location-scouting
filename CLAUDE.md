@@ -175,6 +175,17 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.0.1 (ITERATION) SHIPPED 2026-07-19 (PR #53, squash 7be1998): the
+  version.capability.iteration numbering itself — MERGED on Noah's "That's all
+  perfect. Go" (he accepted the 3.0.0 seed and the three-era reading; the
+  scheme + seed are in the NUMBERING rule above, follow it). Implementation:
+  changelog.js top entry '3.0.1' (corner stamp + What's-new render it), sw.js
+  CACHE 'frame-3.0.1', CHANGELOG.md intro rewritten + '## 3.0.1 —' heading,
+  release.yml HEAD regex now /(v\d+|\d+\.\d+\.\d+)/ (legacy backfills still
+  parse; tags now frame-<x.y.z>). VERIFIED headless: parser dry-run both
+  heading styles, stamp renders 3.0.1, upgrade-from-v43 profile gets the
+  What's-new dialog, first-run seeds silently, zero pageerrors. Entries ≤v43
+  keep historical numbers (honest history) — never renumber them.
 - BUILD 43 (ITERATION) SHIPPED 2026-07-19 (PR #52, squash 7b586b2): "The app
   makes room for the iPhone's clock" — MERGED on Noah's "Merge" (staging URL
   handed over first; the same message set the RELEASE TAXONOMY rule above —
