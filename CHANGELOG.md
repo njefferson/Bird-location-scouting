@@ -9,6 +9,9 @@ name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
 running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
 About → "What's new" and published to GitHub Releases).
 
+## 3.1.0 — 2026-07-20
+- Two new places to scout. Alongside California, Yosemite and Yellowstone, Frame now covers Hahira, Georgia — the home country around Valdosta, with Grand Bay WMA and Banks Lake — and Panama City Beach, Florida, the Gulf coast from St. Andrews out to the St. Joseph peninsula. Tap a region pill at the top to switch; each opens onto its own map, drawn to its own corner of the country, with the coastline, rivers and roads that place you. This one is a capability: 3.1.0.
+
 ## 3.0.1 — 2026-07-19
 - Release numbers now tell you what kind of change you got. Three numbers, like 3.0.1: the first climbs only when Frame itself changes shape (a new version), the middle when Frame learns to do something new (a capability), and the last for refinements and fixes (an iteration). The story so far reads as version 3 — the original planner, then the photographer-first rebuild, then going beyond California. The old single build numbers (v42, v43) retire; this release, the numbering itself, is an iteration: 3.0.1.
 

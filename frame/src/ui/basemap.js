@@ -14,12 +14,19 @@ import { MAP_AREAS } from '../data/map-areas.js';
 import { COUNTIES } from '../data/counties.js';
 import * as CA_LAYERS from '../data/basemap.js';
 import * as YS_LAYERS from '../data/yellowstone-basemap.js';
+import * as HAHIRA_LAYERS from '../data/hahira-basemap.js';
+import * as PCB_LAYERS from '../data/panamacity-basemap.js';
 import { WATER_SHAPES } from '../data/water-shapes.js';
 
-// Per-area landmark layers (v38): same export shape from both generated
-// modules, picked by map area. The OSM water shorelines (WATER_SHAPES) are a
+// Per-area landmark layers (v38): same export shape from every generated
+// module, picked by map area. The OSM water shorelines (WATER_SHAPES) are a
 // California-only curation, so they ride only that area's basemap.
-const LAYERS = { california: CA_LAYERS, yellowstone: YS_LAYERS };
+const LAYERS = {
+  california: CA_LAYERS,
+  yellowstone: YS_LAYERS,
+  hahira: HAHIRA_LAYERS,
+  panamacity: PCB_LAYERS,
+};
 
 // Curated waters that have a real OSM shoreline — those render as actual lakes,
 // so they get no marker dot (the shape IS the marker; the name still labels it).

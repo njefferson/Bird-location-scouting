@@ -1,11 +1,11 @@
 // Frame service worker — offline-first for the static app, network-first for
 // the live eBird overlay (so badges stay fresh, static layer always works).
-const CACHE = 'frame-3.0.1';
+const CACHE = 'frame-3.1.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png',
   './src/styles.css', './src/main.js',
   './src/ui/dom.js', './src/ui/badges.js', './src/ui/views.js', './src/ui/about.js', './src/ui/theme.js', './src/ui/whatsnew.js', './src/ui/regionpicker.js', './src/ui/mapview.js', './src/ui/panzoom.js', './src/ui/basemap.js', './src/ui/scoreinfo.js', './src/ui/facetbar.js', './src/ui/photo.js', './src/ui/targets.js', './src/ui/seen.js', './src/ui/freshness.js', './src/ui/thumbs.js', './src/ui/install.js', './src/ui/maplog.js',
-  './src/data/species.js', './src/data/facets.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js', './src/data/county-shapes.js', './src/data/basemap.js', './src/data/water-shapes.js', './src/data/map-areas.js', './src/data/yellowstone-shapes.js', './src/data/yellowstone-basemap.js',
+  './src/data/species.js', './src/data/facets.js', './src/data/hotspots.js', './src/data/habitats.js', './src/data/changelog.js', './src/data/counties.js', './src/data/roadmap.js', './src/data/county-shapes.js', './src/data/basemap.js', './src/data/water-shapes.js', './src/data/map-areas.js', './src/data/yellowstone-shapes.js', './src/data/yellowstone-basemap.js', './src/data/hahira-shapes.js', './src/data/hahira-basemap.js', './src/data/panamacity-shapes.js', './src/data/panamacity-basemap.js',
   './src/model/inference.js', './src/model/scoring.js', './src/model/facets.js', './src/model/photo.js', './src/model/ebird.js', './src/model/regions.js', './src/model/geo.js', './src/model/targets.js', './src/model/seen.js', './src/model/lists.js', './src/model/freshness.js',
   './data/taxonomy.json',
   // Species photo-thumbnail manifest (code -> credit). Small (~a few KB) and
@@ -24,6 +24,10 @@ const ASSETS = [
   // the same offline-in-the-park reason (the MT/ID gateway counties cache on
   // first visit like any other region — see the activate carry-forward).
   './data/counties/US-WY-029.json', './data/counties/US-WY-039.json',
+  // Hahira (GA) + Panama City Beach (FL) regions (v3.1): their county data
+  // caches on first visit like any other region (activate carries it forward
+  // across version bumps). Not precached — precache is reserved for the
+  // poor-signal national parks; these are everyday coverage.
 ];
 
 const PRECACHED = new Set(ASSETS.map((u) => new URL(u, self.registration.scope).href));

@@ -17,16 +17,23 @@
 
 import { MAP_VIEWBOX, MAP_PROJECTION, COUNTY_SHAPES } from './county-shapes.js';
 import { YS_VIEWBOX, YS_PROJECTION, YS_SHAPES } from './yellowstone-shapes.js';
+import { HAHIRA_VIEWBOX, HAHIRA_PROJECTION, HAHIRA_SHAPES } from './hahira-shapes.js';
+import { PCB_VIEWBOX, PCB_PROJECTION, PCB_SHAPES } from './panamacity-shapes.js';
 
 export const MAP_AREAS = {
   california: { viewBox: MAP_VIEWBOX, projection: MAP_PROJECTION, shapes: COUNTY_SHAPES },
   yellowstone: { viewBox: YS_VIEWBOX, projection: YS_PROJECTION, shapes: YS_SHAPES },
+  // Southeast additions (v3.1) — each its own canvas, hundreds of km apart.
+  hahira: { viewBox: HAHIRA_VIEWBOX, projection: HAHIRA_PROJECTION, shapes: HAHIRA_SHAPES },
+  panamacity: { viewBox: PCB_VIEWBOX, projection: PCB_PROJECTION, shapes: PCB_SHAPES },
 };
 
 /** Which area a county's shape lives on (null for a code with no shape). */
 export function areaOfCounty(code) {
   if (code in COUNTY_SHAPES) return 'california';
   if (code in YS_SHAPES) return 'yellowstone';
+  if (code in HAHIRA_SHAPES) return 'hahira';
+  if (code in PCB_SHAPES) return 'panamacity';
   return null;
 }
 
