@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.1.0',
+    date: '2026-07-20',
+    changes: [
+      'Two new places to scout. Alongside California, Yosemite and Yellowstone, Frame now covers Hahira, Georgia — the home country around Valdosta, with Grand Bay WMA and Banks Lake — and Panama City Beach, Florida, the Gulf coast from St. Andrews out to the St. Joseph peninsula. Tap a region pill at the top to switch; each opens onto its own map, drawn to its own corner of the country, with the coastline, rivers and roads that place you. This one is a capability: 3.1.0.',
+    ],
+  },
+  {
     version: '3.0.1',
     date: '2026-07-19',
     changes: [

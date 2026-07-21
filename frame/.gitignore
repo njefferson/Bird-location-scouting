@@ -2,6 +2,9 @@
 # NOTE: data/taxonomy.json is COMMITTED (the app needs it at runtime to attach
 # species codes) — do not re-add it here.
 data/hotspots-in-box.json
+# Local npm installs for headless verification (playwright-core, sharp) — never committed
+node_modules/
+
 # Never commit secrets / local CSV exports
 .env
 *.local

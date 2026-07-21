@@ -100,6 +100,20 @@ export const COUNTIES = {
   'US-MT-031': { name: 'Gallatin (MT)', depth: FULL_DEPTH },  // West Yellowstone entrance, park NW corner
   'US-MT-067': { name: 'Park (MT)', depth: FULL_DEPTH },      // Gardiner / north entrance, Paradise Valley
   'US-ID-043': { name: 'Fremont (ID)', depth: FULL_DEPTH },   // Island Park / Harriman SP, Bechler corner
+  // --- Hahira, GA cluster (v3.1) — Noah's home turf near Valdosta. Draws on
+  // its own 'hahira' map area (data/map-areas.js). Full depth: rural counties
+  // with modest hotspot counts, so keeping every spot is cheap and lets field
+  // spots (Grand Bay boardwalk, Banks Lake) make the cut.
+  'US-GA-185': { name: 'Lowndes (GA)', depth: FULL_DEPTH },   // Hahira, Grand Bay WMA, Valdosta
+  'US-GA-173': { name: 'Lanier (GA)', depth: FULL_DEPTH },    // Banks Lake NWR, Lakeland
+  'US-GA-027': { name: 'Brooks (GA)', depth: FULL_DEPTH },    // Quitman, Reed Bingham NW edge
+  'US-GA-075': { name: 'Cook (GA)', depth: FULL_DEPTH },      // Reed Bingham SP, Adel
+  // --- Panama City Beach, FL cluster (v3.1) — the Gulf coast. Draws on its own
+  // 'panamacity' map area. Full depth for the same reason (coastal migrant
+  // traps: St. Andrews, St. Joseph Peninsula, Camp Helen).
+  'US-FL-005': { name: 'Bay (FL)', depth: FULL_DEPTH },       // Panama City Beach, St. Andrews SP, Camp Helen SP
+  'US-FL-045': { name: 'Gulf (FL)', depth: FULL_DEPTH },      // St. Joseph Peninsula SP, Port St. Joe
+  'US-FL-131': { name: 'Walton (FL)', depth: FULL_DEPTH },    // Grayton Beach SP, Point Washington SF
 };
 
 export function countyDepth(code) {
@@ -130,4 +144,12 @@ export const REGIONS = [
   // (Park/Teton WY), both road entrances' gateway counties (Gallatin/Park MT)
   // and Island Park (Fremont ID). Draws on its own map area (data/map-areas.js).
   { id: 'yellowstone', name: 'Yellowstone', counties: ['US-WY-029', 'US-WY-039', 'US-MT-031', 'US-MT-067', 'US-ID-043'] },
+  // Hahira, GA (v3.1): Noah's home cluster near Valdosta — Lowndes (which holds
+  // Hahira, Grand Bay WMA and Valdosta), Lanier (Banks Lake NWR), plus Brooks
+  // and Cook (Reed Bingham SP). Draws on the 'hahira' map area.
+  { id: 'hahira', name: 'Hahira', counties: ['US-GA-185', 'US-GA-173', 'US-GA-027', 'US-GA-075'] },
+  // Panama City Beach, FL (v3.1): the Gulf coast cluster — Bay (Panama City
+  // Beach, St. Andrews SP), Gulf (St. Joseph Peninsula SP) and Walton (Grayton
+  // Beach SP). Draws on the 'panamacity' map area.
+  { id: 'panamacity', name: 'Panama City Beach', counties: ['US-FL-005', 'US-FL-045', 'US-FL-131'] },
 ];
