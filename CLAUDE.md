@@ -175,6 +175,20 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.1.1 (ITERATION) SHIPPED 2026-07-21 (PR #55, ff-merge c11713b): "A link to
+  Noah's other free tools" — MERGED to main (production) on Noah's "promote all"
+  (part of a cross-app initiative: the personal hub noahjefferson.pages.dev links
+  OUT to each sibling app; this adds the RETURN path so the apps are discoverable
+  from each other). ONE additive line in frame/src/ui/about.js — a
+  `<p class="about-more"><a href="https://noahjefferson.pages.dev">More free tools
+  by Noah Jefferson ↗</a></p>` at the foot of ABOUT_HTML, reusing the existing
+  About link colour (NO new fg/bg pair → contrast-check.mjs unchanged/green).
+  sw.js → frame-3.1.1, changelog.js top entry + CHANGELOG.md heading bumped
+  together. VERIFIED headless: About dialog shows the link, href correct,
+  6.81:1 contrast, zero pageerrors; contrast gate green. NEEDS-HIS-HANDS: real
+  tap on iPad Safari (taste, not a regression). The SAME back-link shipped to
+  the three sibling apps the same day (Clear Horizons 2.16.7, Photo Pointer
+  1.5.1, Jefferson-Photography-Studio via the ⓘ panel).
 - 3.1.0 (CAPABILITY) SHIPPED 2026-07-21 (PR #54, squash b2f2b3b): "Two new
   regions — Hahira, GA and Panama City Beach, FL" — MERGED to main (production)
   on Noah's "promote". His fresh ask (NOT a roadmap item). Frame's 5th/6th
