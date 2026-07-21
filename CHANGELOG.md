@@ -9,6 +9,12 @@ name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
 running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
 About → "What's new" and published to GitHub Releases).
 
+## 3.1.1 — 2026-07-21
+
+A small link at the bottom of the About page now leads to Noah Jefferson's other
+free tools — the astronomy planner, the photo-spot map, and the photo studio.
+All free, no account, yours to keep. A refinement: 3.1.1.
+
 ## 3.1.0 — 2026-07-20
 - Two new places to scout. Alongside California, Yosemite and Yellowstone, Frame now covers Hahira, Georgia — the home country around Valdosta, with Grand Bay WMA and Banks Lake — and Panama City Beach, Florida, the Gulf coast from St. Andrews out to the St. Joseph peninsula. Tap a region pill at the top to switch; each opens onto its own map, drawn to its own corner of the country, with the coastline, rivers and roads that place you. This one is a capability: 3.1.0.
 

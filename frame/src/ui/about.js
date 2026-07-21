@@ -91,6 +91,9 @@ const ABOUT_HTML = `
   the public-domain QGISsvgAnimals set (woodpecker, kingfisher, curlew) ·
   Species photos from Wikimedia Commons, each under its own public-domain,
   Creative Commons or free-use licence — full per-photo credits below.</p>
+
+  <p class="about-more"><a href="https://noahjefferson.pages.dev" target="_blank"
+  rel="noopener">More free tools by Noah Jefferson&nbsp;↗</a></p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move

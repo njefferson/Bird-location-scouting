@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.1.1',
+    date: '2026-07-21',
+    changes: [
+      'A small link at the bottom of this About page now leads to Noah Jefferson’s other free tools — the astronomy planner, the photo-spot map, and the photo studio — all free, no account, and yours to keep. A refinement: 3.1.1.',
+    ],
+  },
+  {
     version: '3.1.0',
     date: '2026-07-20',
     changes: [
