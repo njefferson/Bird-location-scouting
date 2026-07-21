@@ -1012,6 +1012,19 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
 - Data: per-county files `frame/data/counties/US-XX-###.json` + committed
   `frame/data/taxonomy.json` (NEVER gitignore it — it shipped broken once).
   Species codes are derived from names via eBird taxonomy, never hand-typed.
+- DOWNSTREAM REUSE — "Photo-Pointer" (2026-07-21, Noah): the per-county JSON is
+  SHARED with Noah's other app, Photo-Pointer. The county files + taxonomy.json
+  are the captured eBird data; another app can consume them WITHOUT re-running
+  the cookie-gated build (it's just JSON, and this repo is public → the files
+  are fetchable at raw.githubusercontent.com/njefferson/Bird-location-scouting/
+  main/frame/data/...). Schema per county file: `{ region, name, builtAt,
+  hotspots: [{ locId, name, lat, lng, nSpecies, freqByMonth, checklistsByMonth
+  }] }` — freqByMonth is `{ <eBird code>: [Jan..Dec] }` (0..1 multi-year
+  frequencies, NOT live sightings), checklistsByMonth is a 12-slot sample-size
+  array. The Hahira+PCB reuse was handed to a separate Photo-Pointer session
+  (Frame can't add a 2nd repo mid-session — add_repo/list_repos still bounce on
+  an unsurfaced approval on iPad, confirmed again 2026-07-21). If you change the
+  county-file schema, remember Photo-Pointer reads it too.
 - Refresh: `refresh-data.yml`, quarterly cron + push-trigger; needs
   EBIRD_API_TOKEN + EBIRD_COOKIE secrets. Fails fast (~2s) on a dead cookie;
   partial progress is committed; resume skips built counties.
