@@ -175,6 +175,50 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.1.0 (CAPABILITY) SHIPPED 2026-07-21 (PR #54, squash b2f2b3b): "Two new
+  regions — Hahira, GA and Panama City Beach, FL" — MERGED to main (production)
+  on Noah's "promote". His fresh ask (NOT a roadmap item). Frame's 5th/6th
+  built-in regions, each its OWN map area (the v38 architecture). AREAS: hahira
+  (mid-lat 31.0, viewBox 1000x1096) = Lowndes US-GA-185 (Hahira/Grand Bay WMA/
+  Valdosta) + Lanier US-GA-173 (Banks Lake NWR) + Brooks US-GA-027 + Cook
+  US-GA-075; panamacity (mid-lat 30.2, viewBox 1000x1119) = Bay US-FL-005 (PCB/
+  St. Andrews/Camp Helen) + Gulf US-FL-045 (St. Joseph Peninsula) + Walton
+  US-FL-131 (Grayton Beach). All 7 counties FULL_DEPTH. IMPLEMENTATION: NEW
+  PARAMETERIZED GENERATORS — scripts/gen-region-shapes.mjs + gen-region-basemap.mjs
+  (siblings of the yellowstone ones but config-driven: an AREAS map keyed by
+  area id → {file, prefix, midLat, counties FIPS→code}; run with no arg = all
+  areas, or `node scripts/gen-region-shapes.mjs hahira` for one). They emit
+  src/data/{hahira,panamacity}-{shapes,basemap}.js (exports prefixed HAHIRA_/PCB_).
+  The basemap generator KEEPS the coastline layer (unlike yellowstone's) — PCB
+  is on the Gulf (14 coast paths), Hahira inland yields none. Natural Earth 10m
+  has no state parks at this scale, so LAKES/PARKS layers are empty for both;
+  county silhouettes + coastline + roads + rivers carry orientation. WIRING:
+  map-areas.js (MAP_AREAS + areaOfCounty both extended), ui/basemap.js LAYERS,
+  counties.js (7 COUNTIES + 2 REGIONS). sw.js → frame-3.1.0, new app modules in
+  ASSETS (module graph must be complete offline); the county JSONs are NOT
+  precached (cache-on-visit — everyday coverage, not a poor-signal park).
+  Region pills + geo auto-switch pick both up for free (pointInCounty projects
+  via each county's own area — verified with real Hahira/PCB coords).
+  DATA: built 2026-07-21 via a SCOPED refresh onto STAGING — Hahira 23 hotspots
+  (Lowndes 12/Lanier 5/Brooks 3/Cook 3, top=Grand Bay WMA), Panama City 168
+  (Bay 81/Gulf 33/Walton 54, top=Deer Point Lake). Hahira's small count is real
+  rural coverage, not a gap (offered Berrien/Echols to widen; Noah promoted as-is).
+  KEY INFRA CHANGE (reusable): refresh-data.yml gained an optional `ref` input
+  (default main; job env REF) — checkout/commit/deploy all follow it, so
+  ref=staging builds a NEW region's data onto the staging candidate and deploys
+  the PREVIEW (not prod), fixing the v38 "data landed on main after staging
+  deployed" chicken-and-egg. The 7 county defs must exist on the built ref
+  (build-counties errors on unknown codes) — with ref=staging they do. PROVEN:
+  dispatch mcp actions_run_trigger workflow_id=refresh-data.yml ref=staging
+  inputs={ref:staging, scope:"<space-sep codes>"}; a dry test on the dead cookie
+  confirmed checkout-staging/validate-pass/build-fail-cookie/no-commit before the
+  fresh cookie arrived. VERIFIED headless on the real data: Hahira 23 pins/11 hot,
+  PCB 168 pins/14 hot + Gulf coastline, ranking cards + Planner populate, CA (742
+  pins)/Yellowstone unchanged, contrast gate green, zero pageerrors. .gitignore
+  now ignores node_modules/ (local playwright/sharp installs). NEEDS-HIS-HANDS
+  (taste, not regressions): on-device pinch/scroll of the two new maps + the
+  Gulf-coast read (he promoted from the staging preview handoff; if the county
+  scope wants widening that's follow-up).
 - 3.0.1 (ITERATION) SHIPPED 2026-07-19 (PR #53, squash 7be1998): the
   version.capability.iteration numbering itself — MERGED on Noah's "That's all
   perfect. Go" (he accepted the 3.0.0 seed and the three-era reading; the
