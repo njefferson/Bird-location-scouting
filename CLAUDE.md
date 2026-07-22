@@ -175,6 +175,18 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.1.2 (ITERATION) SHIPPED 2026-07-22 (ff-merge f0d20f1): "An accessibility
+  statement" — MERGED to main (production) on Noah's "promote all". Second half
+  of the cross-app accessibility-statement initiative: the hub now hosts a shared
+  statement at noahjefferson.pages.dev/accessibility (honest WCAG 2.2 AA framing +
+  a mailto:noah.jefferson@icloud.com report path), and every sibling app's About
+  links to it. Frame's change: the about-more line in frame/src/ui/about.js gained
+  a second link `· <a href="https://noahjefferson.pages.dev/accessibility">
+  Accessibility</a>` beside the hub link (reuses the same About link colour, NO new
+  fg/bg pair → contrast-check.mjs green). sw.js → frame-3.1.2, changelog.js top
+  entry + CHANGELOG.md heading. VERIFIED headless: About dialog shows the link,
+  href correct, 6.81:1 contrast, zero pageerrors. Shipped the SAME day to Clear
+  Horizons (2.16.8), Photo Pointer (1.5.2) and Studio.
 - 3.1.1 (ITERATION) SHIPPED 2026-07-21 (PR #55, ff-merge c11713b): "A link to
   Noah's other free tools" — MERGED to main (production) on Noah's "promote all"
   (part of a cross-app initiative: the personal hub noahjefferson.pages.dev links
