@@ -1,3 +1,18 @@
+# CLAUDE.md — Bird-location-scouting (Frame)
+
+> **Inherits the [Universal App Doctrine](https://github.com/njefferson/noahjefferson/blob/main/DOCTRINE.md)**
+> (canonical copy: `DOCTRINE.md` in the noahjefferson hub). Single source of truth
+> for the rules shared across all of Noah's apps — product values, taste,
+> accessibility, honesty, verification, release discipline & taxonomy, licensing
+> (PolyForm Noncommercial), privacy, the permanent **AskUserQuestion ban** (§0),
+> and the **repo-metadata confirm rule** (§10). **Where anything below overlaps
+> the Doctrine, the Doctrine wins.** The rest of this file is repo-specific.
+>
+> Source of truth for this repo: **`NOTES.md`** (Project facts / releases live
+> below and in `frame/src/data/roadmap.js`); accessibility register: `ACCESSIBILITY.md`.
+
+---
+
 # Standing rules for Claude sessions on this repo
 
 ## 0. NEVER use the AskUserQuestion / choice-popup tool. EVER. (Noah, 2026-07-17,
