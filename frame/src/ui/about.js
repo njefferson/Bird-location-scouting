@@ -93,7 +93,9 @@ const ABOUT_HTML = `
   Creative Commons or free-use licence — full per-photo credits below.</p>
 
   <p class="about-more"><a href="https://noahjefferson.pages.dev" target="_blank"
-  rel="noopener">More free tools by Noah Jefferson&nbsp;↗</a></p>
+  rel="noopener">More free tools by Noah Jefferson&nbsp;↗</a>
+  &nbsp;·&nbsp;<a href="https://noahjefferson.pages.dev/accessibility" target="_blank"
+  rel="noopener">Accessibility</a></p>
 `;
 
 // "Coming next" — planned features from the roadmap data module. Items move

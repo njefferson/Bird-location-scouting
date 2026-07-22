@@ -9,6 +9,12 @@ name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
 running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
 About → "What's new" and published to GitHub Releases).
 
+## 3.1.2 — 2026-07-22
+
+The About page now links to an accessibility statement — what Frame does to be
+usable by everyone, honest about what still needs work, and a direct way to
+report anything that got in your way. A refinement: 3.1.2.
+
 ## 3.1.1 — 2026-07-21
 
 A small link at the bottom of the About page now leads to Noah Jefferson's other

@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.1.2',
+    date: '2026-07-22',
+    changes: [
+      'The About page now links to an accessibility statement — what Frame does to be usable by everyone, honest about what still needs work, and a direct way to report anything that got in your way. A refinement: 3.1.2.',
+    ],
+  },
+  {
     version: '3.1.1',
     date: '2026-07-21',
     changes: [
