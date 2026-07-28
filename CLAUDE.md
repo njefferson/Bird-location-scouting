@@ -190,6 +190,44 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.1.3 (ITERATION) SHIPPED 2026-07-28 (ff-merge 9f7f24b, from an `accessibility`
+  branch Noah explicitly authorised — "I'll allow an accessibility branch for this
+  work, so I can continue in the other branches" — then MERGED on his "Merge all
+  and I'll report bugs as I find them", i.e. he WAIVED the on-device gate and is
+  bug-reporting from production; the branch policy reverts to staging/main after).
+  "Text now follows your device's font size setting" — a CROSS-APP sweep (Clear
+  Horizons 2.16.9, Studio, Photo Pointer 1.20.3 the same day). WHAT: all 138 px
+  font-size declarations in frame/src/styles.css → rem at a 16px base, plus
+  `html { font-size: 100% }`. Frame drew every label at a fixed px size, so a
+  reader who raises their browser/OS DEFAULT FONT SIZE got nothing (page-zoom
+  always worked — this is the other path). NOT a WCAG failure (1.4.4 is satisfied
+  by zoom), a real quality gap.
+  THREE THINGS A LATER SESSION MUST NOT UNDO:
+  (1) `.spark-mon { font-size: 7px }` (line ~411) is DELIBERATELY still px — it is
+  SVG text inside a viewBox, where px is user-units that scale with the chart;
+  rem would pin it to the root and break it at every zoom. Same for the
+  `.county-label`/`.pin-name` calc(var(--fs)*1px) rules. Never "finish the job"
+  on those.
+  (2) The `html { font-size: 100% }` rule must stay AFTER the `html, body {...}`
+  rule — I put it before first and the later rule pinned the root to 0.9375rem,
+  shrinking every rem in the app by 6%. Caught by the gate, comment in the file.
+  (3) Entries ≤ v43 and the SVG exemptions in ACCESSIBILITY.md A10 (sub-11px
+  decorative text) are unaffected and stay as documented.
+  VERIFIED — the reusable harness (scratchpad, not committed): a headless snapshot
+  of every element's computed font-size across 8 routes, run at a 16px default and
+  at a 20px default via CDP `Page.setFontSizes`. THREE GATES: (0) old code FAILED
+  to scale — 8,325/8,325 elements, the bug demonstrated before the change; (1)
+  after, 8,325 rendered elements PIXEL-IDENTICAL at the 16px default; (2) all
+  8,325 scale exactly 1.25× at 20px. Plus WCAG 1.4.10 reflow: no horizontal
+  overflow at 20px on a 390px viewport. contrast-check green, 0 pageerrors.
+  ~53 unstyled `<button>` elements sit at Chromium's UA 13.3333px and jump
+  non-proportionally — PRE-EXISTING, identical before and after; fixing means
+  `font: inherit`, which changes rendering, so it was left as a reported item.
+  STILL OPEN (reported, deliberately not done in the same pass — a pure unit
+  conversion is provably pixel-identical, and changing sizes too would have
+  destroyed that proof): the sub-11px sizes. Frame's are already documented
+  exemptions in ACCESSIBILITY.md A10, so Frame is the CLEAN one here; Studio has
+  8px/9px mono text with no such record.
 - 3.1.2 (ITERATION) SHIPPED 2026-07-22 (ff-merge f0d20f1): "An accessibility
   statement" — MERGED to main (production) on Noah's "promote all". Second half
   of the cross-app accessibility-statement initiative: the hub now hosts a shared
