@@ -190,6 +190,30 @@ PROVEN login-gated (probe, 2026-07-05); don't re-litigate it.
   Do NOT keep offering to do them from here; the wall is proven, not assumed.
 
 ## Project facts (verified, don't rediscover)
+- 3.1.4 (ITERATION) SHIPPED 2026-07-28 (ff-merge 109c3cf, same `accessibility`
+  branch, on Noah's "You can merge the ones that are ready, don't promote anything
+  that you didn't make"). The sub-11px sweep 3.1.3 deliberately left open.
+  THE REAL FIND, and it was a WCAG AA FAILURE hiding in plain sight: `.ver-tag`
+  (the corner build stamp) was 9.5px `--dim` at `opacity: .65`, which RENDERS at
+  **2.54:1**. contrast-check.mjs could not see it — the gate checks the TOKEN pair
+  (`--dim` on `--bg` = 4.79:1) and never composites opacity. So the one element
+  whose entire purpose is being legible in a screenshot was the least legible text
+  in the app. FIX: opacity dropped, 9.5px → 11px; measured 4.79:1 at 11px.
+  THE DURABLE RULE (now in the hub LESSONS.md): **dim text with a TOKEN, never with
+  `opacity`** — an opacity on text is invisible to a token-based contrast gate.
+  Photo Pointer hit the identical bug in its 1.14.2 and fixed it the same way; two
+  apps, same author, same trap, so it is a cross-app rule not a Frame quirk.
+  ALSO: `.map-debug` + `.map-debug-copy` 10.5px → 11px (Noah reads the map
+  diagnostics on-device; that is informational text, not chrome).
+  NEW SUB-11px EXEMPTIONS, recorded in ACCESSIBILITY.md as A14 on the same grounds
+  A10 used — do NOT "fix" these later: `.score-q` (a single "?" affordance inside a
+  14px circle; the chip it sits on carries its own full-size label) and
+  `.sp-fi-btn ✓` (a THIRD channel on top of colour AND a 2px inset ring, so it is
+  redundant, not the sole non-hue carrier). The three A10 exemptions stand
+  unchanged (ON/OFF pill, +N/−N badges, chevron).
+  VERIFIED: headless sweep of 6 routes reports ZERO rendered text under 11px except
+  those three exemptions; contrast gate green; no horizontal overflow at a 20px
+  browser default; 0 pageerrors; stamp renders "3.1.4".
 - 3.1.3 (ITERATION) SHIPPED 2026-07-28 (ff-merge 9f7f24b, from an `accessibility`
   branch Noah explicitly authorised — "I'll allow an accessibility branch for this
   work, so I can continue in the other branches" — then MERGED on his "Merge all
