@@ -236,7 +236,10 @@ a { color: var(--accent-ink); }
   color: var(--accent-ink); border-radius: 999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700;
   cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .div-chip:active { transform: translateY(1px); }
-/* A quiet "?" affordance so the tap-for-meaning is discoverable without hover. */
+/* A quiet "?" affordance so the tap-for-meaning is discoverable without hover.
+   SUB-11px EXEMPT (A14): a single-glyph affordance inside a 14px circle, in the
+   same family as the chevrons A10 exempted — it labels nothing on its own and the
+   whole chip it sits on is the tap target, with its own full-size label. */
 .score-q { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: var(--card);
   font-size: 0.625rem; font-weight: 700; line-height: 0.875rem; text-align: center; }
 /* Inline tappable "species likely" (hotspot detail header). */
@@ -557,10 +560,10 @@ table.species-table tr[onclick] { cursor: pointer; }
   background: color-mix(in srgb, var(--card) 90%, transparent);
   border: 1px solid var(--line); }
 .map-debug { margin: 0; white-space: pre;
-  font-family: var(--mono); font-size: 0.65625rem; line-height: 1.45; color: var(--ink); }
+  font-family: var(--mono); font-size: 0.6875rem; line-height: 1.45; color: var(--ink); }
 .map-debug-copy { display: block; margin-top: 6px; padding: 3px 8px; pointer-events: auto;
   border-radius: 6px; border: 1px solid var(--line); cursor: pointer;
-  background: var(--card); font-family: var(--mono); font-size: 0.65625rem; color: var(--ink); }
+  background: var(--card); font-family: var(--mono); font-size: 0.6875rem; color: var(--ink); }
 .map-scale-bar { display: inline-block; height: 5px; min-width: 12px;
   border: 1.5px solid var(--ink); border-top: none; }
 .map-scale-zf { color: var(--dim); }
@@ -1150,6 +1153,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-fi-btn:active { transform: scale(.9); }
 .sp-fi-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sp-fi-btn:not(.labelled).wanted { color: var(--facet-want); box-shadow: inset 0 0 0 2px var(--facet-want); }
+/* SUB-11px EXEMPT (A14): this ✓ is a THIRD channel on top of the colour and the
+   2px inset ring, both of which already carry "wanted" — it is redundant, not the
+   sole non-hue carrier, so its size is not load-bearing. */
 .sp-fi-btn:not(.labelled).wanted::before { content: "✓"; position: absolute; top: -1px; right: 1px;
   font-size: 0.625rem; font-weight: 700; color: var(--facet-want); line-height: 1; }
 .sp-fi-btn:not(.labelled).excluded { color: var(--facet-block); opacity: .8; }
@@ -1268,8 +1274,14 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Build tag — a tiny version stamp in the corner so every screenshot says which
    build it came from. Decorative (aria-hidden); the version story lives in About. */
+/* MEASURED 2026-07-28: at 9.5px with opacity .65 this rendered at 2.54:1 — a real
+   AA failure the contrast gate could not see, because the gate checks the TOKEN
+   pair (--dim on --bg = 4.79:1) and never composites the opacity. The stamp's whole
+   job is to be readable in a screenshot, so it is now 11px at full --dim (4.79:1).
+   Photo Pointer hit the identical bug in its 1.14.2 and fixed it the same way.
+   Never put opacity back on text — dim it with a token, which the gate can see. */
 .ver-tag { position: fixed; top: calc(2px + env(safe-area-inset-top)); right: 8px; z-index: 60; pointer-events: none;
-  font-family: var(--mono); font-size: 0.59375rem; color: var(--dim); opacity: .65; }
+  font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
 
 /* Map diagnostics actions (Settings) */
 .diag-actions { display: flex; gap: 8px; }

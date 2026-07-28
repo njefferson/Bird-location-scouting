@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.1.4',
+    date: '2026-07-28',
+    changes: [
+      'The little build number in the corner is readable now — it was faint enough to disappear against the paper, which rather defeated the point of putting it there. The map’s diagnostics readout got a size up too. A refinement: 3.1.4.',
+    ],
+  },
+  {
     version: '3.1.3',
     date: '2026-07-28',
     changes: [

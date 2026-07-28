@@ -9,6 +9,12 @@ name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
 running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
 About → "What's new" and published to GitHub Releases).
 
+## 3.1.4 — 2026-07-28
+
+The little build number in the corner is readable now — it was faint enough to
+disappear against the paper, which rather defeated the point of putting it there.
+The map's diagnostics readout got a size up too. A refinement: 3.1.4.
+
 ## 3.1.3 — 2026-07-28
 
 If you've set a larger default text size in your browser or on your phone, Frame
