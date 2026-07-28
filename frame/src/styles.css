@@ -129,7 +129,13 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink);
-  font-family: var(--sans); font-size: 15px; line-height: 1.45; }
+  font-family: var(--sans); font-size: 0.9375rem; line-height: 1.45; }
+/* The root stays at 100% = whatever the reader set as their browser/OS default
+   font size; body renders at 0.9375rem (15px at the default) as designed. Every
+   font-size below is in rem, so the app scales with that preference. This rule
+   must stay AFTER the one above, which would otherwise pin the root to 0.9375rem
+   and shrink every rem in the app. Never set a px font-size on the root. */
+html { font-size: 100%; }
 /* Clear the floating dock: its height + 10px float + a little breathing room. */
 body { padding-bottom: calc(var(--tab-h) + 24px + env(safe-area-inset-bottom)); }
 /* Installed on a phone, the page runs full-bleed under the status bar and
@@ -141,8 +147,8 @@ body { padding-top: env(safe-area-inset-top); }
 body::before { content: ""; position: fixed; top: 0; left: 0; right: 0;
   height: env(safe-area-inset-top); background: var(--bg); z-index: 10; }
 .view { max-width: 760px; margin: 0 auto; padding: 12px 12px 24px; }
-h1 { font-size: 22px; margin: 0; font-family: var(--serif); font-weight: 600; }
-h2 { font-size: 16px; margin: 0 0 6px; }
+h1 { font-size: 1.375rem; margin: 0; font-family: var(--serif); font-weight: 600; }
+h2 { font-size: 1rem; margin: 0 0 6px; }
 /* Hotspot names on cards read as titles too (screen h1s are serif above). */
 .card-head-main h2 { font-family: var(--serif); font-weight: 600; }
 /* Every number is IBM Plex Mono, tabular — scores, freq %, cells, pills,
@@ -160,7 +166,7 @@ a { color: var(--accent-ink); }
    at the top so keyboard users jump past nothing-yet to the main view. */
 .skip-link { position: fixed; top: -60px; left: 12px; z-index: 100;
   background: var(--card); color: var(--accent-ink); border: 1px solid var(--focus);
-  border-radius: 8px; padding: 9px 14px; font-size: 14px; font-weight: 600;
+  border-radius: 8px; padding: 9px 14px; font-size: 0.875rem; font-weight: 600;
   text-decoration: none; transition: top .12s ease; }
 .skip-link:focus { top: calc(10px + env(safe-area-inset-top)); }
 
@@ -192,19 +198,19 @@ a { color: var(--accent-ink); }
 .bar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px;
   background: linear-gradient(var(--bg), transparent); pointer-events: none; }
 .title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.subtitle { color: var(--dim); font-size: 13px; }
-.back { background: none; border: 0; color: var(--accent-ink); font-size: 15px; padding: 4px 0; cursor: pointer; }
+.subtitle { color: var(--dim); font-size: 0.8125rem; }
+.back { background: none; border: 0; color: var(--accent-ink); font-size: 0.9375rem; padding: 4px 0; cursor: pointer; }
 
 .months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 8px; }
 .month { background: var(--card); border: 1px solid var(--line); color: var(--dim);
-  border-radius: 8px; padding: 6px 0; font-size: 12px; cursor: pointer; }
+  border-radius: 8px; padding: 6px 0; font-size: 0.75rem; cursor: pointer; }
 .month.active { background: var(--accent); color: #06160f; border-color: var(--accent); font-weight: 700; }
 
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
 .filter { background: var(--card); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  border-radius: 999px; padding: 6px 12px; font-size: 0.8125rem; cursor: pointer; }
 .filter.active { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
-.filter-hint { flex-basis: 100%; color: var(--dim); font-size: 12px; margin-top: 2px; }
+.filter-hint { flex-basis: 100%; color: var(--dim); font-size: 0.75rem; margin-top: 2px; }
 
 /* cards */
 .cards { display: flex; flex-direction: column; gap: 12px; }
@@ -227,19 +233,19 @@ a { color: var(--accent-ink); }
 /* "N birds likely" chip — the headline that replaced the 0–100 score ring.
    Tap for the icon explainer; a quiet "?" makes that discoverable. */
 .div-chip { position: relative; background: var(--accent-wash); border: 1px solid var(--accent);
-  color: var(--accent-ink); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700;
+  color: var(--accent-ink); border-radius: 999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700;
   cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .div-chip:active { transform: translateY(1px); }
 /* A quiet "?" affordance so the tap-for-meaning is discoverable without hover. */
 .score-q { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); color: var(--card);
-  font-size: 10px; font-weight: 700; line-height: 14px; text-align: center; }
+  font-size: 0.625rem; font-weight: 700; line-height: 0.875rem; text-align: center; }
 /* Inline tappable "species likely" (hotspot detail header). */
 .score-inline { background: var(--bg2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 8px; padding: 2px 8px 2px 10px; font-size: 13px; cursor: pointer;
+  border-radius: 8px; padding: 2px 8px 2px 10px; font-size: 0.8125rem; cursor: pointer;
   font-family: var(--mono); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
 .score-inline:active { transform: translateY(1px); }
 
-.badge { --c: #555; font-size: 11px; font-weight: 700; color: var(--badge-ink); background: var(--c);
+.badge { --c: #555; font-size: 0.6875rem; font-weight: 700; color: var(--badge-ink); background: var(--c);
   padding: 2px 8px; border-radius: 6px; }
 .badge.live { --c: var(--live); }
 /* Trust badges pull from theme tokens so Dawn Mode reskins them too. */
@@ -248,33 +254,33 @@ a { color: var(--accent-ink); }
 .badge.trust-exploratory { --c: var(--trust-exploratory); }
 .badge.trust-thin        { --c: var(--trust-thin); }
 .badge.trust-inferred    { --c: var(--trust-inferred); }
-.chip { font-size: 11px; color: var(--ink); background: var(--card2); border: 1px solid var(--line);
+.chip { font-size: 0.6875rem; color: var(--ink); background: var(--card2); border: 1px solid var(--line);
   padding: 2px 7px; border-radius: 6px; }
 .chip.dim { color: var(--dim); }
 .chip.inferred { color: var(--warn); border-color: var(--warn); }
 
 .habs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-.hab { font-size: 11px; color: var(--dim); background: var(--bg2); border: 1px solid var(--line);
+.hab { font-size: 0.6875rem; color: var(--dim); background: var(--bg2); border: 1px solid var(--line);
   padding: 2px 8px; border-radius: 999px; }
 
 .top-species { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-.tsp { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: center; font-size: 13px; }
+.tsp { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: center; font-size: 0.8125rem; }
 .tsp-freq { color: var(--dim); font-variant-numeric: tabular-nums; }
 .tsp-bar { grid-column: 1 / -1; height: 4px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
 .tsp-bar i { display: block; height: 100%; background: var(--accent); }
 
 .btn { background: var(--card2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; }
+  border-radius: 8px; padding: 7px 12px; font-size: 0.8125rem; cursor: pointer; text-decoration: none; display: inline-block; }
 .btn.ghost { background: none; }
 .btn:active { transform: translateY(1px); }
 
 .provenance { margin-top: 18px; padding: 12px; background: var(--bg2); border: 1px dashed var(--line);
-  border-radius: 10px; font-size: 12px; color: var(--dim); }
+  border-radius: 10px; font-size: 0.75rem; color: var(--dim); }
 .provenance strong { color: var(--warn); }
 
 /* matrix */
 .matrix-wrap, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.matrix { border-collapse: collapse; width: 100%; font-size: 0.75rem; }
 table.matrix th, table.matrix td { padding: 6px 4px; text-align: center; }
 /* Month headers sort their column; the corner restores the default order.
    The tappable part is a real BUTTON inside the th (keyboard-reachable, focus
@@ -295,18 +301,18 @@ table.matrix .corner { text-align: left; }
   background: var(--card); }
 .cell.hot { background: var(--score-hot); color: #2a1503; }
 .col-active { outline: 2px solid var(--accent); }
-.legend { color: var(--dim); font-size: 12px; margin-top: 10px; }
+.legend { color: var(--dim); font-size: 0.75rem; margin-top: 10px; }
 /* Map caption + the ⓘ that jumps to the Planner's report-count view. */
 .legend-row { display: flex; align-items: flex-start; gap: 8px; }
 .legend-row .legend { flex: 1 1 auto; }
 .stats-info { flex: 0 0 auto; width: 30px; height: 30px; margin-top: 8px; border-radius: 50%;
   cursor: pointer; border: 1px solid var(--line); background: var(--card); color: var(--dim);
-  font-size: 15px; display: grid; place-content: center; }
+  font-size: 0.9375rem; display: grid; place-content: center; }
 
 /* Planner numbers toggle: which number fills the cells (species likely /
    reports). A standing, self-announcing control — never a hidden mode. */
 .num-toggle { display: flex; gap: 6px; margin: 2px 0 10px; }
-.num-btn { padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 12.5px;
+.num-btn { padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 0.78125rem;
   border: 1px solid var(--line); background: var(--card); color: var(--dim); }
 .num-btn.on { border-color: var(--accent); background: var(--accent-wash);
   color: var(--accent-ink); font-weight: 700; }
@@ -316,7 +322,7 @@ table.matrix .corner { text-align: left; }
    = higher score. */
 
 /* species tables */
-table.species-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.species-table { border-collapse: collapse; width: 100%; font-size: 0.8125rem; }
 table.species-table th { text-align: left; color: var(--dim); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 table.species-table td { padding: 6px 8px; border-bottom: 1px solid var(--bg2); vertical-align: middle; }
 table.species-table tr[onclick] { cursor: pointer; }
@@ -326,7 +332,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Labelled variant (icon+word pills): let the pills wrap instead of stretching a
    table column, and keep them tight so a row shows two-up rather than one wide line. */
 .sp-facets-labelled { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; vertical-align: middle; }
-.sp-facets-labelled .sp-fi-btn.labelled { padding: 2px 8px 2px 6px; font-size: 11px; }
+.sp-facets-labelled .sp-fi-btn.labelled { padding: 2px 8px 2px 6px; font-size: 0.6875rem; }
 /* Species facets: a guild silhouette leads the row (in front of the text, a
    clear "kind of bird" cue — dim so it stays quieter than the species name),
    then a short italic info line. Same bird leads the Target/Seen pill rows and
@@ -335,7 +341,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-facet-bird { flex: 0 0 auto; color: var(--dim); opacity: .7; }
 .sp-facet-bird svg { display: block; }
 .sp-facet-line .sp-facet-bird { margin-top: 1px; }
-.sp-facet-note { font-style: italic; font-size: 11.5px; color: var(--dim); line-height: 1.3; }
+.sp-facet-note { font-style: italic; font-size: 0.71875rem; color: var(--dim); line-height: 1.3; }
 
 /* Species photo thumbnail (Wikimedia Commons) — a leading avatar beside a bird's
    name. A rounded square with a hairline frame; falls back to the dim guild
@@ -365,10 +371,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 .star-btn.labelled, .seen-btn.labelled {
   width: auto; height: auto; border-radius: 999px; display: inline-flex; align-items: center;
   gap: 6px; padding: 7px 13px; border: 1px solid var(--line); background: var(--card2);
-  color: var(--ink); font-size: 13px; font-weight: 600; }
+  color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
 .star-btn.labelled .mark-ico, .seen-btn.labelled .mark-ico { display: inline-flex; align-items: center; }
 .star-btn.labelled .mark-ico svg { width: 18px; height: 18px; }
-.seen-btn.labelled .mark-ico { font-size: 16px; line-height: 1; }
+.seen-btn.labelled .mark-ico { font-size: 1rem; line-height: 1; }
 /* Install ("add to home screen") — banner + steps. Banner mirrors .freshbar but
    in the accent family (an invitation, not a warning). */
 .installbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -376,20 +382,20 @@ table.species-table tr[onclick] { cursor: pointer; }
   border: 1px solid var(--accent); background: var(--accent-wash); }
 .install-ico { flex: 0 0 auto; color: var(--accent-ink); display: inline-grid; place-content: center; }
 .install-ico svg { display: block; }
-.install-msg { flex: 1 1 180px; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.install-msg { flex: 1 1 180px; font-size: 0.8125rem; color: var(--ink); line-height: 1.4; }
 .install-msg strong { font-weight: 700; color: var(--accent-ink); }
 .install-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
 .install-dialog { border: none; border-radius: 14px; padding: 0; max-width: 420px; width: calc(100% - 32px);
   background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,.28); }
 .install-dialog::backdrop { background: rgba(0,0,0,.4); }
 .install-body { padding: 22px 20px; }
-.install-body h2 { font-size: 18px; margin: 0 0 12px; padding-right: 30px; }
-.install-body p { font-size: 14px; margin: 8px 0; }
+.install-body h2 { font-size: 1.125rem; margin: 0 0 12px; padding-right: 30px; }
+.install-body p { font-size: 0.875rem; margin: 8px 0; }
 .install-body .btn.primary { margin-bottom: 12px; }
-.install-steps { margin: 8px 0; padding-left: 22px; font-size: 14px; }
+.install-steps { margin: 8px 0; padding-left: 22px; font-size: 0.875rem; }
 .install-steps li { margin: 7px 0; line-height: 1.4; }
 .inline-ico { display: inline-flex; vertical-align: -3px; color: var(--accent-ink); }
-.install-done { color: var(--facet-mode-ink, var(--accent-ink)); font-weight: 600; font-size: 14px; }
+.install-done { color: var(--facet-mode-ink, var(--accent-ink)); font-weight: 600; font-size: 0.875rem; }
 .setting .install-steps strong, .install-body .install-steps strong { color: var(--accent-ink); }
 
 .star-btn.labelled.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); }
@@ -409,23 +415,23 @@ table.species-table tr[onclick] { cursor: pointer; }
 .bird-link:hover, .bird-link:focus-visible { color: var(--accent-ink); text-decoration: underline; }
 /* In the species table the NAME is the headline each row supports — bigger,
    bolder, full ink, so the facet line / freq / marks read as secondary data. */
-.species-table td .bird-link { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+.species-table td .bird-link { font-size: 0.9375rem; font-weight: 600; color: var(--ink); line-height: 1.25; }
 /* Right-justify the name so it sits against its data (the guild bird + facets). */
 .species-table th:nth-child(2), .species-table td.name-cell { text-align: right; }
 .species-table td.freq-cell { color: var(--dim); }
 /* external eBird link, shown on the species page */
-.ebird-link { font-size: 11px; color: var(--accent-ink); text-decoration: none;
+.ebird-link { font-size: 0.6875rem; color: var(--accent-ink); text-decoration: none;
   border: 1px solid var(--line); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
 .ebird-link:hover { background: var(--card2); }
 
-.access-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 12px; font-size: 13px; }
+.access-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 12px; font-size: 0.8125rem; }
 .access-box .btn { margin-top: 8px; }
-.access-label { margin: 0; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
+.access-label { margin: 0; font-size: 0.75rem; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
 .access-links { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* species search */
 .search-wrap { margin-bottom: 12px; }
-.search { width: 100%; padding: 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--line);
+.search { width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid var(--line);
   background: var(--card); color: var(--ink); }
 
 /* Species combobox: an in-app suggestion list that overlays the results, so it
@@ -438,14 +444,14 @@ table.species-table tr[onclick] { cursor: pointer; }
   box-shadow: 0 10px 28px rgba(0, 0, 0, .22); padding: 4px; }
 .sp-suggest[hidden] { display: none; }
 .sp-suggest-row { display: block; width: 100%; text-align: left; padding: 11px 12px;
-  background: none; border: none; border-radius: 8px; font-size: 15px; color: var(--ink);
+  background: none; border: none; border-radius: 8px; font-size: 0.9375rem; color: var(--ink);
   cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .sp-suggest-row:active { background: var(--accent-wash); }
 .sp-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; }
 .sp-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.sp-note { color: var(--dim); font-size: 13px; }
+.sp-note { color: var(--dim); font-size: 0.8125rem; }
 .sp-best { background: var(--bg2); padding: 8px 10px; border-radius: 8px; }
-.sp-live { font-size: 13px; margin-top: 10px; }
+.sp-live { font-size: 0.8125rem; margin-top: 10px; }
 
 /* settings */
 .settings { display: flex; flex-direction: column; gap: 12px; }
@@ -457,7 +463,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .regionbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
   padding: 2px 84px 10px 0; margin-bottom: 2px; }
 .region-pill { background: var(--card); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 999px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+  border-radius: 999px; padding: 5px 14px; font-size: 0.8125rem; cursor: pointer;
   max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .region-pill.active { background: var(--accent); border-color: var(--accent); color: #06160f; font-weight: 700; }
 .region-pill.add { color: var(--dim); font-weight: 700; padding: 5px 12px; }
@@ -531,7 +537,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .map-scale { position: absolute; left: 10px; bottom: 8px; display: flex; align-items: center;
   gap: 7px; padding: 4px 9px; border-radius: 7px; cursor: pointer; /* tap = diagnostics window */
   background: color-mix(in srgb, var(--card) 88%, transparent);
-  border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink); }
+  border: 1px solid var(--line); font-family: var(--mono); font-size: 0.6875rem; color: var(--ink); }
 
 /* Hold-to-load line (Noah's design): while the box is quiet but fingers are
    still down, a thin bar fills over ~3s — at full, the map loads anyway (also
@@ -551,10 +557,10 @@ table.species-table tr[onclick] { cursor: pointer; }
   background: color-mix(in srgb, var(--card) 90%, transparent);
   border: 1px solid var(--line); }
 .map-debug { margin: 0; white-space: pre;
-  font-family: var(--mono); font-size: 10.5px; line-height: 1.45; color: var(--ink); }
+  font-family: var(--mono); font-size: 0.65625rem; line-height: 1.45; color: var(--ink); }
 .map-debug-copy { display: block; margin-top: 6px; padding: 3px 8px; pointer-events: auto;
   border-radius: 6px; border: 1px solid var(--line); cursor: pointer;
-  background: var(--card); font-family: var(--mono); font-size: 10.5px; color: var(--ink); }
+  background: var(--card); font-family: var(--mono); font-size: 0.65625rem; color: var(--ink); }
 .map-scale-bar { display: inline-block; height: 5px; min-width: 12px;
   border: 1.5px solid var(--ink); border-top: none; }
 .map-scale-zf { color: var(--dim); }
@@ -566,7 +572,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .map-progress { position: absolute; left: 10px; bottom: 38px; display: flex; align-items: center;
   gap: 7px; padding: 4px 9px; border-radius: 7px; pointer-events: none;
   background: color-mix(in srgb, var(--card) 88%, transparent);
-  border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink); }
+  border: 1px solid var(--line); font-family: var(--mono); font-size: 0.6875rem; color: var(--ink); }
 .map-progress-spin { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto;
   border: 2px solid var(--track); border-top-color: var(--accent);
   animation: mpspin .8s linear infinite; }
@@ -643,7 +649,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 .map-zoom { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; }
 .map-zbtn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line);
   background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--ink);
-  font-size: 18px; line-height: 1; cursor: pointer; display: grid; place-content: center; }
+  font-size: 1.125rem; line-height: 1; cursor: pointer; display: grid; place-content: center; }
 .map-zbtn:active { transform: translateY(1px); }
 
 /* standing mode indicator over the map bottom — announces the picker mode,
@@ -651,20 +657,20 @@ table.species-table tr[onclick] { cursor: pointer; }
 .pick-mode { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
   max-width: 90%; padding: 5px 12px; border-radius: 999px; pointer-events: none; white-space: nowrap;
   background: color-mix(in srgb, var(--card2) 88%, transparent); color: var(--ink); border: 1px solid var(--accent2);
-  font-size: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .4); backdrop-filter: blur(6px); }
+  font-size: 0.75rem; box-shadow: 0 6px 18px rgba(0, 0, 0, .4); backdrop-filter: blur(6px); }
 
 .pick-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
-.pick-count { color: var(--dim); font-size: 13px; }
-.btn.small { padding: 4px 10px; font-size: 12px; }
+.pick-count { color: var(--dim); font-size: 0.8125rem; }
+.btn.small { padding: 4px 10px; font-size: 0.75rem; }
 
 .county-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 12px; margin-bottom: 14px; }
-.county-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 14px; cursor: pointer; }
+.county-item { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 0.875rem; cursor: pointer; }
 .county-item input { width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
 
 .pick-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
-.region-name-wrap { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--dim); flex: 1 1 220px; }
+.region-name-wrap { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--dim); flex: 1 1 220px; }
 .region-name { background: var(--bg2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 8px; padding: 10px; font-size: 16px; }
+  border-radius: 8px; padding: 10px; font-size: 1rem; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #06160f; font-weight: 700; }
 .btn.primary:disabled { opacity: .4; cursor: not-allowed; }
 .btn.danger { background: none; border-color: var(--danger-dim); color: var(--danger); }
@@ -675,19 +681,19 @@ table.species-table tr[onclick] { cursor: pointer; }
   padding: 8px 10px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; }
 .region-row-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .region-row-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-.dim.small, .small { font-size: 12px; }
+.dim.small, .small { font-size: 0.75rem; }
 
 /* toast (auto-switch notices etc.) */
 .toast { position: fixed; left: 50%; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 26px);
   transform: translate(-50%, 8px); max-width: 88vw; padding: 10px 16px; z-index: 20;
   background: var(--card2); color: var(--ink); border: 1px solid var(--accent2); border-radius: 999px;
-  font-size: 13px; box-shadow: 0 8px 26px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s, transform .25s;
+  font-size: 0.8125rem; box-shadow: 0 8px 26px rgba(0, 0, 0, .45); opacity: 0; transition: opacity .25s, transform .25s;
   pointer-events: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 /* actionable toast (Undo etc.) — must catch taps, so it opts back in */
 .toast.has-action { display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; pointer-events: auto; }
 .toast-action { flex: 0 0 auto; background: var(--accent); color: #06160f; border: 0; border-radius: 999px;
-  padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  padding: 6px 14px; font-size: 0.8125rem; font-weight: 700; cursor: pointer; }
 .toast-action:active { transform: translateY(1px); }
 
 /* tab bar — a floating dock in the same card language as the content: same
@@ -702,7 +708,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   box-shadow: var(--dock-shadow), var(--dock-lip);
   display: grid; grid-template-columns: repeat(5, 1fr); z-index: 10; }
 .tab { background: none; border: 0; color: var(--tab-ink); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 11px; }
+  align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-size: 0.6875rem; }
 .tab.active { color: var(--tab-ink-active); }
 /* The active tab carries a SHAPE (small bar), never hue alone. */
 .tab.active .tab-icon::after { content: ""; display: block; position: absolute;
@@ -719,7 +725,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* about — unobtrusive floating info button + modal */
 .about-btn { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: var(--col-edge); z-index: 8;
   width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
-  background: var(--card2); color: var(--dim); font-size: 15px; line-height: 1; cursor: pointer;
+  background: var(--card2); color: var(--dim); font-size: 0.9375rem; line-height: 1; cursor: pointer;
   display: grid; place-content: center; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
 .about-btn:hover, .about-btn:focus-visible { opacity: 1; color: var(--accent); border-color: var(--accent); }
 .about-btn:active { transform: translateY(1px); }
@@ -744,42 +750,42 @@ table.species-table tr[onclick] { cursor: pointer; }
 .about-dialog::backdrop { background: rgba(4, 12, 9, .66); backdrop-filter: blur(2px); }
 .about-close { position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px;
   border-radius: 50%; border: 1px solid var(--line); background: var(--bg2); color: var(--ink);
-  font-size: 18px; line-height: 1; cursor: pointer; }
+  font-size: 1.125rem; line-height: 1; cursor: pointer; }
 .about-close:active { transform: translateY(1px); }
 .about-body { padding: 22px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.about-body h2 { font-size: 19px; margin: 0 0 10px; padding-right: 34px; }
-.about-body h3 { font-size: 14px; margin: 16px 0 4px; color: var(--accent-ink); }
-.about-body p { margin: 6px 0; font-size: 14px; }
-.about-body ul { margin: 6px 0; padding-left: 20px; font-size: 14px; }
+.about-body h2 { font-size: 1.1875rem; margin: 0 0 10px; padding-right: 34px; }
+.about-body h3 { font-size: 0.875rem; margin: 16px 0 4px; color: var(--accent-ink); }
+.about-body p { margin: 6px 0; font-size: 0.875rem; }
+.about-body ul { margin: 6px 0; padding-left: 20px; font-size: 0.875rem; }
 .about-body li { margin: 3px 0; }
 .about-formula { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
   padding: 10px 12px; font-weight: 700; color: var(--accent-ink); text-align: center;
   font-variant-numeric: tabular-nums; }
 .about-inferred { color: var(--warn); font-weight: 700; }
-.about-foot { color: var(--dim); font-size: 12px; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
+.about-foot { color: var(--dim); font-size: 0.75rem; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
 .whatsnew-h { margin-top: 20px !important; border-top: 1px solid var(--line); padding-top: 14px; }
 .whatsnew-dialog { max-width: 420px; }
-.whatsnew-dialog .rel-date { color: var(--dim); font-size: 12px; margin-top: -6px; }
+.whatsnew-dialog .rel-date { color: var(--dim); font-size: 0.75rem; margin-top: -6px; }
 .whatsnew-ok { margin-top: 14px; width: 100%; }
 .about-body .roadmap li { margin: 7px 0; }
 .about-body .roadmap strong { color: var(--accent-ink); }
 .about-body .rel { margin: 8px 0 12px; }
 .rel-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 2px !important; }
 .rel-ver { font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-.rel-date { color: var(--dim); font-size: 12px; }
-.rel-more { font-size: 13px; margin: 4px 0 0 !important; }
+.rel-date { color: var(--dim); font-size: 0.75rem; }
+.rel-more { font-size: 0.8125rem; margin: 4px 0 0 !important; }
 
 /* Species photo credits — a collapsed section listing each thumbnail's
    photographer + licence (Wikimedia Commons). Scrolls within itself so 270-odd
    rows don't blow out the dialog. */
 .photo-credits { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
-.photo-credits > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent-ink); }
+.photo-credits > summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--accent-ink); }
 .photo-credits[open] > summary { margin-bottom: 8px; }
-.pc-intro { font-size: 12px; color: var(--dim); margin: 4px 0 8px !important; }
-.pc-empty { font-size: 13px; color: var(--dim); }
+.pc-intro { font-size: 0.75rem; color: var(--dim); margin: 4px 0 8px !important; }
+.pc-empty { font-size: 0.8125rem; color: var(--dim); }
 .pc-list { max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   margin: 0 !important; padding-left: 0 !important; list-style: none; }
-.pc-row { font-size: 12px; margin: 4px 0; line-height: 1.35; }
+.pc-row { font-size: 0.75rem; margin: 4px 0; line-height: 1.35; }
 .pc-name { font-weight: 600; }
 .pc-cred { color: var(--dim); }
 
@@ -791,36 +797,36 @@ table.species-table tr[onclick] { cursor: pointer; }
 .si-dialog::backdrop { background: rgba(4,12,9,.66); backdrop-filter: blur(2px); }
 .si-close { position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px;
   border-radius: 50%; border: 1px solid var(--line); background: var(--bg2); color: var(--ink);
-  font-size: 18px; line-height: 1; cursor: pointer; }
+  font-size: 1.125rem; line-height: 1; cursor: pointer; }
 .si-close:active { transform: translateY(1px); }
 .si-head { display: flex; align-items: center; gap: 14px; padding: 20px 20px 14px;
   border-bottom: 1px solid var(--line); }
 .si-count { flex: 0 0 auto; width: 60px; height: 60px; border-radius: 50%; display: grid;
   place-content: center; text-align: center; background: var(--accent-wash); border: 1px solid var(--accent); }
-.si-count-num { font-size: 22px; font-weight: 700; line-height: 1; color: var(--accent-ink); }
-.si-count-cap { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
+.si-count-num { font-size: 1.375rem; font-weight: 700; line-height: 1; color: var(--accent-ink); }
+.si-count-cap { font-size: 0.6875rem; color: var(--dim); text-transform: uppercase; letter-spacing: .4px; }
 /* Guild icon at the head of each explainer row, inheriting the fi-* state colour. */
 .si-icon { flex: 0 0 auto; display: inline-grid; place-content: center; }
 .si-icon svg { display: block; }
-.si-title h2 { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 0; padding-right: 30px; }
-.si-sub { color: var(--dim); font-size: 12px; }
+.si-title h2 { font-family: var(--serif); font-weight: 600; font-size: 1.125rem; margin: 0; padding-right: 30px; }
+.si-sub { color: var(--dim); font-size: 0.75rem; }
 .si-body { padding: 16px 20px 22px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.si-body p { margin: 8px 0; font-size: 14px; }
+.si-body p { margin: 8px 0; font-size: 0.875rem; }
 .si-lead { margin-top: 0 !important; }
 .si-formula { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
   padding: 10px 12px; font-weight: 700; color: var(--accent-ink); text-align: center;
   font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.si-h { font-size: 13px; margin: 18px 0 8px; color: var(--accent-ink); text-transform: uppercase; letter-spacing: .4px; }
-.si-note { color: var(--dim); font-size: 13px !important; }
-.si-note.si-dim { font-size: 12px !important; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 14px; }
-.si-legend { color: var(--dim); font-size: 11px !important; margin-top: 6px !important; }
+.si-h { font-size: 0.8125rem; margin: 18px 0 8px; color: var(--accent-ink); text-transform: uppercase; letter-spacing: .4px; }
+.si-note { color: var(--dim); font-size: 0.8125rem !important; }
+.si-note.si-dim { font-size: 0.75rem !important; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 14px; }
+.si-legend { color: var(--dim); font-size: 0.6875rem !important; margin-top: 6px !important; }
 .si-trust { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .si-contribs { display: flex; flex-direction: column; gap: 6px; }
-.si-row { display: grid; grid-template-columns: auto 1fr 84px auto; align-items: center; gap: 8px; font-size: 13px; }
+.si-row { display: grid; grid-template-columns: auto 1fr 84px auto; align-items: center; gap: 8px; font-size: 0.8125rem; }
 .si-sp { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .si-bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; }
 .si-bar i { display: block; height: 100%; background: var(--accent); }
-.si-vals { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); font-size: 12px; }
+.si-vals { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); font-size: 0.75rem; }
 
 /* =============================================================================
    TARGET BIRDS (v21) — a personal species list that re-weights the ranking.
@@ -830,7 +836,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Star toggle — reused on species pages, the hotspot matrix and the picker.
    Big enough to tap; gold and filled when the bird is on your list. */
 .star-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
-  background: none; cursor: pointer; font-size: 20px; line-height: 1; color: var(--dim);
+  background: none; cursor: pointer; font-size: 1.25rem; line-height: 1; color: var(--dim);
   display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
 .star-btn:hover, .star-btn:focus-visible { color: var(--accent); }
 .star-btn.on { color: var(--accent); }
@@ -850,9 +856,9 @@ table.species-table tr[onclick] { cursor: pointer; }
   margin: 0 0 12px; padding: 9px 12px; border-radius: var(--r);
   border: 1px solid var(--line); background: var(--card2); }
 .targetbar.engaged { border-color: var(--accent); background: var(--accent-wash); }
-.tb-mark { flex: 0 0 auto; font-size: 16px; color: var(--dim); }
+.tb-mark { flex: 0 0 auto; font-size: 1rem; color: var(--dim); }
 .targetbar.engaged .tb-mark { color: var(--accent); }
-.tb-label { flex: 1 1 180px; font-size: 13px; color: var(--ink); }
+.tb-label { flex: 1 1 180px; font-size: 0.8125rem; color: var(--ink); }
 .tb-label strong { font-weight: 700; }
 .tb-actions { display: flex; gap: 6px; flex: 0 0 auto; }
 
@@ -866,10 +872,10 @@ table.species-table tr[onclick] { cursor: pointer; }
 .fresh-ico { flex: 0 0 auto; color: var(--slate); display: inline-grid; place-content: center; }
 .freshbar.archived .fresh-ico { color: var(--warn); }
 .fresh-ico svg { display: block; }
-.fresh-msg { flex: 1 1 180px; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.fresh-msg { flex: 1 1 180px; font-size: 0.8125rem; color: var(--ink); line-height: 1.4; }
 .fresh-msg strong { font-weight: 700; }
 .fresh-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
-.fresh-x { background: none; border: 0; color: var(--dim); font-size: 20px; line-height: 1;
+.fresh-x { background: none; border: 0; color: var(--dim); font-size: 1.25rem; line-height: 1;
   padding: 2px 6px; cursor: pointer; border-radius: 6px; }
 .fresh-x:hover, .fresh-x:focus-visible { color: var(--ink); }
 
@@ -878,34 +884,34 @@ table.species-table tr[onclick] { cursor: pointer; }
   margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r);
   border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
 .tg-entry:active { transform: translateY(1px); }
-.tg-entry-mark { flex: 0 0 auto; font-size: 20px; color: var(--accent); }
+.tg-entry-mark { flex: 0 0 auto; font-size: 1.25rem; color: var(--accent); }
 .tg-entry-main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tg-entry-main strong { font-family: var(--serif); font-weight: 600; font-size: 15px; }
-.tg-entry-main .dim { font-size: 12px; }
-.tg-entry-go { flex: 0 0 auto; color: var(--dim); font-size: 22px; }
+.tg-entry-main strong { font-family: var(--serif); font-weight: 600; font-size: 0.9375rem; }
+.tg-entry-main .dim { font-size: 0.75rem; }
+.tg-entry-go { flex: 0 0 auto; color: var(--dim); font-size: 1.375rem; }
 
 /* Picker screen. */
 .tg-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   margin: 0 0 12px; padding: 10px 12px; border-radius: var(--r);
   border: 1px solid var(--line); background: var(--card2); }
-.tg-count { font-weight: 700; font-size: 14px; }
-.tg-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; color: var(--dim); }
+.tg-count { font-weight: 700; font-size: 0.875rem; }
+.tg-toggle { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 0.8125rem; color: var(--dim); }
 .tg-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
-.tg-hint { font-size: 12px; margin: 0 0 12px; }
-.tg-group { font-family: var(--sans); font-size: 12px; font-weight: 700; text-transform: uppercase;
+.tg-hint { font-size: 0.75rem; margin: 0 0 12px; }
+.tg-group { font-family: var(--sans); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .5px; color: var(--accent-ink); margin: 16px 0 6px; }
 .tg-list { display: flex; flex-direction: column; }
 .tg-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px;
   border-bottom: 1px solid var(--line); }
 .tg-row.on { background: var(--accent-wash); border-radius: 8px; border-bottom-color: transparent; }
 .tg-row-main { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
-.tg-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.tg-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; }
 
 /* Collapsible habitat sections in the browse list (v31): the picker opens as a
    short index; tap a section header to unfold its birds. Header reuses the
    .tg-group typography (accent, uppercase) and adds a chevron + count badges. */
 .tg-browsehead { display: flex; align-items: center; gap: 10px; margin: 16px 0 2px; }
-.tg-browselabel { font-family: var(--sans); font-size: 12px; font-weight: 700;
+.tg-browselabel { font-family: var(--sans); font-size: 0.75rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
 .tg-foldall { margin-left: auto; }
 .tg-fold { display: flex; align-items: center; gap: 9px; width: 100%;
@@ -914,16 +920,16 @@ table.species-table tr[onclick] { cursor: pointer; }
   -webkit-tap-highlight-color: transparent; }
 .tg-fold:active { background: var(--accent-wash); }
 .tg-fold.open { border-bottom-color: transparent; }
-.tg-fold-chev { flex: none; width: 12px; font-size: 11px; color: var(--accent-ink); }
+.tg-fold-chev { flex: none; width: 12px; font-size: 0.6875rem; color: var(--accent-ink); }
 .tg-fold-label { flex: 1 1 auto; min-width: 0; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; }
 .tg-fold-counts { flex: none; display: flex; align-items: center; gap: 6px; }
-.tg-fold-count { font-family: var(--mono); font-size: 12px; font-weight: 600;
+.tg-fold-count { font-family: var(--mono); font-size: 0.75rem; font-weight: 600;
   letter-spacing: 0; text-transform: none; color: var(--dim);
   background: var(--card2); border: 1px solid var(--line);
   border-radius: 999px; padding: 1px 8px; }
 .tg-fold-starred { display: inline-flex; align-items: center; gap: 3px;
-  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  font-family: var(--mono); font-size: 0.75rem; font-weight: 700;
   letter-spacing: 0; text-transform: none; color: var(--accent-ink);
   background: var(--accent-wash); border: 1px solid var(--accent);
   border-radius: 999px; padding: 1px 7px 1px 5px; }
@@ -940,7 +946,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Targeting note in the score explainer. */
 .si-targeting { background: var(--accent-wash); border: 1px solid var(--accent);
-  border-radius: 8px; padding: 9px 11px; font-size: 13px !important; color: var(--ink); }
+  border-radius: 8px; padding: 9px 11px; font-size: 0.8125rem !important; color: var(--ink); }
 .si-targeting strong { color: var(--accent-ink); }
 
 /* ==========================================================================
@@ -950,7 +956,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Seen toggle — the slate sibling of the gold star. ＋ to add, ✓ when on. */
 .seen-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: none;
-  background: none; cursor: pointer; font-size: 18px; line-height: 1; color: var(--dim);
+  background: none; cursor: pointer; font-size: 1.125rem; line-height: 1; color: var(--dim);
   display: grid; place-content: center; border-radius: 50%; transition: color .12s, transform .1s; }
 .seen-btn:hover, .seen-btn:focus-visible { color: var(--slate); }
 .seen-btn.on { color: var(--slate); }
@@ -977,7 +983,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 /* Marks are supporting affordances, not the focus — small and faint when off,
    still gold/slate when the bird is on your list/seen. */
 .species-table td.mark-cell .star-btn,
-.species-table td.mark-cell .seen-btn { width: 24px; height: 22px; font-size: 13px; }
+.species-table td.mark-cell .seen-btn { width: 24px; height: 22px; font-size: 0.8125rem; }
 .species-table td.mark-cell .star-btn:not(.on),
 .species-table td.mark-cell .seen-btn:not(.on) { color: var(--dim); opacity: .5; }
 
@@ -992,25 +998,25 @@ table.species-table tr[onclick] { cursor: pointer; }
 .tl-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px;
   border-bottom: 1px solid var(--line); }
 .tl-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.tl-name { font-family: var(--serif); font-weight: 600; font-size: 15px; color: var(--ink);
+.tl-name { font-family: var(--serif); font-weight: 600; font-size: 0.9375rem; color: var(--ink);
   text-decoration: none; }
 .tl-name:hover { color: var(--accent-ink); }
-.tl-where { font-size: 13px; margin: 0; }
+.tl-where { font-size: 0.8125rem; margin: 0; }
 .tl-where strong { font-weight: 700; }
-.tl-more { font-size: 12px; margin: 0; }
+.tl-more { font-size: 0.75rem; margin: 0; }
 .tl-card .spark { margin-top: 2px; }
 
 /* Bulk-import a life list. */
 .tg-import { margin: 0 0 12px; border: 1px solid var(--line); border-radius: var(--r);
   background: var(--card2); padding: 6px 12px; }
-.tg-import summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--slate);
+.tg-import summary { cursor: pointer; font-size: 0.8125rem; font-weight: 700; color: var(--slate);
   padding: 6px 0; }
 .import-wrap { padding: 4px 0 10px; }
-.import-ta { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: 12px;
+.import-ta { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: 0.75rem;
   border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--card);
   color: var(--ink); resize: vertical; }
 .import-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-.import-status { margin: 0; font-size: 12px; }
+.import-status { margin: 0; font-size: 0.75rem; }
 
 /* ==========================================================================
    FACET ICONS (v23) — per-site guild rows + the tri-state icon filter.
@@ -1052,7 +1058,7 @@ table.species-table tr[onclick] { cursor: pointer; }
 
 /* Tri-state filter overlay — shape, not just colour. */
 .fi.wanted { box-shadow: inset 0 0 0 2px var(--facet-want); }
-.fi.wanted::before { content: "✓"; position: absolute; top: 0; right: 3px; font-size: 11px;
+.fi.wanted::before { content: "✓"; position: absolute; top: 0; right: 3px; font-size: 0.6875rem;
   font-weight: 700; color: var(--facet-want); line-height: 1; }
 .fi.excluded { color: var(--facet-block); opacity: .75; }
 .fi.excluded::before { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 2px;
@@ -1068,7 +1074,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   gap: 1px; padding: 3px 6px 4px; }
 .fi.has-cap::after { content: none; }            /* the caption + glyph colour carry presence */
 /* The word stays whole (one unit with the icon) — never hyphen-wraps mid-word. */
-.fi-cap { font-size: 11px; line-height: 1.05; text-align: center; color: var(--dim);
+.fi-cap { font-size: 0.6875rem; line-height: 1.05; text-align: center; color: var(--dim);
   white-space: nowrap; letter-spacing: .1px; }
 .fi.has-cap.fi-lots .fi-cap { color: var(--ink); }
 .fi.has-cap.wanted .fi-cap { color: var(--accent-ink); }
@@ -1082,7 +1088,7 @@ table.species-table tr[onclick] { cursor: pointer; }
   border: 1px solid var(--facet-mode); background: var(--facet-mode-wash); }
 .facetbar .tb-mark { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .facetbar .tb-mark svg { display: block; }
-.facet-chip { display: inline-block; font-size: 12px; color: var(--ink); margin-right: 8px; }
+.facet-chip { display: inline-block; font-size: 0.75rem; color: var(--ink); margin-right: 8px; }
 .facet-chip strong { color: var(--facet-mode-ink); font-weight: 700; }
 
 /* Collapsed entry chip in the Ranking header — summarises or invites, opens the
@@ -1093,9 +1099,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-entry:active { transform: translateY(1px); }
 .facet-entry-mark { flex: 0 0 auto; color: var(--facet-mode); display: inline-grid; place-content: center; }
 .facet-entry-mark svg { display: block; }
-.facet-entry-main { flex: 1 1 auto; min-width: 0; font-size: 13px; overflow: hidden; }
+.facet-entry-main { flex: 1 1 auto; min-width: 0; font-size: 0.8125rem; overflow: hidden; }
 .facet-entry-main.dim { color: var(--dim); }
-.facet-entry-go { flex: 0 0 auto; color: var(--facet-mode); font-size: 18px; font-weight: 700; line-height: 1; }
+.facet-entry-go { flex: 0 0 auto; color: var(--facet-mode); font-size: 1.125rem; font-weight: 700; line-height: 1; }
 
 /* The picker dialog — reuses the explainer dialog frame + close button. */
 .facet-dialog { position: fixed; inset: 0; margin: auto; width: min(92vw, 480px); max-height: 86vh;
@@ -1104,11 +1110,11 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-dialog[open] { display: flex; flex-direction: column; }
 .facet-dialog::backdrop { background: rgba(4,12,9,.66); backdrop-filter: blur(2px); }
 .facet-dialog-head { padding: 18px 20px 8px; border-bottom: 1px solid var(--line); }
-.facet-dialog-head h2 { font-family: var(--serif); font-weight: 600; font-size: 18px; margin: 0 30px 4px 0; }
-.facet-dialog-head .dim { font-size: 12px; margin: 0; }
+.facet-dialog-head h2 { font-family: var(--serif); font-weight: 600; font-size: 1.125rem; margin: 0 30px 4px 0; }
+.facet-dialog-head .dim { font-size: 0.75rem; margin: 0; }
 .facet-sections { padding: 8px 16px 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .facet-sec { margin: 12px 0; }
-.facet-sec h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--accent-ink);
+.facet-sec h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .4px; color: var(--accent-ink);
   margin: 0 0 8px; }
 .facet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
 .facet-dialog-foot { display: flex; gap: 8px; justify-content: flex-end; align-items: center;
@@ -1121,8 +1127,8 @@ table.species-table tr[onclick] { cursor: pointer; }
 .facet-pick:active { transform: scale(.96); }
 .facet-pick .fi-glyph { display: inline-grid; place-content: center; }
 .facet-pick .fi-glyph svg { display: block; }
-.facet-pick .fi-label { font-size: 11px; color: var(--ink); text-align: center; line-height: 1.15; }
-.facet-pick .fi-state { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; min-height: 11px; }
+.facet-pick .fi-label { font-size: 0.6875rem; color: var(--ink); text-align: center; line-height: 1.15; }
+.facet-pick .fi-state { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .4px; min-height: 11px; }
 .facet-pick.wanted { border-color: var(--facet-want); box-shadow: inset 0 0 0 1px var(--facet-want);
   color: var(--facet-want); background: var(--accent-wash); }
 .facet-pick.wanted .fi-state { color: var(--accent-ink); }
@@ -1145,14 +1151,14 @@ table.species-table tr[onclick] { cursor: pointer; }
 .sp-fi-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sp-fi-btn:not(.labelled).wanted { color: var(--facet-want); box-shadow: inset 0 0 0 2px var(--facet-want); }
 .sp-fi-btn:not(.labelled).wanted::before { content: "✓"; position: absolute; top: -1px; right: 1px;
-  font-size: 10px; font-weight: 700; color: var(--facet-want); line-height: 1; }
+  font-size: 0.625rem; font-weight: 700; color: var(--facet-want); line-height: 1; }
 .sp-fi-btn:not(.labelled).excluded { color: var(--facet-block); opacity: .8; }
 .sp-fi-btn:not(.labelled).excluded::before { content: ""; position: absolute; left: 6px; right: 6px;
   top: 50%; height: 2px; background: var(--facet-block); transform: rotate(-45deg); }
 
 /* Pill (labelled) form — icon + label, on the species page. */
 .sp-fi-btn.labelled { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px;
-  min-width: 0; min-height: 0; border-radius: 999px; font-size: 12px; color: var(--ink);
+  min-width: 0; min-height: 0; border-radius: 999px; font-size: 0.75rem; color: var(--ink);
   background: var(--card2); border: 1px solid var(--line); }
 .sp-fi-btn.labelled .sp-fi { color: var(--dim); }
 /* Selected (wanted) = strong DARK-INK outline so the kept pills read as chosen.
@@ -1182,9 +1188,9 @@ table.species-table tr[onclick] { cursor: pointer; }
 .photo-toggle-mark { flex: 0 0 auto; color: var(--dim); display: inline-grid; place-content: center; }
 .photo-toggle-mark svg { width: 20px; height: 20px; display: block; }
 .photo-toggle-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
-.photo-toggle-main strong { font-size: 13px; }
-.photo-toggle-sub { font-size: 11px; color: var(--dim); }
-.photo-toggle-state { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .6px;
+.photo-toggle-main strong { font-size: 0.8125rem; }
+.photo-toggle-sub { font-size: 0.6875rem; color: var(--dim); }
+.photo-toggle-state { flex: 0 0 auto; font-size: 0.625rem; font-weight: 700; letter-spacing: .6px;
   padding: 3px 9px; border-radius: 999px; background: var(--line); color: var(--dim); }
 .photo-toggle:active { transform: scale(.99); }
 .photo-toggle.on { border-color: var(--accent); background: var(--accent-wash); }
@@ -1192,12 +1198,12 @@ table.species-table tr[onclick] { cursor: pointer; }
 .photo-toggle.on .photo-toggle-main strong { color: var(--accent-ink); }
 .photo-toggle.on .photo-toggle-state { background: var(--accent); color: var(--card); }
 .photo-toggle-info { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
-  border: 1px solid var(--line); background: var(--card); color: var(--dim); font-size: 15px;
+  border: 1px solid var(--line); background: var(--card); color: var(--dim); font-size: 0.9375rem;
   display: grid; place-content: center; }
 
 /* === Card presence row — INFO ONLY (not the filter) ======================= */
 .presence-row { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }
-.presence-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
+.presence-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: .5px; color: var(--dim); }
 .presence-icons { display: flex; align-items: center; gap: 1px; flex-wrap: nowrap; width: 100%;
   overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .pi { position: relative; flex: 0 0 auto; display: inline-grid; place-content: center;
@@ -1220,23 +1226,23 @@ table.species-table tr[onclick] { cursor: pointer; }
   border-radius: 9px; background: var(--card); color: var(--dim); cursor: pointer; }
 .ffp-cat-ico { color: var(--facet-mode); display: inline-grid; place-content: center; }
 .ffp-cat-ico svg { width: 18px; height: 18px; display: block; transition: width .1s, height .1s; }
-.ffp-cat-label { font-size: 11px; color: var(--ink); }
+.ffp-cat-label { font-size: 0.6875rem; color: var(--ink); }
 .ffp-cat-counts { position: absolute; top: 2px; left: 2px; display: flex; gap: 2px; }
 .ffp-cat-count { min-width: 13px; height: 13px; padding: 0 3px;
-  border-radius: 7px; color: var(--card); font-size: 8.5px; font-weight: 700;
+  border-radius: 7px; color: var(--card); font-size: 0.53125rem; font-weight: 700;
   display: grid; place-content: center; }
 /* Colour is the bonus, the SYMBOL is the meaning: badges read "+N" / "−N"
    (colour-blind-safe), on grounds measured ≥4.5:1 under their digits. */
 .ffp-cat-count.want { background: var(--count-want); }    /* green +N — must-include */
 .ffp-cat-count.block { background: var(--facet-block); }  /* red −N — exclude */
-.ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 9px; line-height: 1; color: var(--facet-mode-ink); }
+.ffp-cat-chev { position: absolute; right: 4px; bottom: 2px; font-size: 0.5625rem; line-height: 1; color: var(--facet-mode-ink); }
 .ffp-cat.open { border-color: var(--facet-mode); background: var(--facet-mode-wash); }
 .ffp-cat.open .ffp-cat-ico svg { width: 21px; height: 21px; }
 .ffp-vals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.ffp-help { font-size: 11px; color: var(--dim); margin: 6px 2px 0; }
+.ffp-help { font-size: 0.6875rem; color: var(--dim); margin: 6px 2px 0; }
 .ffp-lights { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px;
   padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--facet-mode) 30%, transparent); }
-.ffp-lights-empty { font-size: 11px; color: var(--dim); }
+.ffp-lights-empty { font-size: 0.6875rem; color: var(--dim); }
 .ffp-light { position: relative; display: inline-grid; place-content: center; width: 22px; height: 22px; border-radius: 6px; }
 .ffp-light-ico svg { width: 15px; height: 15px; display: block; }
 .ffp-light.want { color: var(--facet-want); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--facet-want); }
@@ -1245,25 +1251,25 @@ table.species-table tr[onclick] { cursor: pointer; }
    pills, so want vs exclude never rests on hue alone. */
 .ffp-light.exclude::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%;
   height: 2px; background: var(--facet-block); transform: rotate(-45deg); }
-.ffp-clear { margin-left: auto; font-size: 11px; color: var(--facet-mode-ink); background: none; border: 0;
+.ffp-clear { margin-left: auto; font-size: 0.6875rem; color: var(--facet-mode-ink); background: none; border: 0;
   cursor: pointer; text-decoration: underline; padding: 2px 4px; }
 
 .pw-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .pw-row { display: flex; align-items: center; gap: 10px; }
 .pw-icon { flex: 0 0 auto; color: var(--ink); display: inline-grid; place-content: center; }
-.pw-label { flex: 1 1 auto; font-size: 13px; }
+.pw-label { flex: 1 1 auto; font-size: 0.8125rem; }
 .pw-w { flex: 0 0 auto; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 600; }
-.photo-dialog .si-note { font-size: 13px; color: var(--ink); margin: 8px 0; }
+.photo-dialog .si-note { font-size: 0.8125rem; color: var(--ink); margin: 8px 0; }
 .photo-dialog .si-dim { color: var(--dim); }
-.pw-toggle { flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.pw-toggle { flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8125rem; }
 
 /* Species panel: the honest one-line weight readout. */
-.sp-photo { font-size: 12px; margin: 0 0 8px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sp-photo { font-size: 0.75rem; margin: 0 0 8px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 /* Build tag — a tiny version stamp in the corner so every screenshot says which
    build it came from. Decorative (aria-hidden); the version story lives in About. */
 .ver-tag { position: fixed; top: calc(2px + env(safe-area-inset-top)); right: 8px; z-index: 60; pointer-events: none;
-  font-family: var(--mono); font-size: 9.5px; color: var(--dim); opacity: .65; }
+  font-family: var(--mono); font-size: 0.59375rem; color: var(--dim); opacity: .65; }
 
 /* Map diagnostics actions (Settings) */
 .diag-actions { display: flex; gap: 8px; }

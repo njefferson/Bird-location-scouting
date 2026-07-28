@@ -9,6 +9,13 @@ name (`frame-<x.y.z>` in `frame/sw.js`) so you can tell which build you're
 running. Source of truth: `frame/src/data/changelog.js` (rendered in-app under
 About → "What's new" and published to GitHub Releases).
 
+## 3.1.3 — 2026-07-28
+
+If you've set a larger default text size in your browser or on your phone, Frame
+now grows with it. Before, the app drew every label at a fixed size and quietly
+ignored that setting. Nothing looks different if you haven't changed it.
+A refinement: 3.1.3.
+
 ## 3.1.2 — 2026-07-22
 
 The About page now links to an accessibility statement — what Frame does to be

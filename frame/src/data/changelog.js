@@ -9,6 +9,13 @@
 
 export const CHANGELOG = [
   {
+    version: '3.1.3',
+    date: '2026-07-28',
+    changes: [
+      'If you’ve set a larger default text size in your browser or on your phone, Frame now grows with it. Before, the app drew every label at a fixed size and quietly ignored that setting. Nothing looks different if you haven’t changed it. A refinement: 3.1.3.',
+    ],
+  },
+  {
     version: '3.1.2',
     date: '2026-07-22',
     changes: [
